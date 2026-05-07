@@ -7,6 +7,18 @@ export enum ContentType {
   BOOK = 'BOOK',
 }
 
+export class ListContentDto {
+  @ApiPropertyOptional({ enum: ContentType, default: ContentType.MOVIE })
+  @IsOptional()
+  @IsEnum(ContentType)
+  type?: ContentType = ContentType.MOVIE;
+
+  @ApiPropertyOptional({ description: '마지막 항목 id (무한 스크롤 커서)' })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+}
+
 export class SearchContentDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -73,6 +85,12 @@ export interface ContentResponseDto {
   releaseYear: number | null;
   thumbnailUrl: string | null;
   synopsis: string | null;
+}
+
+export interface ContentListResponseDto {
+  items: ContentResponseDto[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }
 
 export interface GroupContentResponseDto {

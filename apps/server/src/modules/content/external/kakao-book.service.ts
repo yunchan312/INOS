@@ -42,7 +42,23 @@ export class KakaoBookService {
       },
     );
 
-    return response.data.documents.map((b) => ({
+    return response.data.documents.map((b) => this.toKakaoBook(b));
+  }
+
+  async fetchPopularBooks(page: number): Promise<KakaoBook[]> {
+    const response = await axios.get<KakaoBookResponse>(
+      'https://dapi.kakao.com/v3/search/book',
+      {
+        headers: { Authorization: `KakaoAK ${this.apiKey}` },
+        params: { query: '베스트셀러', size: 50, page },
+      },
+    );
+
+    return response.data.documents.map((b) => this.toKakaoBook(b));
+  }
+
+  private toKakaoBook(b: KakaoBookDoc): KakaoBook {
+    return {
       externalId: b.isbn || `${b.title}-${b.authors.join(',')}`,
       title: b.title,
       synopsis: b.contents || null,
@@ -50,6 +66,6 @@ export class KakaoBookService {
       thumbnailUrl: b.thumbnail || null,
       type: 'BOOK' as const,
       creator: b.authors.join(', ') || null,
-    }));
+    };
   }
 }

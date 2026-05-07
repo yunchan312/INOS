@@ -9,8 +9,10 @@ import { TmdbService } from './external/tmdb.service';
 import { KakaoBookService } from './external/kakao-book.service';
 import {
   SearchContentDto,
+  ListContentDto,
   ContentType,
   ContentResponseDto,
+  ContentListResponseDto,
   GroupContentResponseDto,
   UserContentResponseDto,
   UpdateGroupContentStatusDto,
@@ -24,6 +26,70 @@ export class ContentService {
     private readonly tmdb: TmdbService,
     private readonly kakao: KakaoBookService,
   ) {}
+
+  private static readonly LIST_PAGE_SIZE = 50;
+  private static readonly TMDB_PAGE_SIZE = 20;
+  private static readonly KAKAO_PAGE_SIZE = 50;
+
+  async list(dto: ListContentDto): Promise<ContentListResponseDto> {
+    const type = dto.type ?? ContentType.MOVIE;
+    const limit = ContentService.LIST_PAGE_SIZE;
+
+    await this.ensureSeeded(type, limit, dto.cursor);
+
+    const rows = await this.prisma.content.findMany({
+      where: { type },
+      take: limit + 1,
+      ...(dto.cursor ? { cursor: { id: dto.cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'asc' },
+      select: this.contentSelect(),
+    });
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    return { items, nextCursor, hasMore };
+  }
+
+  private async ensureSeeded(type: ContentType, needed: number, cursor?: string): Promise<void> {
+    // 커서가 있으면 이미 앞 페이지 데이터는 있으므로, 전체 count로 부족 여부 판단
+    const dbCount = await this.prisma.content.count({ where: { type } });
+    if (dbCount >= needed) return;
+
+    const shortage = needed - dbCount;
+    const pagesNeeded = Math.ceil(shortage / (type === ContentType.MOVIE
+      ? ContentService.TMDB_PAGE_SIZE
+      : ContentService.KAKAO_PAGE_SIZE));
+    const startPage = Math.floor(dbCount / (type === ContentType.MOVIE
+      ? ContentService.TMDB_PAGE_SIZE
+      : ContentService.KAKAO_PAGE_SIZE)) + 1;
+
+    for (let p = startPage; p < startPage + pagesNeeded; p++) {
+      const externals = type === ContentType.MOVIE
+        ? await this.tmdb.fetchPopularMovies(p)
+        : await this.kakao.fetchPopularBooks(p);
+
+      await Promise.all(
+        externals.map((item) =>
+          this.prisma.content.upsert({
+            where: { source_sourceId: { source: type === ContentType.MOVIE ? 'TMDB' : 'KAKAO', sourceId: item.externalId } },
+            update: {},
+            create: {
+              title: item.title,
+              type,
+              creator: item.creator ?? '',
+              synopsis: item.synopsis,
+              releaseYear: item.releaseYear,
+              thumbnailUrl: item.thumbnailUrl,
+              source: type === ContentType.MOVIE ? 'TMDB' : 'KAKAO',
+              sourceId: item.externalId,
+            },
+          }),
+        ),
+      );
+    }
+  }
 
   async search(dto: SearchContentDto): Promise<ContentResponseDto[]> {
     const limit = dto.limit ?? 20;

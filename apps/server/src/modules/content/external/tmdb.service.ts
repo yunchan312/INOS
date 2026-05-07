@@ -38,16 +38,26 @@ export class TmdbService {
       params: { api_key: this.apiKey, query, language: 'ko-KR', page: 1 },
     });
 
-    return response.data.results.slice(0, limit).map((m) => ({
+    return response.data.results.slice(0, limit).map((m) => this.toTmdbMovie(m));
+  }
+
+  async fetchPopularMovies(page: number): Promise<TmdbMovie[]> {
+    const response = await axios.get<TmdbSearchResponse>(`${this.baseUrl}/movie/popular`, {
+      params: { api_key: this.apiKey, language: 'ko-KR', page },
+    });
+
+    return response.data.results.map((m) => this.toTmdbMovie(m));
+  }
+
+  private toTmdbMovie(m: TmdbMovieResult): TmdbMovie {
+    return {
       externalId: String(m.id),
       title: m.title,
       synopsis: m.overview || null,
       releaseYear: m.release_date ? Number(m.release_date.slice(0, 4)) : null,
-      thumbnailUrl: m.poster_path
-        ? `https://image.tmdb.org/t/p/w500${m.poster_path}`
-        : null,
+      thumbnailUrl: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : null,
       type: 'MOVIE' as const,
       creator: null,
-    }));
+    };
   }
 }
