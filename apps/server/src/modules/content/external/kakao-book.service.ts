@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import axios from "axios";
 
 interface KakaoBookDoc {
   title: string;
@@ -21,7 +21,7 @@ export interface KakaoBook {
   synopsis: string | null;
   releaseYear: number | null;
   thumbnailUrl: string | null;
-  type: 'BOOK';
+  type: "BOOK";
   creator: string | null;
 }
 
@@ -30,12 +30,12 @@ export class KakaoBookService {
   private readonly apiKey: string;
 
   constructor(config: ConfigService) {
-    this.apiKey = config.getOrThrow<string>('KAKAO_REST_API_KEY');
+    this.apiKey = config.getOrThrow<string>("KAKAO_REST_API_KEY");
   }
 
   async searchBooks(query: string, limit = 10): Promise<KakaoBook[]> {
     const response = await axios.get<KakaoBookResponse>(
-      'https://dapi.kakao.com/v3/search/book',
+      "https://dapi.kakao.com/v3/search/book",
       {
         headers: { Authorization: `KakaoAK ${this.apiKey}` },
         params: { query, size: limit },
@@ -47,10 +47,10 @@ export class KakaoBookService {
 
   async fetchPopularBooks(page: number): Promise<KakaoBook[]> {
     const response = await axios.get<KakaoBookResponse>(
-      'https://dapi.kakao.com/v3/search/book',
+      "https://dapi.kakao.com/v3/search/book",
       {
         headers: { Authorization: `KakaoAK ${this.apiKey}` },
-        params: { query: '베스트셀러', size: 50, page },
+        params: { query: "", size: 50, page, sort: "latest" },
       },
     );
 
@@ -59,13 +59,13 @@ export class KakaoBookService {
 
   private toKakaoBook(b: KakaoBookDoc): KakaoBook {
     return {
-      externalId: b.isbn || `${b.title}-${b.authors.join(',')}`,
+      externalId: b.isbn || `${b.title}-${b.authors.join(",")}`,
       title: b.title,
       synopsis: b.contents || null,
       releaseYear: b.datetime ? Number(b.datetime.slice(0, 4)) : null,
       thumbnailUrl: b.thumbnail || null,
-      type: 'BOOK' as const,
-      creator: b.authors.join(', ') || null,
+      type: "BOOK" as const,
+      creator: b.authors.join(", ") || null,
     };
   }
 }
