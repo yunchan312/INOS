@@ -9,7 +9,7 @@ import { DiscussionService } from './discussion.service';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),
+        secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
       }),
       inject: [ConfigService],
     }),

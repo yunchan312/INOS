@@ -10,13 +10,13 @@ export class S3Service {
 
   constructor(private readonly config: ConfigService) {
     this.client = new S3Client({
-      region: this.config.getOrThrow<string>('AWS_REGION'),
+      region: this.config.getOrThrow<string>('S3_REGION'),
       credentials: {
-        accessKeyId: this.config.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.config.getOrThrow<string>('AWS_SECRET_ACCESS_KEY'),
+        accessKeyId: this.config.getOrThrow<string>('S3_ACCESS_KEY'),
+        secretAccessKey: this.config.getOrThrow<string>('S3_SECRET_KEY'),
       },
     });
-    this.bucket = this.config.getOrThrow<string>('AWS_S3_BUCKET');
+    this.bucket = this.config.getOrThrow<string>('S3_BUCKET');
   }
 
   async getPresignedUploadUrl(
