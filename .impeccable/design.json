@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-10T00:00:00Z",
+  "title": "Design System: INOS — 인문학의 OS",
+  "extensions": {
+    "colorMeta": {
+      "parchment":      { "role": "neutral",   "displayName": "Parchment",    "canonical": "oklch(98% 0.002 80)",  "tonalRamp": ["oklch(25% 0.002 80)","oklch(38% 0.002 80)","oklch(52% 0.002 80)","oklch(65% 0.002 80)","oklch(78% 0.002 80)","oklch(88% 0.002 80)","oklch(94% 0.002 80)","oklch(98% 0.002 80)"] },
+      "indigo-deep":    { "role": "primary",   "displayName": "Deep Indigo",  "canonical": "oklch(30% 0.13 268)",  "tonalRamp": ["oklch(15% 0.13 268)","oklch(22% 0.13 268)","oklch(30% 0.13 268)","oklch(38% 0.12 268)","oklch(50% 0.11 268)","oklch(62% 0.10 268)","oklch(75% 0.07 268)","oklch(90% 0.03 268)"] },
+      "amber":          { "role": "secondary", "displayName": "Warm Amber",   "canonical": "oklch(62% 0.13 68)",   "tonalRamp": ["oklch(20% 0.13 68)","oklch(32% 0.13 68)","oklch(44% 0.13 68)","oklch(55% 0.13 68)","oklch(62% 0.13 68)","oklch(72% 0.10 68)","oklch(84% 0.06 68)","oklch(93% 0.03 68)"] },
+      "text-primary":   { "role": "neutral",   "displayName": "Ink",          "canonical": "oklch(18% 0.003 80)",  "tonalRamp": ["oklch(10% 0.003 80)","oklch(18% 0.003 80)","oklch(30% 0.003 80)","oklch(47% 0.003 80)","oklch(60% 0.003 80)","oklch(72% 0.003 80)","oklch(85% 0.003 80)","oklch(94% 0.003 80)"] },
+      "border":         { "role": "neutral",   "displayName": "Chalk Border", "canonical": "oklch(92% 0.005 80)",  "tonalRamp": ["oklch(40% 0.005 80)","oklch(55% 0.005 80)","oklch(68% 0.005 80)","oklch(78% 0.005 80)","oklch(85% 0.005 80)","oklch(90% 0.005 80)","oklch(92% 0.005 80)","oklch(96% 0.003 80)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display",  "purpose": "발제문 제목, 랜딩 헤드라인. 화면에 하나만." },
+      "headline": { "displayName": "Headline","purpose": "페이지 제목, 섹션 타이틀." },
+      "title":    { "displayName": "Title",   "purpose": "카드 제목, 그룹명, 콘텐츠명." },
+      "body":     { "displayName": "Body",    "purpose": "본문 텍스트, 발제문 내용. 최대 65ch." },
+      "label":    { "displayName": "Label",   "purpose": "버튼, 네비게이션, 메타데이터." },
+      "caption":  { "displayName": "Caption", "purpose": "날짜, 배지, 보조 정보." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "상태 전환 기본 easing." },
+      { "name": "ease-out-quart","value": "cubic-bezier(0.25, 1, 0.5, 1)","purpose": "버튼 탭, 카드 호버." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "호버, 포커스." },
+      { "name": "duration-mid",  "value": "200ms", "purpose": "색상 전환, 투표 버튼." }
+    ],
+    "breakpoints": [
+      { "name": "sm",  "value": "640px" },
+      { "name": "md",  "value": "768px" },
+      { "name": "lg",  "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (Indigo)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "주요 CTA. 인디고 배경, Pretendard 500.",
+      "html": "<button class=\"ds-btn-primary\">모임 만들기</button>",
+      "css": ".ds-btn-primary { background: #2D3561; color: #FAFAF8; padding: 12px 20px; border-radius: 10px; font-family: 'Pretendard', -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background 150ms cubic-bezier(0.4,0,0.2,1); min-height: 44px; } .ds-btn-primary:hover { background: #3D4880; } .ds-btn-primary:focus-visible { outline: 2px solid #2D3561; outline-offset: 2px; } .ds-btn-primary:disabled { background: #E8E7E3; color: #ADADAD; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "보조 액션. 테두리만.",
+      "html": "<button class=\"ds-btn-ghost\">취소</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #2D3561; padding: 12px 20px; border-radius: 10px; font-family: 'Pretendard', -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 500; border: 1px solid #2D3561; cursor: pointer; transition: background 150ms cubic-bezier(0.4,0,0.2,1); min-height: 44px; } .ds-btn-ghost:hover { background: #F0EFF9; } .ds-btn-ghost:focus-visible { outline: 2px solid #2D3561; outline-offset: 2px; }"
+    },
+    {
+      "name": "Amber Vote Button",
+      "kind": "button",
+      "refersTo": "button-amber",
+      "description": "투표/선택 맥락 전용. 인디고와 공존 금지.",
+      "html": "<button class=\"ds-btn-amber\">선택</button>",
+      "css": ".ds-btn-amber { background: #C4872A; color: #FFFFFF; padding: 12px 20px; border-radius: 10px; font-family: 'Pretendard', -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background 150ms cubic-bezier(0.4,0,0.2,1), transform 200ms cubic-bezier(0.25,1,0.5,1); min-height: 44px; } .ds-btn-amber:hover { background: #A87020; } .ds-btn-amber:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "Content Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "콘텐츠 목록 카드. 썸네일 + 텍스트 사이드.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-thumb\"></div><div class=\"ds-card-body\"><p class=\"ds-card-title\">파친코</p><p class=\"ds-card-meta\">이민진 · 2017</p><span class=\"ds-badge\">책</span></div></div>",
+      "css": ".ds-card { display: flex; gap: 12px; background: #FFFFFF; border: 1px solid #E8E7E3; border-radius: 16px; padding: 16px; transition: background 150ms cubic-bezier(0.4,0,0.2,1); cursor: pointer; } .ds-card:hover { background: #F5F4F0; } .ds-card-thumb { width: 64px; height: 88px; border-radius: 6px; background: #E8E7E3; flex-shrink: 0; } .ds-card-body { flex: 1; display: flex; flex-direction: column; gap: 4px; } .ds-card-title { font-family: 'Pretendard', system-ui, sans-serif; font-size: 15px; font-weight: 600; color: #1A1A1A; } .ds-card-meta { font-family: 'Pretendard', system-ui, sans-serif; font-size: 13px; color: #6B6B6B; } .ds-badge { display: inline-block; font-size: 11px; font-family: 'Pretendard', system-ui, sans-serif; font-weight: 500; padding: 2px 8px; border-radius: 9999px; background: #F5E6CC; color: #A87020; margin-top: 4px; }"
+    },
+    {
+      "name": "Underline Input",
+      "kind": "input",
+      "refersTo": "input-base",
+      "description": "모든 폼 입력 필드. 하단 라인만.",
+      "html": "<div class=\"ds-input-wrap\"><input class=\"ds-input\" placeholder=\"닉네임을 입력하세요\" /><label class=\"ds-input-label\">닉네임</label></div>",
+      "css": ".ds-input-wrap { position: relative; padding-top: 18px; } .ds-input { display: block; width: 100%; background: transparent; border: none; border-bottom: 1px solid #E8E7E3; padding: 8px 0; font-family: 'Pretendard', system-ui, sans-serif; font-size: 16px; color: #1A1A1A; outline: none; transition: border-color 200ms cubic-bezier(0.4,0,0.2,1); } .ds-input:focus { border-bottom-color: #2D3561; } .ds-input::placeholder { color: #ADADAD; } .ds-input-label { position: absolute; top: 0; left: 0; font-family: 'Pretendard', system-ui, sans-serif; font-size: 12px; font-weight: 500; color: #6B6B6B; letter-spacing: 0.01em; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "작은 책방의 큐레이터",
+    "overview": "INOS는 판교 직장인이 인문학 모임을 운영하는 도구다. 인터페이스는 조용하고 넉넉하다. 좋은 책방이 책을 느끼게 두듯, 이 앱은 콘텐츠와 텍스트가 숨쉴 공간을 먼저 확보한다. AI가 발제문을 쓰고 콘텐츠를 추천하지만 'AI' 레이블은 어디에도 보이지 않는다.",
+    "keyCharacteristics": [
+      "8px 그리드 기반 넉넉한 여백",
+      "세리프(콘텐츠) + 산세리프(UI) 이중 타입 스케일",
+      "그림자 없음 — 경계는 1px 연한 선으로만 표현",
+      "강조색 두 가지(인디고, 앰버)의 맥락 분리 사용",
+      "모바일 웹뷰 우선, iOS safe-area 완전 대응",
+      "AI는 레이블이 아닌 결과물로 존재"
+    ],
+    "rules": [
+      { "name": "The Context Split Rule", "body": "인디고는 지식/AI 맥락에만, 앰버는 선택/투표 맥락에만. 두 강조색이 같은 화면에 공존하면 맥락이 충돌한다.", "section": "colors" },
+      { "name": "The Off-White Rule",     "body": "배경은 항상 #FAFAF8. 순백은 카드에만.", "section": "colors" },
+      { "name": "The Flat-By-Default Rule","body": "box-shadow 사용 금지. 깊이는 배경색 차이와 1px 테두리로만.", "section": "elevation" },
+      { "name": "The Serif/Sans Split Rule","body": "세리프는 콘텐츠 레이어에만, 산세리프는 UI 레이어에만.", "section": "typography" }
+    ],
+    "dos": [
+      "배경은 항상 #FAFAF8 (Parchment). 순백 배경은 카드에만.",
+      "카드 테두리는 1px solid #E8E7E3만. 그림자 절대 금지.",
+      "발제문과 헤드라인은 Noto Serif KR. 버튼/레이블/데이터는 Pretendard.",
+      "인디고는 AI/지식 맥락에만, 앰버는 투표/선택 맥락에만.",
+      "터치 타겟 최소 44×44px, 텍스트 최소 14px.",
+      "여백을 먼저 잡고 콘텐츠를 넣는다."
+    ],
+    "donts": [
+      "보라색 또는 그라디언트. 특히 파란색-보라색 그라디언트는 AI 클리셰.",
+      "box-shadow, drop-shadow, glow 효과.",
+      "카드 안에 카드 중첩.",
+      "Inter 폰트.",
+      "회색 텍스트 + 파란 버튼 + 흰 배경 조합.",
+      "UI에 'AI', 'GPT', '인공지능' 레이블.",
+      "다크 모드에 네온 컬러.",
+      "background-clip: text gradient."
+    ]
+  }
+}
