@@ -48,6 +48,11 @@
     height: 100dvh;
   }
 
+  /* Bottom nav clearance: h-14 (56px) + home indicator */
+  .pb-nav-safe {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
   /* Card press feedback */
   .card-hover {
     cursor: pointer;

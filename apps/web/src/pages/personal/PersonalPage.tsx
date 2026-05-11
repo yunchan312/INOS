@@ -154,7 +154,7 @@ export default function PersonalPage() {
         </div>
 
         {/* Tab content */}
-        <div className="pb-20">
+        <div>
           {activeTab === 'content' ? <MyContentTab /> : <MyDiscussionTab />}
         </div>
       </div>

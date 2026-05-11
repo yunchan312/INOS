@@ -97,7 +97,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Tab content */}
-        <div className="px-4 py-6 space-y-4 pb-20">
+        <div className="px-4 py-6 space-y-4">
           {activeTab === 'contents' && (
             <div className="space-y-4">
               {/* Add content actions */}

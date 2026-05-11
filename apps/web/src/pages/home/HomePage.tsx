@@ -131,7 +131,7 @@ export default function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3 pb-20">
+          <div className="space-y-3">
             {filtered?.map((content) => (
               <button
                 key={content.id}

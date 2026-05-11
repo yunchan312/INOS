@@ -14,7 +14,7 @@ export function Layout({ children, hideNav = false }: Props) {
       style={{ backgroundColor: 'oklch(98.2% 0.002 80)' }}
     >
       {!hideNav && <Navbar />}
-      <main className="flex-1 pb-20 md:pb-0 page-enter">
+      <main className="flex-1 pb-nav-safe md:pb-0 page-enter">
         {children}
       </main>
       {!hideNav && <BottomNav />}

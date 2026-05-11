@@ -26,7 +26,7 @@ export default function GroupListPage() {
           <div className="flex gap-2">
             <Link
               to="/group/join"
-              className="min-h-[40px] px-4 rounded-[10px] border text-sm font-medium flex items-center transition-colors duration-150"
+              className="min-h-[44px] px-4 rounded-[10px] border text-sm font-medium flex items-center transition-colors duration-150"
               style={{ borderColor: 'oklch(88% 0.005 80)', color: 'oklch(47% 0.004 80)', backgroundColor: 'transparent' }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(95.5% 0.003 80)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
@@ -35,7 +35,7 @@ export default function GroupListPage() {
             </Link>
             <Link
               to="/group/new"
-              className="min-h-[40px] px-4 rounded-[10px] text-sm font-medium flex items-center transition-colors duration-150"
+              className="min-h-[44px] px-4 rounded-[10px] text-sm font-medium flex items-center transition-colors duration-150"
               style={{ backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(84% 0.21 100)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffdf05'; }}
@@ -45,7 +45,7 @@ export default function GroupListPage() {
           </div>
         </div>
 
-        <div className="px-4 pb-20">
+        <div className="px-4">
           {isLoading ? (
             <div className="flex justify-center py-16">
               <LoadingSpinner />
@@ -60,7 +60,7 @@ export default function GroupListPage() {
               </p>
               <Link
                 to="/group/new"
-                className="inline-flex items-center min-h-[40px] px-5 mt-4 rounded-[10px] text-sm font-medium transition-colors duration-150"
+                className="inline-flex items-center min-h-[44px] px-5 mt-4 rounded-[10px] text-sm font-medium transition-colors duration-150"
                 style={{ backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }}
               >
                 첫 모임 만들기

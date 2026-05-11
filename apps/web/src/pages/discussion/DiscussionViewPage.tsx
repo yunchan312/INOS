@@ -222,7 +222,7 @@ export default function DiscussionViewPage() {
             <p className="text-sm" style={{ color: 'oklch(60% 0.003 80)' }}>질문이 없어요</p>
           </div>
         ) : (
-          <div className="space-y-4 pb-20">
+          <div className="space-y-4">
             {questions.map((question, idx) => {
               const myNote = notes?.find(
                 (n) => n.questionIndex === idx && n.userId === userId,
