@@ -4,3 +4,137 @@
 @theme {
   --color-point: #ffdf05;
 }
+
+/* ─── Base ──────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    overflow-x: hidden;
+    font-family: 'Pretendard', system-ui, sans-serif;
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────── */
+@layer utilities {
+  /* Safe area insets (notch / home indicator support) */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* Dynamic viewport height — avoids iOS Safari chrome overlap */
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+  .h-dvh {
+    height: 100dvh;
+  }
+
+  /* Card press feedback */
+  .card-hover {
+    cursor: pointer;
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 150ms ease;
+  }
+  .card-hover:active {
+    transform: scale(0.985);
+  }
+
+  /* Page entrance animation */
+  .page-enter {
+    animation: page-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Skeleton loading shimmer */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      oklch(93% 0.003 80) 25%,
+      oklch(96% 0.002 80) 50%,
+      oklch(93% 0.003 80) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease infinite;
+  }
+
+  /* Underline-style input */
+  .input-underline {
+    border: none;
+    border-bottom: 1.5px solid oklch(88% 0.005 80);
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    padding-block: 8px;
+    width: 100%;
+    transition: border-color 200ms ease;
+    appearance: none;
+  }
+  .input-underline:focus {
+    border-bottom-color: oklch(42% 0.15 90);
+  }
+  .input-underline::placeholder {
+    color: oklch(70% 0.003 80);
+  }
+
+  /* Timeline vertical rule */
+  .timeline-line {
+    position: relative;
+  }
+  .timeline-line::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: oklch(90% 0.004 80);
+  }
+}
+
+/* ─── Keyframes ──────────────────────────────────────────────────── */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}

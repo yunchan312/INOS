@@ -4,13 +4,18 @@ export default function LoginPage() {
   const { loginWithGoogle } = useAuth();
 
   return (
-    <div className="min-h-screen flex page-enter">
-      {/* Indigo block — brand mark */}
-      <div className="flex flex-col items-center justify-center px-6 bg-point">
-        <div className="text-[6rem] font-bold">INOS</div>
+    <div className="min-h-dvh flex flex-col sm:flex-row page-enter">
+      {/* Brand block */}
+      <div className="flex items-center justify-center py-10 sm:py-0 sm:flex-col sm:w-56 bg-point">
+        <div
+          className="text-[3.5rem] sm:text-[5rem] font-bold leading-none"
+          style={{ fontFamily: "'Noto Serif KR', Georgia, serif", color: 'oklch(18% 0.003 80)' }}
+        >
+          INOS
+        </div>
       </div>
 
-      {/* Parchment block — action */}
+      {/* Action block */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 gap-6">
         <p className="text-sm text-center">독서 모임, 영화 클럽을 더 쉽게</p>
 

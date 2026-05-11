@@ -10,7 +10,7 @@ interface Props {
 export function Layout({ children, hideNav = false }: Props) {
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-dvh flex flex-col"
       style={{ backgroundColor: 'oklch(98.2% 0.002 80)' }}
     >
       {!hideNav && <Navbar />}

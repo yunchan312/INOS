@@ -36,7 +36,7 @@ export default function OnboardingPage() {
   return (
     <Layout hideNav>
       <div
-        className="min-h-screen flex flex-col items-center justify-center px-6 py-12"
+        className="min-h-dvh flex flex-col items-center justify-center px-6 py-12"
         style={{ backgroundColor: 'oklch(98.2% 0.002 80)' }}
       >
         <div className="w-full max-w-sm space-y-10">

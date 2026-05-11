@@ -78,7 +78,7 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <Link
                 to="/group/new"
-                className="min-h-[36px] px-4 rounded-[10px] text-sm font-medium flex items-center transition-colors duration-150"
+                className="min-h-[44px] px-4 rounded-[10px] text-sm font-medium flex items-center transition-colors duration-150"
                 style={{ backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }}
               >
                 + 모임
@@ -87,7 +87,7 @@ export default function HomePage() {
           ) : (
             <Link
               to="/login"
-              className="min-h-[36px] px-4 rounded-[10px] text-sm font-medium flex items-center border transition-colors duration-150"
+              className="min-h-[44px] px-4 rounded-[10px] text-sm font-medium flex items-center border transition-colors duration-150"
               style={{ borderColor: 'oklch(88% 0.005 80)', color: 'oklch(47% 0.004 80)' }}
             >
               로그인
