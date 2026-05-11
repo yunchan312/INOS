@@ -65,7 +65,7 @@ export default function ArchiveListPage() {
                   {/* Timeline dot */}
                   <div
                     className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-[oklch(98.2%_0.002_80)] z-10"
-                    style={{ backgroundColor: 'oklch(30% 0.13 268)' }}
+                    style={{ backgroundColor: '#ffdf05' }}
                   />
 
                   <Link to={`/archives/${archive.id}`} className="flex-1 min-w-0">

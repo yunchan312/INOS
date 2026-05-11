@@ -19,12 +19,12 @@ import {
   ListContentDto,
   AddGroupContentDto,
   AddUserContentDto,
-  VoteGroupContentDto,
   UpdateGroupContentStatusDto,
   UpdateUserContentDto,
   ContentResponseDto,
   ContentListResponseDto,
   GroupContentResponseDto,
+  LikeResponseDto,
   UserContentResponseDto,
 } from './dto/content.dto';
 
@@ -117,14 +117,14 @@ export class ContentController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @Post('groups/:groupId/contents/vote')
+  @Post('groups/:groupId/contents/:groupContentId/likes')
   @HttpCode(200)
-  @ApiOperation({ summary: '그룹 콘텐츠 투표 (중복 409)' })
-  voteGroupContent(
+  @ApiOperation({ summary: '그룹 콘텐츠 좋아요 토글' })
+  toggleLike(
     @Param('groupId') groupId: string,
+    @Param('groupContentId') groupContentId: string,
     @CurrentUser() user: User,
-    @Body() dto: VoteGroupContentDto,
-  ): Promise<void> {
-    return this.contentService.voteGroupContent(groupId, user.id, dto.groupContentId, dto.score);
+  ): Promise<LikeResponseDto> {
+    return this.contentService.toggleLike(groupId, groupContentId, user.id);
   }
 }

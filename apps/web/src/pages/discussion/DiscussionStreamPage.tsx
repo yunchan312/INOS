@@ -5,16 +5,12 @@ import { StreamingText } from '@/components/discussion/StreamingText';
 
 const AI_BASE = import.meta.env.VITE_AI_API_URL ?? '/ai';
 
-export default function DiscussionPage() {
-  const { groupId, meetingId } = useParams<{ groupId: string; meetingId: string }>();
+export default function DiscussionStreamPage() {
+  const { meetingId } = useParams<{ meetingId: string }>();
   const navigate = useNavigate();
 
   const sseUrl = meetingId ? `${AI_BASE}/discussions/stream/${meetingId}` : null;
-  const { text, isDone, isError } = useSSE(sseUrl);
-
-  const handleShare = () => {
-    void navigator.share?.({ title: 'INOS 발제문', text });
-  };
+  const { text, isDone, isError, discussionId } = useSSE(sseUrl);
 
   return (
     <Layout>
@@ -24,13 +20,13 @@ export default function DiscussionPage() {
           <button
             onClick={() => navigate(-1)}
             className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-150"
-            style={{ backgroundColor: 'transparent', color: 'oklch(47% 0.004 80)' }}
+            style={{ color: 'oklch(47% 0.004 80)' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(95.5% 0.003 80)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             aria-label="뒤로 가기"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
+              <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
           </button>
           <div>
@@ -71,10 +67,7 @@ export default function DiscussionPage() {
               <div className="skeleton-shimmer h-4 w-4/5 rounded" />
             </div>
             <div className="flex items-center gap-2 pt-2">
-              <span
-                className="text-xs font-medium"
-                style={{ color: 'oklch(42% 0.15 90)' }}
-              >
+              <span className="text-xs font-medium" style={{ color: 'oklch(42% 0.15 90)' }}>
                 발제문을 생성하고 있어요
               </span>
               <span className="flex gap-0.5">
@@ -94,7 +87,7 @@ export default function DiscussionPage() {
           </div>
         )}
 
-        {/* Discussion body */}
+        {/* Streaming body */}
         {text && (
           <div
             className="bg-[oklch(100%_0_0)] border border-[oklch(92%_0.005_80)] rounded-2xl p-6 sm:p-8"
@@ -107,24 +100,25 @@ export default function DiscussionPage() {
         {/* Done actions */}
         {isDone && (
           <div className="flex gap-3">
-            <button
-              className="flex-1 min-h-[48px] rounded-[10px] text-sm font-medium border transition-colors duration-150"
-              style={{ borderColor: 'oklch(92% 0.005 80)', color: 'oklch(47% 0.004 80)' }}
-              onClick={() => navigate(`/groups/${groupId}/meetings/${meetingId}`)}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(95.5% 0.003 80)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-            >
-              돌아가기
-            </button>
-            {typeof navigator.share === 'function' && (
+            {discussionId ? (
               <button
                 className="flex-1 min-h-[48px] rounded-[10px] text-sm font-medium transition-colors duration-150"
                 style={{ backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }}
-                onClick={handleShare}
+                onClick={() => navigate(`/discussion/${discussionId}`)}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(84% 0.21 100)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffdf05'; }}
               >
-                공유하기
+                답변 작성하기
+              </button>
+            ) : (
+              <button
+                className="flex-1 min-h-[48px] rounded-[10px] text-sm font-medium border transition-colors duration-150"
+                style={{ borderColor: 'oklch(92% 0.005 80)', color: 'oklch(47% 0.004 80)' }}
+                onClick={() => navigate(-1)}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(95.5% 0.003 80)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                돌아가기
               </button>
             )}
           </div>

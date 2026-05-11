@@ -8,6 +8,7 @@ import { GroupModule } from './modules/group/group.module';
 import { ContentModule } from './modules/content/content.module';
 import { ScheduleModule } from './modules/schedule/schedule.module';
 import { ArchiveModule } from './modules/archive/archive.module';
+import { DiscussionModule } from './modules/discussion/discussion.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ArchiveModule } from './modules/archive/archive.module';
     GroupModule,
     ContentModule,
     ScheduleModule,
+    DiscussionModule,
     ArchiveModule,
   ],
 })

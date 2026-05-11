@@ -28,7 +28,7 @@ export default function GroupCreatePage() {
   const onSubmit = (data: FormValues) => {
     mutate(
       { ...data, mode: data.mode as GroupMode },
-      { onSuccess: (group) => navigate(`/groups/${group.id}`, { replace: true }) },
+      { onSuccess: (group) => navigate(`/group/${group.id}`, { replace: true }) },
     );
   };
 
@@ -80,7 +80,7 @@ export default function GroupCreatePage() {
               소개 <span style={{ color: 'oklch(70% 0.003 80)' }}>(선택)</span>
             </label>
             <textarea
-              className="w-full bg-transparent resize-none text-sm border-b border-[oklch(92%_0.005_80)] focus:border-[oklch(30%_0.13_268)] focus:outline-none transition-colors duration-200 py-2"
+              className="w-full bg-transparent resize-none text-sm border-b border-[oklch(92%_0.005_80)] focus:border-[#ffdf05] focus:outline-none transition-colors duration-200 py-2"
               placeholder="모임을 소개해주세요"
               rows={2}
               style={{ color: 'oklch(18% 0.003 80)', fontFamily: "'Pretendard', system-ui, sans-serif" }}
@@ -99,8 +99,8 @@ export default function GroupCreatePage() {
                   key={m}
                   className="relative flex flex-col gap-1 p-4 rounded-2xl border cursor-pointer transition-colors duration-150"
                   style={{
-                    borderColor: mode === m ? 'oklch(30% 0.13 268)' : 'oklch(92% 0.005 80)',
-                    backgroundColor: mode === m ? 'oklch(90% 0.03 268)' : 'oklch(100% 0 0)',
+                    borderColor: mode === m ? '#ffdf05' : 'oklch(92% 0.005 80)',
+                    backgroundColor: mode === m ? 'oklch(97% 0.07 100)' : 'oklch(100% 0 0)',
                   }}
                 >
                   <input type="radio" value={m} {...register('mode')} className="sr-only" />
@@ -121,7 +121,7 @@ export default function GroupCreatePage() {
             style={
               isPending
                 ? { backgroundColor: 'oklch(92% 0.005 80)', color: 'oklch(70% 0.003 80)' }
-                : { backgroundColor: 'oklch(30% 0.13 268)', color: 'oklch(98.2% 0.002 80)' }
+                : { backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }
             }
             disabled={isPending}
           >

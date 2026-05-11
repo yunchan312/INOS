@@ -24,7 +24,7 @@ export default function GroupJoinPage() {
   const onSubmit = ({ inviteCode }: FormValues) => {
     mutate(inviteCode, {
       onSuccess: (member) =>
-        navigate(`/groups/${member.groupId}`, { replace: true }),
+        navigate(`/group/${member.groupId}`, { replace: true }),
     });
   };
 

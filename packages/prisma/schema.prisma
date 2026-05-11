@@ -172,7 +172,7 @@ model ContentVote {
   id             String   @id @default(uuid()) @db.Uuid
   groupContentId String   @db.Uuid
   userId         String   @db.Uuid
-  score          Int
+  liked          Boolean  @default(true)
   votedAt        DateTime @default(now())
 
   groupContent GroupContent @relation(fields: [groupContentId], references: [id], onDelete: Cascade)
@@ -257,16 +257,20 @@ model Discussion {
 }
 
 model DiscussionNote {
-  id           String   @id @default(uuid()) @db.Uuid
-  discussionId String   @db.Uuid
-  userId       String   @db.Uuid
-  content      String   @db.Text
-  createdAt    DateTime @default(now())
+  id            String    @id @default(uuid()) @db.Uuid
+  discussionId  String    @db.Uuid
+  userId        String    @db.Uuid
+  questionIndex Int
+  content       String    @db.Text
+  isPublic      Boolean   @default(false)
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
 
   discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([discussionId, userId])
+  @@unique([discussionId, userId, questionIndex])
+  @@index([discussionId, questionIndex])
   @@map("discussion_notes")
 }
 

@@ -51,19 +51,6 @@ export class AddUserContentDto {
   contentId!: string;
 }
 
-export class VoteGroupContentDto {
-  @ApiProperty()
-  @IsString()
-  groupContentId!: string;
-
-  @ApiProperty({ minimum: 1, maximum: 5 })
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  @Type(() => Number)
-  score!: number;
-}
-
 export class UpdateGroupContentStatusDto {
   @ApiProperty({ enum: ['VOTING', 'SELECTED', 'COMPLETED', 'CANCELLED'] })
   @IsString()
@@ -99,9 +86,13 @@ export interface GroupContentResponseDto {
   contentId: string;
   status: string;
   selectedAt: Date;
-  avgScore: number;
-  voteCount: number;
+  likeCount: number;
+  canGenerateDiscussion: boolean;
   content: ContentResponseDto;
+}
+
+export interface LikeResponseDto {
+  liked: boolean;
 }
 
 export interface UserContentResponseDto {

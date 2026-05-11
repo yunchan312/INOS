@@ -1,134 +1,148 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
-import { useMyGroups } from '@/hooks/useGroup';
+import { useContents } from '@/hooks/useContent';
 import { Layout } from '@/components/layout/Layout';
-import { GroupCard } from '@/components/group/GroupCard';
+import { ContentCard } from '@/components/content/ContentCard';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
-function SkeletonCard() {
+type Filter = 'ALL' | 'MOVIE' | 'BOOK';
+
+function SearchBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="bg-[oklch(100%_0_0)] border border-[oklch(92%_0.005_80)] rounded-2xl p-5 space-y-2">
-      <div className="skeleton-shimmer h-4 w-2/3 rounded" />
-      <div className="skeleton-shimmer h-3 w-1/2 rounded" />
+    <div className="relative">
+      <svg
+        className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+        width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="oklch(60% 0.003 80)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+      >
+        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+      </svg>
+      <input
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="영화, 책 검색..."
+        className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm outline-none transition-colors duration-150"
+        style={{
+          borderColor: 'oklch(92% 0.005 80)',
+          backgroundColor: 'oklch(98.2% 0.002 80)',
+          color: 'oklch(18% 0.003 80)',
+        }}
+      />
     </div>
   );
 }
 
 export default function HomePage() {
+  const [filter, setFilter] = useState<Filter>('ALL');
+  const [search, setSearch] = useState('');
   const user = useAuthStore((s) => s.user);
-  const { data: groups, isLoading } = useMyGroups();
+  const navigate = useNavigate();
 
-  const greeting = (() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return '좋은 아침이에요';
-    if (hour < 18) return '좋은 오후예요';
-    return '좋은 저녁이에요';
-  })();
+  const { data: contents, isLoading } = useContents(
+    filter === 'ALL' ? undefined : filter,
+  );
+
+  const filtered = contents?.filter((c) =>
+    search.trim() === '' ||
+    c.title.toLowerCase().includes(search.toLowerCase()) ||
+    (c.creator ?? '').toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const filters: { key: Filter; label: string }[] = [
+    { key: 'ALL', label: '전체' },
+    { key: 'MOVIE', label: '영화' },
+    { key: 'BOOK', label: '책' },
+  ];
 
   return (
     <Layout>
-      <div className="container max-w-2xl mx-auto px-4 py-8 space-y-10">
+      <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
 
-        {/* Greeting */}
-        <div className="space-y-1">
-          <p
-            className="font-semibold uppercase"
-            style={{ fontSize: '11px', letterSpacing: '0.12em', color: 'oklch(60% 0.003 80)' }}
-          >
-            {greeting}
-          </p>
-          <h2
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1
             style={{
               fontFamily: "'Noto Serif KR', Georgia, serif",
-              fontSize: 'clamp(36px, 9vw, 48px)',
+              fontSize: 'clamp(28px, 7vw, 36px)',
               fontWeight: 700,
               color: 'oklch(18% 0.003 80)',
-              lineHeight: 1.1,
               letterSpacing: '-0.02em',
+              lineHeight: 1.15,
             }}
           >
-            {user?.nickname ?? ''}님
-          </h2>
-        </div>
-
-        {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            to="/groups/new"
-            className="rounded-2xl p-6 flex flex-col gap-3 transition-colors duration-150"
-            style={{ backgroundColor: 'oklch(30% 0.13 268)', color: 'oklch(98.2% 0.002 80)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(37% 0.12 268)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'oklch(30% 0.13 268)'; }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
-              <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
-            </svg>
-            <div>
-              <p className="text-sm font-semibold">모임 만들기</p>
-              <p className="text-xs" style={{ opacity: 0.65 }}>새 모임 시작</p>
-            </div>
-          </Link>
-
-          <Link
-            to="/groups/join"
-            className="bg-[oklch(100%_0_0)] border border-[oklch(92%_0.005_80)] rounded-2xl p-6 flex flex-col gap-3 card-hover"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="oklch(30% 0.13 268)" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/>
-            </svg>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'oklch(18% 0.003 80)' }}>모임 참여</p>
-              <p className="text-xs" style={{ color: 'oklch(47% 0.004 80)' }}>초대코드 입력</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* My groups */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3
-              className="font-semibold uppercase"
-              style={{ fontSize: '11px', letterSpacing: '0.1em', color: 'oklch(60% 0.003 80)' }}
-            >
-              내 모임
-            </h3>
-            <Link
-              to="/groups"
-              className="text-sm font-medium"
-              style={{ color: 'oklch(30% 0.13 268)' }}
-            >
-              전체 보기
-            </Link>
-          </div>
-
-          {isLoading ? (
-            <div className="space-y-3">
-              <SkeletonCard />
-              <SkeletonCard />
-            </div>
-          ) : groups?.length === 0 ? (
-            <div
-              className="text-center py-14 rounded-2xl border"
-              style={{ borderColor: 'oklch(92% 0.005 80)', borderStyle: 'dashed' }}
-            >
-              <p className="text-sm" style={{ color: 'oklch(60% 0.003 80)' }}>
-                아직 참여 중인 모임이 없어요
-              </p>
+            INOS
+          </h1>
+          {user ? (
+            <div className="flex items-center gap-3">
               <Link
-                to="/groups/new"
-                className="inline-block mt-3 text-sm font-medium"
-                style={{ color: 'oklch(30% 0.13 268)' }}
+                to="/group/new"
+                className="min-h-[36px] px-4 rounded-[10px] text-sm font-medium flex items-center transition-colors duration-150"
+                style={{ backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }}
               >
-                첫 모임 만들기 →
+                + 모임
               </Link>
             </div>
           ) : (
-            <div className="space-y-3">
-              {groups?.slice(0, 4).map((group) => (
-                <GroupCard key={group.id} group={group} />
-              ))}
-            </div>
+            <Link
+              to="/login"
+              className="min-h-[36px] px-4 rounded-[10px] text-sm font-medium flex items-center border transition-colors duration-150"
+              style={{ borderColor: 'oklch(88% 0.005 80)', color: 'oklch(47% 0.004 80)' }}
+            >
+              로그인
+            </Link>
           )}
         </div>
+
+        {/* Search */}
+        <SearchBar value={search} onChange={setSearch} />
+
+        {/* Filter tabs */}
+        <div className="flex gap-1.5">
+          {filters.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className="px-4 py-1.5 text-sm font-medium rounded-full transition-colors duration-150"
+              style={
+                filter === f.key
+                  ? { backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }
+                  : { backgroundColor: 'oklch(95.5% 0.003 80)', color: 'oklch(47% 0.004 80)' }
+              }
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content list */}
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <LoadingSpinner />
+          </div>
+        ) : filtered?.length === 0 ? (
+          <div
+            className="text-center py-16 rounded-2xl border"
+            style={{ borderColor: 'oklch(92% 0.005 80)', borderStyle: 'dashed' }}
+          >
+            <p className="text-sm" style={{ color: 'oklch(60% 0.003 80)' }}>
+              {search ? '검색 결과가 없어요' : '아직 등록된 콘텐츠가 없어요'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3 pb-20">
+            {filtered?.map((content) => (
+              <button
+                key={content.id}
+                onClick={() => navigate(`/contents/${content.id}`)}
+                className="w-full text-left"
+              >
+                <ContentCard content={content} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );

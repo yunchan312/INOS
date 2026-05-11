@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { GroupContentStatus } from '@prisma/client';
@@ -78,6 +78,19 @@ export class ScheduleService {
   async confirmMeeting(meetingId: string): Promise<MeetingResponseDto> {
     const meeting = await this.prisma.meeting.findUnique({ where: { id: meetingId } });
     if (!meeting) throw new NotFoundException('모임을 찾을 수 없습니다');
+
+    const memberCount = await this.prisma.groupMember.count({
+      where: { groupId: meeting.groupId },
+    });
+    const likeCount = await this.prisma.contentVote.count({
+      where: { groupContentId: meeting.groupContentId, liked: true },
+    });
+    if (likeCount < Math.ceil(memberCount / 2)) {
+      throw new HttpException(
+        '구성원 50% 이상의 좋아요가 필요합니다.',
+        HttpStatus.FORBIDDEN,
+      );
+    }
 
     const [updated] = await this.prisma.$transaction([
       this.prisma.meeting.update({

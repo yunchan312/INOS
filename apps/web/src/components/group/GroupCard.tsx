@@ -7,7 +7,7 @@ interface Props {
 
 export function GroupCard({ group }: Props) {
   return (
-    <Link to={`/groups/${group.id}`} className="block">
+    <Link to={`/group/${group.id}`} className="block">
       <div className="bg-[oklch(100%_0_0)] border border-[oklch(92%_0.005_80)] rounded-2xl p-5 card-hover">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">

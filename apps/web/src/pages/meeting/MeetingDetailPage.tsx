@@ -75,7 +75,7 @@ export default function MeetingDetailPage() {
 
         {meeting.status === 'CONFIRMED' && (
           <Link
-            to={`/groups/${groupId}/meetings/${meetingId}/discussion`}
+            to={`/discussion/stream/${meetingId}`}
             className="btn btn-primary w-full"
           >
             발제문 생성하기

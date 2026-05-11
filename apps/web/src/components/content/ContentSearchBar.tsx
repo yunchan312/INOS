@@ -48,7 +48,7 @@ export function ContentSearchBar({ onSearch, isLoading }: Props) {
         style={
           !query.trim() || isLoading
             ? { backgroundColor: 'oklch(92% 0.005 80)', color: 'oklch(70% 0.003 80)', cursor: 'not-allowed' }
-            : { backgroundColor: 'oklch(30% 0.13 268)', color: 'oklch(98.2% 0.002 80)' }
+            : { backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }
         }
         disabled={isLoading || !query.trim()}
       >

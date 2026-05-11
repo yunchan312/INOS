@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
 } from "@nestjs/common";
 import { UserContentStatus, GroupContentStatus } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -14,6 +13,7 @@ import {
   ContentResponseDto,
   ContentListResponseDto,
   GroupContentResponseDto,
+  LikeResponseDto,
   UserContentResponseDto,
   UpdateGroupContentStatusDto,
   UpdateUserContentDto,
@@ -197,6 +197,8 @@ export class ContentService {
   }
 
   async getGroupContents(groupId: string): Promise<GroupContentResponseDto[]> {
+    const memberCount = await this.prisma.groupMember.count({ where: { groupId } });
+
     const results = await this.prisma.groupContent.findMany({
       where: { groupId },
       select: {
@@ -206,16 +208,12 @@ export class ContentService {
         status: true,
         selectedAt: true,
         content: { select: this.contentSelect() },
-        votes: { select: { score: true } },
+        votes: { select: { liked: true } },
       },
     });
 
     return results.map((gc) => {
-      const voteCount = gc.votes.length;
-      const avgScore =
-        voteCount > 0
-          ? gc.votes.reduce((sum, v) => sum + v.score, 0) / voteCount
-          : 0;
+      const likeCount = gc.votes.filter((v) => v.liked).length;
       return {
         id: gc.id,
         groupId: gc.groupId,
@@ -223,8 +221,8 @@ export class ContentService {
         status: gc.status,
         selectedAt: gc.selectedAt,
         content: gc.content,
-        avgScore,
-        voteCount,
+        likeCount,
+        canGenerateDiscussion: likeCount >= Math.ceil(memberCount / 2),
       };
     });
   }
@@ -238,6 +236,8 @@ export class ContentService {
     });
     if (!content) throw new NotFoundException("콘텐츠를 찾을 수 없습니다");
 
+    const memberCount = await this.prisma.groupMember.count({ where: { groupId } });
+
     const gc = await this.prisma.groupContent.upsert({
       where: { groupId_contentId: { groupId, contentId } },
       update: {},
@@ -249,17 +249,16 @@ export class ContentService {
         status: true,
         selectedAt: true,
         content: { select: this.contentSelect() },
-        votes: { select: { score: true } },
+        votes: { select: { liked: true } },
       },
     });
 
-    const voteCount = gc.votes.length;
-    const avgScore =
-      voteCount > 0
-        ? gc.votes.reduce((sum, v) => sum + v.score, 0) / voteCount
-        : 0;
-
-    return { ...gc, avgScore, voteCount };
+    const likeCount = gc.votes.filter((v) => v.liked).length;
+    return {
+      ...gc,
+      likeCount,
+      canGenerateDiscussion: likeCount >= Math.ceil(memberCount / 2),
+    };
   }
 
   async updateGroupContentStatus(
@@ -278,26 +277,31 @@ export class ContentService {
     });
   }
 
-  async voteGroupContent(
+  async toggleLike(
     groupId: string,
-    userId: string,
     groupContentId: string,
-    score: number,
-  ): Promise<void> {
+    userId: string,
+  ): Promise<LikeResponseDto> {
     const groupContent = await this.prisma.groupContent.findFirst({
       where: { id: groupContentId, groupId },
     });
-    if (!groupContent)
-      throw new NotFoundException("그룹 콘텐츠를 찾을 수 없습니다");
+    if (!groupContent) throw new NotFoundException("그룹 콘텐츠를 찾을 수 없습니다");
 
     const existing = await this.prisma.contentVote.findUnique({
       where: { groupContentId_userId: { groupContentId, userId } },
     });
-    if (existing) throw new ConflictException("이미 투표했습니다");
+
+    if (existing) {
+      await this.prisma.contentVote.delete({
+        where: { groupContentId_userId: { groupContentId, userId } },
+      });
+      return { liked: false };
+    }
 
     await this.prisma.contentVote.create({
-      data: { groupContentId, userId, score },
+      data: { groupContentId, userId, liked: true },
     });
+    return { liked: true };
   }
 
   private async searchExternal(

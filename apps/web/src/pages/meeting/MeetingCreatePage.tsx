@@ -31,7 +31,7 @@ export default function MeetingCreatePage() {
         location: data.location,
       }),
     onSuccess: ({ data: meeting }) =>
-      navigate(`/groups/${groupId}/meetings/${meeting.id}`, { replace: true }),
+      navigate(`/group/${groupId}/meetings/${meeting.id}`, { replace: true }),
   });
 
   const {

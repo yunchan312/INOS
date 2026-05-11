@@ -11,7 +11,6 @@ export default function GroupListPage() {
     <Layout>
       <div className="container max-w-2xl mx-auto">
 
-        {/* Page header */}
         <div className="px-4 pt-8 pb-6 flex items-center justify-between gap-3">
           <h2
             style={{
@@ -26,28 +25,27 @@ export default function GroupListPage() {
           </h2>
           <div className="flex gap-2">
             <Link
-              to="/groups/join"
+              to="/group/join"
               className="min-h-[40px] px-4 rounded-[10px] border text-sm font-medium flex items-center transition-colors duration-150"
-              style={{ borderColor: 'oklch(92% 0.005 80)', color: 'oklch(30% 0.13 268)', backgroundColor: 'transparent' }}
+              style={{ borderColor: 'oklch(88% 0.005 80)', color: 'oklch(47% 0.004 80)', backgroundColor: 'transparent' }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(95.5% 0.003 80)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               참여
             </Link>
             <Link
-              to="/groups/new"
+              to="/group/new"
               className="min-h-[40px] px-4 rounded-[10px] text-sm font-medium flex items-center transition-colors duration-150"
-              style={{ backgroundColor: 'oklch(30% 0.13 268)', color: 'oklch(98.2% 0.002 80)' }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(37% 0.12 268)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'oklch(30% 0.13 268)'; }}
+              style={{ backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'oklch(84% 0.21 100)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffdf05'; }}
             >
               + 새 모임
             </Link>
           </div>
         </div>
 
-        {/* List */}
-        <div className="px-4 pb-8">
+        <div className="px-4 pb-20">
           {isLoading ? (
             <div className="flex justify-center py-16">
               <LoadingSpinner />
@@ -61,9 +59,9 @@ export default function GroupListPage() {
                 참여 중인 모임이 없어요
               </p>
               <Link
-                to="/groups/new"
+                to="/group/new"
                 className="inline-flex items-center min-h-[40px] px-5 mt-4 rounded-[10px] text-sm font-medium transition-colors duration-150"
-                style={{ backgroundColor: 'oklch(30% 0.13 268)', color: 'oklch(98.2% 0.002 80)' }}
+                style={{ backgroundColor: '#ffdf05', color: 'oklch(18% 0.003 80)' }}
               >
                 첫 모임 만들기
               </Link>
