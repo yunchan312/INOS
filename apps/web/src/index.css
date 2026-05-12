@@ -1,3 +1,4 @@
+@import url('https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/GmarketSans.css');
 @import "tailwindcss";
 @plugin "daisyui";
 
@@ -15,7 +16,7 @@
 
   body {
     overflow-x: hidden;
-    font-family: 'Pretendard', system-ui, sans-serif;
+    font-family: 'GmarketSans', 'Pretendard', system-ui, sans-serif;
   }
 
   * {
