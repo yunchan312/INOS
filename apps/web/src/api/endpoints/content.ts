@@ -16,9 +16,17 @@ export interface LikeResponseDto {
   liked: boolean;
 }
 
+export interface ContentListResponseDto {
+  items: ContentDto[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
 export const contentApi = {
-  listContents: (type?: 'MOVIE' | 'BOOK') =>
-    apiClient.get<ContentDto[]>('/contents', { params: type ? { type } : {} }),
+  listContents: (type?: 'MOVIE' | 'BOOK', cursor?: string) =>
+    apiClient.get<ContentListResponseDto>('/contents', {
+      params: { ...(type ? { type } : {}), ...(cursor ? { cursor } : {}) },
+    }),
 
   searchContents: (query: string, type?: 'MOVIE' | 'BOOK') =>
     apiClient.get<ContentDto[]>('/contents/search', { params: { q: query, type } }),

@@ -16,7 +16,9 @@ async function bootstrap(): Promise<void> {
   await app.register(fastifyCookie as any);
 
   app.enableCors({
-    origin: process.env.VITE_API_URL ?? 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',')
+      : ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true,
   });
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { useContents } from '@/hooks/useContent';
@@ -39,16 +39,43 @@ export default function HomePage() {
   const [search, setSearch] = useState('');
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const { data: contents, isLoading } = useContents(
-    filter === 'ALL' ? undefined : filter,
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useContents(filter === 'ALL' ? undefined : filter);
+
+  const allContents = useMemo(
+    () => data?.pages.flatMap((p) => p.items) ?? [],
+    [data],
   );
 
-  const filtered = contents?.filter((c) =>
-    search.trim() === '' ||
-    c.title.toLowerCase().includes(search.toLowerCase()) ||
-    (c.creator ?? '').toLowerCase().includes(search.toLowerCase()),
+  const filtered = useMemo(
+    () =>
+      search.trim() === ''
+        ? allContents
+        : allContents.filter(
+            (c) =>
+              c.title.toLowerCase().includes(search.toLowerCase()) ||
+              (c.creator ?? '').toLowerCase().includes(search.toLowerCase()),
+          ),
+    [allContents, search],
   );
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasNextPage) fetchNextPage(); },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, fetchNextPage]);
 
   const filters: { key: Filter; label: string }[] = [
     { key: 'ALL', label: '전체' },
@@ -121,7 +148,7 @@ export default function HomePage() {
           <div className="flex justify-center py-16">
             <LoadingSpinner />
           </div>
-        ) : filtered?.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div
             className="text-center py-16 rounded-2xl border"
             style={{ borderColor: 'oklch(92% 0.005 80)', borderStyle: 'dashed' }}
@@ -132,7 +159,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered?.map((content) => (
+            {filtered.map((content) => (
               <button
                 key={content.id}
                 onClick={() => navigate(`/contents/${content.id}`)}
@@ -141,6 +168,12 @@ export default function HomePage() {
                 <ContentCard content={content} />
               </button>
             ))}
+            <div ref={sentinelRef} />
+            {isFetchingNextPage && (
+              <div className="flex justify-center py-4">
+                <LoadingSpinner />
+              </div>
+            )}
           </div>
         )}
       </div>

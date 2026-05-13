@@ -1,11 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CreateGroupContentDto } from '@inos/types';
 import { contentApi, type GroupContentDto } from '@/api/endpoints/content';
 
 export function useContents(type?: 'MOVIE' | 'BOOK') {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['contents', type ?? 'all'],
-    queryFn: () => contentApi.listContents(type).then((r) => r.data),
+    queryFn: ({ pageParam }) =>
+      contentApi.listContents(type, pageParam as string | undefined).then((r) => r.data),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   });
 }
 
