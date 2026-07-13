@@ -1,0 +1,27 @@
+# DOMAIN 환경변수에 도메인을 넣으면 Caddy가 Let's Encrypt 인증서를 자동 발급/갱신한다.
+# 도메인 없이 IP로만 테스트할 때는 DOMAIN=:80 으로 설정.
+{$DOMAIN} {
+	encode gzip
+
+	# 일반 API
+	handle /api/* {
+		reverse_proxy server:3000
+	}
+
+	# AI API (SSE 포함 — Caddy는 text/event-stream을 자동으로 즉시 flush)
+	handle /ai/* {
+		reverse_proxy ai-server:3001
+	}
+
+	# socket.io (WebSocket) — 게이트웨이는 global prefix를 타지 않음
+	handle /socket.io/* {
+		reverse_proxy ai-server:3001
+	}
+
+	# SPA 정적 파일
+	handle {
+		root * /srv/www
+		try_files {path} /index.html
+		file_server
+	}
+}

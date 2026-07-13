@@ -218,6 +218,14 @@ pnpm dev:api      # server + ai-server만
 
 ---
 
+## 배포
+
+EC2 한 대 + Docker Compose로 전 스택(웹 정적파일 포함)을 운영합니다. Caddy가 HTTPS 자동 발급과 리버스 프록시(`/api`, `/ai`, `/socket.io`)를 담당해 same-origin으로 서빙되고, master 브랜치에 push되면 GitHub Actions가 타입체크 후 SSH로 자동 재배포합니다.
+
+자세한 절차는 [`deploy/DEPLOY.md`](deploy/DEPLOY.md) 참고.
+
+---
+
 ## 코딩 컨벤션
 
 - TypeScript strict mode

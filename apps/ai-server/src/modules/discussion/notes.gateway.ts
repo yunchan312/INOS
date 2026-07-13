@@ -11,7 +11,7 @@ import { JwtValidatorService } from '../../shared/auth/jwt-validator.service';
 @WebSocketGateway({
   namespace: '/notes',
   cors: {
-    origin: process.env.VITE_API_URL ?? 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
     credentials: true,
   },
 })
