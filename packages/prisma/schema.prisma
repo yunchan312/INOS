@@ -1,51 +1,19 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [pgvector(map: "vector")]
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum OAuthProvider {
   GOOGLE
 }
 
-enum GroupMode {
-  GROUP
-  SOLO
-}
-
 enum GroupRole {
-  LEADER
+  OWNER
   MEMBER
-}
-
-enum ContentType {
-  MOVIE
-  BOOK
-}
-
-enum ContentSource {
-  TMDB
-  KAKAO
-  GOOGLE_BOOKS
-  USER_ADDED
-}
-
-enum GroupContentStatus {
-  VOTING
-  SELECTED
-  COMPLETED
-  CANCELLED
-}
-
-enum UserContentStatus {
-  COMPLETED
-  IN_PROGRESS
-  WISHLIST
 }
 
 enum MeetingStatus {
@@ -61,25 +29,35 @@ enum DiscussionStatus {
   PUBLISHED
 }
 
+enum PromptKind {
+  BOOK
+  MOVIE
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
 model User {
-  id              String                      @id @default(uuid()) @db.Uuid
-  email           String                      @unique
+  id              String        @id @default(uuid()) @db.Uuid
+  email           String        @unique
   nickname        String
   profileImageUrl String?
   oauthProvider   OAuthProvider
   oauthId         String
-  tasteProfile    Json?
-  embedding       Unsupported("vector(1536)")?
-  createdAt       DateTime                    @default(now())
-  updatedAt       DateTime                    @updatedAt
+  isAdmin         Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  groupMembers     GroupMember[]
-  contentVotes     ContentVote[]
-  meetingAvails    MeetingAvailability[]
-  discussionNotes  DiscussionNote[]
-  userContents     UserContent[]
-  archives         Archive[]
-  selectedContents GroupContent[]             @relation("SelectedBy")
+  groupMembers    GroupMember[]
+  ownedGroups     Group[]               @relation("GroupOwner")
+  meetingAvails   MeetingAvailability[]
+  discussionNotes DiscussionNote[]
+  createdMeetings Meeting[]             @relation("MeetingCreatedBy")
+  sentInvitations Invitation[]          @relation("InvitationInvitedBy")
 
   @@unique([oauthProvider, oauthId])
   @@index([email])
@@ -87,24 +65,21 @@ model User {
 }
 
 model Group {
-  id             String                      @id @default(uuid()) @db.Uuid
-  ownerId        String                      @db.Uuid
-  name           String
-  description    String?
-  inviteCode     String                      @unique @default(uuid())
-  mode           GroupMode                   @default(GROUP)
-  tasteProfile   Json?
-  groupEmbedding Unsupported("vector(1536)")?
-  createdAt      DateTime                    @default(now())
-  updatedAt      DateTime                    @updatedAt
+  id          String   @id @default(uuid()) @db.Uuid
+  ownerId     String   @db.Uuid
+  name        String
+  description String?
+  greeting    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  members       GroupMember[]
-  groupContents GroupContent[]
-  meetings      Meeting[]
-  archives      Archive[]
-  discussions   Discussion[]
+  owner       User          @relation("GroupOwner", fields: [ownerId], references: [id])
+  members     GroupMember[]
+  meetings    Meeting[]
+  discussions Discussion[]
+  invitations Invitation[]
 
-  @@index([inviteCode])
+  @@index([ownerId])
   @@map("groups")
 }
 
@@ -119,103 +94,33 @@ model GroupMember {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
+  @@index([userId])
   @@map("group_members")
 }
 
-model Content {
-  id           String        @id @default(uuid()) @db.Uuid
-  type         ContentType
-  title        String
-  creator      String
-  releaseYear  Int?
-  thumbnailUrl String?
-  synopsis     String?       @db.Text
-  metadata     Json?
-  source       ContentSource @default(USER_ADDED)
-  sourceId     String?
-  isSeeded     Boolean       @default(false)
-  embedding    Unsupported("vector(1536)")?
-  createdAt    DateTime      @default(now())
-
-  groupContents GroupContent[]
-  userContents  UserContent[]
-
-  @@unique([source, sourceId])
-  @@index([type])
-  @@index([title])
-  @@map("contents")
-}
-
-model GroupContent {
-  id          String             @id @default(uuid()) @db.Uuid
-  groupId     String             @db.Uuid
-  contentId   String             @db.Uuid
-  status      GroupContentStatus @default(VOTING)
-  selectedBy  String?            @db.Uuid
-  selectedAt  DateTime           @default(now())
-  completedAt DateTime?
-
-  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  content  Content  @relation(fields: [contentId], references: [id])
-  selector User?    @relation("SelectedBy", fields: [selectedBy], references: [id])
-
-  votes       ContentVote[]
-  meetings    Meeting[]
-  discussions Discussion[]
-
-  @@unique([groupId, contentId])
-  @@index([groupId, status])
-  @@map("group_contents")
-}
-
-model ContentVote {
-  id             String   @id @default(uuid()) @db.Uuid
-  groupContentId String   @db.Uuid
-  userId         String   @db.Uuid
-  liked          Boolean  @default(true)
-  votedAt        DateTime @default(now())
-
-  groupContent GroupContent @relation(fields: [groupContentId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([groupContentId, userId])
-  @@map("content_votes")
-}
-
-model UserContent {
-  id          String            @id @default(uuid()) @db.Uuid
-  userId      String            @db.Uuid
-  contentId   String            @db.Uuid
-  status      UserContentStatus @default(IN_PROGRESS)
-  completedAt DateTime?
-  createdAt   DateTime          @default(now())
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  content Content @relation(fields: [contentId], references: [id])
-
-  @@unique([userId, contentId])
-  @@index([userId, status])
-  @@map("user_contents")
-}
-
 model Meeting {
-  id             String        @id @default(uuid()) @db.Uuid
-  groupId        String        @db.Uuid
-  groupContentId String        @db.Uuid
-  confirmedDate  DateTime?
-  location       String?
-  status         MeetingStatus @default(PENDING)
-  createdAt      DateTime      @default(now())
+  id            String        @id @default(uuid()) @db.Uuid
+  groupId       String        @db.Uuid
+  createdById   String        @db.Uuid
+  bookTitle     String?
+  bookAuthor    String?
+  movieTitle    String?
+  movieDirector String?
+  confirmedDate DateTime?
+  location      String?
+  status        MeetingStatus @default(PENDING)
+  candidateFrom DateTime
+  candidateTo   DateTime
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  group        Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupContent GroupContent @relation(fields: [groupContentId], references: [id])
-
+  group          Group                 @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy      User                  @relation("MeetingCreatedBy", fields: [createdById], references: [id])
   availabilities MeetingAvailability[]
   discussion     Discussion?
-  summary        MeetingSummary?
-  archives       Archive[]
 
   @@index([groupId, status])
+  @@index([groupId, confirmedDate])
   @@map("meetings")
 }
 
@@ -234,72 +139,61 @@ model MeetingAvailability {
 }
 
 model Discussion {
-  id               String           @id @default(uuid()) @db.Uuid
-  meetingId        String           @unique @db.Uuid
-  groupId          String           @db.Uuid
-  groupContentId   String           @db.Uuid
-  webSearchContext String?          @db.Text
-  ragContext       String?          @db.Text
-  generatedBody    String?          @db.Text
-  editedBody       String?          @db.Text
-  status           DiscussionStatus @default(GENERATING)
-  generatedAt      DateTime?
-  publishedAt      DateTime?
+  id           String           @id @default(uuid()) @db.Uuid
+  meetingId    String           @unique @db.Uuid
+  groupId      String           @db.Uuid
+  bookPrompts  Json?
+  moviePrompts Json?
+  bookContext  String?          @db.Text
+  movieContext String?          @db.Text
+  status       DiscussionStatus @default(GENERATING)
+  generatedAt  DateTime?
+  publishedAt  DateTime?
 
-  meeting      Meeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  group        Group        @relation(fields: [groupId], references: [id])
-  groupContent GroupContent @relation(fields: [groupContentId], references: [id])
-
-  notes DiscussionNote[]
+  meeting Meeting          @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  group   Group            @relation(fields: [groupId], references: [id])
+  notes   DiscussionNote[]
 
   @@index([groupId])
   @@map("discussions")
 }
 
 model DiscussionNote {
-  id            String    @id @default(uuid()) @db.Uuid
-  discussionId  String    @db.Uuid
-  userId        String    @db.Uuid
+  id            String     @id @default(uuid()) @db.Uuid
+  discussionId  String     @db.Uuid
+  userId        String     @db.Uuid
+  promptKind    PromptKind
   questionIndex Int
-  content       String    @db.Text
-  isPublic      Boolean   @default(false)
+  content       String     @db.Text
+  isPublic      Boolean    @default(false)
   publishedAt   DateTime?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([discussionId, userId, questionIndex])
-  @@index([discussionId, questionIndex])
+  @@unique([discussionId, userId, promptKind, questionIndex])
+  @@index([discussionId, promptKind, questionIndex])
   @@map("discussion_notes")
 }
 
-model MeetingSummary {
-  id            String   @id @default(uuid()) @db.Uuid
-  meetingId     String   @unique @db.Uuid
-  transcriptRaw String?  @db.Text
-  summary       String?  @db.Text
-  keyInsights   Json?
-  createdAt     DateTime @default(now())
+model Invitation {
+  id          String           @id @default(uuid()) @db.Uuid
+  groupId     String           @db.Uuid
+  email       String
+  token       String           @unique
+  invitedById String           @db.Uuid
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime         @default(now())
 
-  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedBy User  @relation("InvitationInvitedBy", fields: [invitedById], references: [id])
 
-  @@map("meeting_summaries")
-}
-
-model Archive {
-  id         String   @id @default(uuid()) @db.Uuid
-  meetingId  String   @db.Uuid
-  groupId    String   @db.Uuid
-  userId     String   @db.Uuid
-  body       String?  @db.Text
-  photoUrls  Json?
-  archivedAt DateTime @default(now())
-
-  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  group   Group   @relation(fields: [groupId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
-
-  @@index([groupId, archivedAt])
-  @@map("archives")
+  @@unique([groupId, email])
+  @@index([token])
+  @@index([groupId, status])
+  @@map("invitations")
 }

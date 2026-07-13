@@ -5,10 +5,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { GroupModule } from './modules/group/group.module';
-import { ContentModule } from './modules/content/content.module';
-import { ScheduleModule } from './modules/schedule/schedule.module';
-import { ArchiveModule } from './modules/archive/archive.module';
-import { DiscussionModule } from './modules/discussion/discussion.module';
+import { MeetingModule } from './modules/meeting/meeting.module';
+import { MailModule } from './modules/mail/mail.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -26,13 +25,12 @@ import { DiscussionModule } from './modules/discussion/discussion.module';
       }),
     }),
     PrismaModule,
+    MailModule,
     AuthModule,
     UserModule,
     GroupModule,
-    ContentModule,
-    ScheduleModule,
-    DiscussionModule,
-    ArchiveModule,
+    MeetingModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

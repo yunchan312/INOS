@@ -2,8 +2,8 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
 
-const MODEL = 'claude-sonnet-4-20250514';
-const MAX_TOKENS = 4000;
+const MODEL = 'claude-sonnet-4-6';
+const MAX_TOKENS = 4096;
 
 @Injectable()
 export class ClaudeService {
@@ -20,7 +20,8 @@ export class ClaudeService {
       const stream = await this.client.messages.create({
         model: MODEL,
         max_tokens: MAX_TOKENS,
-        system,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }] as any,
         messages: [{ role: 'user', content: prompt }],
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tools: [{ type: 'web_search_20250305', name: 'web_search' }] as any,
@@ -38,24 +39,6 @@ export class ClaudeService {
     } catch (error) {
       throw new InternalServerErrorException(
         `Claude 스트리밍 오류: ${(error as Error).message}`,
-      );
-    }
-  }
-
-  async generateText(prompt: string, system: string): Promise<string> {
-    try {
-      const message = await this.client.messages.create({
-        model: MODEL,
-        max_tokens: 512,
-        system,
-        messages: [{ role: 'user', content: prompt }],
-      });
-
-      const block = message.content[0];
-      return block.type === 'text' ? block.text : '';
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Claude 텍스트 생성 오류: ${(error as Error).message}`,
       );
     }
   }

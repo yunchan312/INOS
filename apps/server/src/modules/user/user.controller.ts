@@ -1,46 +1,43 @@
-import { Controller, Get, Patch, Delete, Body, UseGuards, HttpCode } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { User } from '@prisma/client';
-import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
-import { CurrentUser } from '../../shared/decorators/current-user.decorator';
+import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import { UpdateUserDto, UpdateTasteDto, UserResponseDto } from './dto/user.dto';
+import { UpdateUserDto, UserDto } from './dto/user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser, AuthUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('users')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('users')
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
   @ApiOperation({ summary: '내 프로필 조회' })
-  getMe(@CurrentUser() user: User): Promise<UserResponseDto> {
-    return this.userService.findById(user.id);
+  async me(@CurrentUser() user: AuthUser): Promise<UserDto> {
+    const record = await this.userService.findById(user.id);
+    if (!record) throw new Error('사용자를 찾을 수 없습니다');
+    return {
+      id: record.id,
+      email: record.email,
+      nickname: record.nickname,
+      profileImageUrl: record.profileImageUrl,
+      createdAt: record.createdAt,
+    };
   }
 
   @Patch('me')
   @ApiOperation({ summary: '내 프로필 수정' })
-  updateMe(
-    @CurrentUser() user: User,
+  async updateMe(
+    @CurrentUser() user: AuthUser,
     @Body() dto: UpdateUserDto,
-  ): Promise<UserResponseDto> {
-    return this.userService.update(user.id, dto);
-  }
-
-  @Patch('me/taste')
-  @ApiOperation({ summary: '취향 프로필 업데이트' })
-  updateTaste(
-    @CurrentUser() user: User,
-    @Body() dto: UpdateTasteDto,
-  ): Promise<UserResponseDto> {
-    return this.userService.updateTaste(user.id, dto);
-  }
-
-  @Delete('me')
-  @HttpCode(204)
-  @ApiOperation({ summary: '회원 탈퇴' })
-  deleteMe(@CurrentUser() user: User): Promise<void> {
-    return this.userService.deleteUser(user.id);
+  ): Promise<UserDto> {
+    const updated = await this.userService.update(user.id, dto);
+    return {
+      id: updated.id,
+      email: updated.email,
+      nickname: updated.nickname,
+      profileImageUrl: updated.profileImageUrl,
+      createdAt: updated.createdAt,
+    };
   }
 }

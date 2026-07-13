@@ -1,30 +1,32 @@
-import { IsString, IsOptional, MaxLength } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
 
 export class UpdateUserDto {
-  @ApiPropertyOptional()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  @MaxLength(50)
+  @MaxLength(40)
   nickname?: string;
 
-  @ApiPropertyOptional()
+  @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
+  @IsUrl()
   profileImageUrl?: string;
 }
 
-export class UpdateTasteDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  tasteProfile?: unknown;
-}
+export class UserDto {
+  @ApiProperty()
+  id!: string;
 
-export interface UserResponseDto {
-  id: string;
-  email: string;
-  nickname: string;
-  profileImageUrl: string | null;
-  tasteProfile: unknown;
-  createdAt: Date;
+  @ApiProperty()
+  email!: string;
+
+  @ApiProperty()
+  nickname!: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  profileImageUrl!: string | null;
+
+  @ApiProperty()
+  createdAt!: Date;
 }

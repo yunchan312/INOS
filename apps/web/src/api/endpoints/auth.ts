@@ -1,14 +1,6 @@
 import { apiClient } from '@/api/client';
+import type { UserDto } from '@inos/types';
 
 export const authApi = {
-  refresh: () =>
-    apiClient.post<{ accessToken: string }>('/auth/refresh'),
-
-  logout: () =>
-    apiClient.post('/auth/logout'),
-
-  getGoogleOAuthUrl: () => {
-    const base = import.meta.env.VITE_API_URL ?? '/api';
-    return `${base}/auth/google`;
-  },
+  getMe: () => apiClient.get<UserDto>('/auth/me').then((r) => r.data),
 };

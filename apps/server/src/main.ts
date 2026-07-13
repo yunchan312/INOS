@@ -19,7 +19,8 @@ async function bootstrap(): Promise<void> {
     origin: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(',')
       : ['http://localhost:5173', 'http://localhost:5174'],
-    credentials: true,
+    credentials: false,
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   app.setGlobalPrefix('api');
@@ -36,7 +37,6 @@ async function bootstrap(): Promise<void> {
     .setTitle('INOS API')
     .setDescription('인문학 모임 플랫폼 API')
     .setVersion('1.0')
-    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

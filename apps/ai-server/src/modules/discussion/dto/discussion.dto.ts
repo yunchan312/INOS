@@ -1,41 +1,33 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsBoolean,
+  IsNumber,
+  IsIn,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
-export class UpdateDiscussionDto {
+export class UpsertNoteDto {
   @IsString()
-  @IsNotEmpty()
-  editedBody!: string;
-}
+  @IsIn(['BOOK', 'MOVIE'])
+  promptKind!: string;
 
-export class AddDiscussionNoteDto {
+  @IsNumber()
+  @Min(0)
+  questionIndex!: number;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
   content!: string;
+
+  @IsBoolean()
+  isPublic!: boolean;
 }
 
-export class PersonalStreamQueryDto {
+export class TokenQueryDto {
   @IsString()
   @IsNotEmpty()
-  contentId!: string;
-}
-
-export interface DiscussionNoteResponseDto {
-  id: string;
-  discussionId: string;
-  userId: string;
-  content: string;
-  createdAt: Date;
-}
-
-export interface DiscussionResponseDto {
-  id: string;
-  meetingId: string;
-  groupId: string;
-  groupContentId: string;
-  status: string;
-  generatedBody: string | null;
-  editedBody: string | null;
-  generatedAt: Date | null;
-  publishedAt: Date | null;
-  notes?: DiscussionNoteResponseDto[];
+  token!: string;
 }

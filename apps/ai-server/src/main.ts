@@ -16,7 +16,7 @@ async function bootstrap(): Promise<void> {
   app.enableCors({
     origin: process.env.VITE_API_URL ?? 'http://localhost:5173',
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Authorization', 'Content-Type'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id'],
   });
 
   app.useGlobalPipes(
@@ -31,7 +31,6 @@ async function bootstrap(): Promise<void> {
     .setTitle('INOS AI Server')
     .setDescription('AI 전담 서버 - 발제문 SSE 스트리밍, 추천, 요약')
     .setVersion('1.0')
-    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

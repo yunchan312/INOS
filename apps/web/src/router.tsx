@@ -1,63 +1,47 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { ProtectedRoute } from '@/components/common/ProtectedRoute';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
-const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
-const CallbackPage = lazy(() => import('@/pages/auth/CallbackPage'));
-const OnboardingPage = lazy(() => import('@/pages/onboarding/OnboardingPage'));
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
-const ContentDetailPage = lazy(() => import('@/pages/content/ContentDetailPage'));
-const ContentSearchPage = lazy(() => import('@/pages/content/ContentSearchPage'));
-const RecommendationPage = lazy(() => import('@/pages/content/RecommendationPage'));
-const GroupListPage = lazy(() => import('@/pages/group/GroupListPage'));
-const GroupDetailPage = lazy(() => import('@/pages/group/GroupDetailPage'));
-const GroupCreatePage = lazy(() => import('@/pages/group/GroupCreatePage'));
-const GroupJoinPage = lazy(() => import('@/pages/group/GroupJoinPage'));
-const MeetingCreatePage = lazy(() => import('@/pages/meeting/MeetingCreatePage'));
-const MeetingDetailPage = lazy(() => import('@/pages/meeting/MeetingDetailPage'));
-const PersonalPage = lazy(() => import('@/pages/personal/PersonalPage'));
-const DiscussionStreamPage = lazy(() => import('@/pages/discussion/DiscussionStreamPage'));
-const DiscussionViewPage = lazy(() => import('@/pages/discussion/DiscussionViewPage'));
-const ArchiveListPage = lazy(() => import('@/pages/archive/ArchiveListPage'));
-const ArchiveDetailPage = lazy(() => import('@/pages/archive/ArchiveDetailPage'));
+const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
+const OrgSelectorPage = lazy(() => import('@/pages/orgs/OrgSelectorPage'));
+const OrgHomePage = lazy(() => import('@/pages/orgs/OrgHomePage'));
+const OrgSettingsPage = lazy(() => import('@/pages/orgs/OrgSettingsPage'));
+const CreateMeetingPage = lazy(
+  () => import('@/pages/meetings/CreateMeetingPage'),
+);
+const AvailabilityPage = lazy(
+  () => import('@/pages/meetings/AvailabilityPage'),
+);
+const MeetingPage = lazy(() => import('@/pages/meetings/MeetingPage'));
+const AcceptInvitePage = lazy(
+  () => import('@/pages/invitations/AcceptInvitePage'),
+);
+const AdminPage = lazy(() => import('@/pages/admin/AdminPage'));
 
-const fallback = <LoadingSpinner fullScreen />;
+const fallback = (
+  <div className="min-h-dvh flex items-center justify-center bg-base-100">
+    <span className="loading loading-dots loading-md" />
+  </div>
+);
 
-function suspend(element: ReactNode) {
-  return <Suspense fallback={fallback}>{element}</Suspense>;
-}
-
-function protect(element: ReactNode) {
-  return (
-    <Suspense fallback={fallback}>
-      <ProtectedRoute>{element}</ProtectedRoute>
-    </Suspense>
-  );
-}
+const suspend = (el: ReactNode) => <Suspense fallback={fallback}>{el}</Suspense>;
 
 export const router = createBrowserRouter([
   { path: '/', element: suspend(<HomePage />) },
-  { path: '/login', element: suspend(<LoginPage />) },
-  { path: '/auth/callback', element: suspend(<CallbackPage />) },
-  { path: '/onboarding', element: protect(<OnboardingPage />) },
-
-  { path: '/contents/:contentId', element: suspend(<ContentDetailPage />) },
-
-  { path: '/group', element: protect(<GroupListPage />) },
-  { path: '/group/new', element: protect(<GroupCreatePage />) },
-  { path: '/group/join', element: protect(<GroupJoinPage />) },
-  { path: '/group/:groupId', element: protect(<GroupDetailPage />) },
-  { path: '/group/:groupId/contents/search', element: protect(<ContentSearchPage />) },
-  { path: '/group/:groupId/recommendations', element: protect(<RecommendationPage />) },
-  { path: '/group/:groupId/meetings/new', element: protect(<MeetingCreatePage />) },
-  { path: '/group/:groupId/meetings/:meetingId', element: protect(<MeetingDetailPage />) },
-  { path: '/group/:groupId/archives', element: protect(<ArchiveListPage />) },
-  { path: '/archives/:archiveId', element: protect(<ArchiveDetailPage />) },
-
-  { path: '/personal', element: protect(<PersonalPage />) },
-  { path: '/discussion/stream/:meetingId', element: protect(<DiscussionStreamPage />) },
-  { path: '/discussion/:discussionId', element: protect(<DiscussionViewPage />) },
-
+  { path: '/auth/callback', element: suspend(<AuthCallbackPage />) },
+  { path: '/orgs', element: suspend(<OrgSelectorPage />) },
+  { path: '/orgs/:orgId', element: suspend(<OrgHomePage />) },
+  { path: '/orgs/:orgId/settings', element: suspend(<OrgSettingsPage />) },
+  { path: '/orgs/:orgId/meetings/new', element: suspend(<CreateMeetingPage />) },
+  {
+    path: '/orgs/:orgId/meetings/:meetingId',
+    element: suspend(<MeetingPage />),
+  },
+  {
+    path: '/orgs/:orgId/meetings/:meetingId/availability',
+    element: suspend(<AvailabilityPage />),
+  },
+  { path: '/invitations/:token', element: suspend(<AcceptInvitePage />) },
+  { path: '/admin', element: suspend(<AdminPage />) },
   { path: '*', element: <Navigate to="/" replace /> },
 ]);

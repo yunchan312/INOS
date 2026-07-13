@@ -1,63 +1,89 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+import { GroupRole } from '@prisma/client';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
-export class CreateGroupDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  name!: string;
-
-  @ApiPropertyOptional()
+export class UpdateGroupSettingsDto {
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  @MaxLength(500)
-  description?: string;
-}
-
-export class UpdateGroupDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
+  @MaxLength(60)
   name?: string;
 
-  @ApiPropertyOptional()
+  @ApiProperty({ required: false, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  description?: string;
+  description?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  greeting?: string | null;
 }
 
-export class JoinGroupDto {
+export class GroupSummaryDto {
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  inviteCode!: string;
+  id!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  description!: string | null;
+
+  @ApiProperty({ enum: ['OWNER', 'MEMBER'] })
+  myRole!: GroupRole;
+
+  @ApiProperty()
+  memberCount!: number;
+
+  @ApiProperty()
+  createdAt!: Date;
 }
 
-export class InviteMemberDto {
+export class GroupMemberDto {
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
+  id!: string;
+
+  @ApiProperty()
   userId!: string;
+
+  @ApiProperty()
+  nickname!: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  profileImageUrl!: string | null;
+
+  @ApiProperty({ enum: ['OWNER', 'MEMBER'] })
+  role!: GroupRole;
+
+  @ApiProperty()
+  joinedAt!: Date;
 }
 
-export interface GroupResponseDto {
-  id: string;
-  name: string;
-  description: string | null;
-  ownerId: string;
-  inviteCode: string;
-  createdAt: Date;
-}
+export class GroupDetailDto {
+  @ApiProperty()
+  id!: string;
 
-export interface GroupMemberResponseDto {
-  userId: string;
-  role: string;
-  joinedAt: Date;
-  user: {
-    nickname: string;
-    profileImageUrl: string | null;
-  };
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  description!: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  greeting!: string | null;
+
+  @ApiProperty()
+  ownerId!: string;
+
+  @ApiProperty({ enum: ['OWNER', 'MEMBER'] })
+  myRole!: GroupRole;
+
+  @ApiProperty({ type: [GroupMemberDto] })
+  members!: GroupMemberDto[];
+
+  @ApiProperty()
+  createdAt!: Date;
 }

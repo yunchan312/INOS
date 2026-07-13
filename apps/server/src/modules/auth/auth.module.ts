@@ -1,25 +1,26 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigService } from '@nestjs/config';
-import { AuthService } from './auth.service';
+import { UserModule } from '../user/user.module';
+import { MailModule } from '../mail/mail.module';
 import { AuthController } from './auth.controller';
-import { GoogleStrategy } from './strategies/google.strategy';
+import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GroupRoleGuard } from './guards/group-role.guard';
 
 @Module({
   imports: [
-    PassportModule,
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
-        signOptions: { expiresIn: '15m' },
-      }),
-    }),
+    UserModule,
+    MailModule,
+    JwtModule.register({}),
   ],
-  providers: [AuthService, GoogleStrategy, JwtStrategy],
   controllers: [AuthController],
-  exports: [JwtModule],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    GroupRoleGuard,
+  ],
+  exports: [AuthService, JwtAuthGuard, GroupRoleGuard, JwtModule],
 })
 export class AuthModule {}

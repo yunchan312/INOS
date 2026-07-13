@@ -1,18 +1,72 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import type { MessageEvent } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ClaudeService } from '../../shared/claude/claude.service';
-import {
-  UpdateDiscussionDto,
-  AddDiscussionNoteDto,
-  DiscussionResponseDto,
-  DiscussionNoteResponseDto,
-} from './dto/discussion.dto';
+import type { DiscussionDto, DiscussionNoteDto, UpsertDiscussionNoteDto } from '@inos/types';
+import { UpsertNoteDto } from './dto/discussion.dto';
+
+const SYSTEM_PROMPT = `당신은 인문학 모임 전문 사회자이자 발제문 작성 전문가입니다.
+웹 검색을 활용하여 책이나 영화의 실제 내용, 맥락, 비평적 관점을 정확히 파악하세요.
+각 발제 질문은 참가자들이 깊이 있는 토론을 나눌 수 있도록, 단순한 사실 확인이 아닌
+성찰과 논의를 유도하는 방향으로 한국어로 작성하세요.`;
+
+function buildBookPrompt(title: string, author: string): string {
+  return `책 "${title}" (저자: ${author})에 대한 인문학 모임 발제 질문 5개를 작성해주세요.
+
+반드시 다음 형식으로 작성하세요:
+1. (질문 내용)
+2. (질문 내용)
+3. (질문 내용)
+4. (질문 내용)
+5. (질문 내용)
+
+질문 줄에는 굵게(**) 등 마크다운 장식을 쓰지 말고, 숫자로 시작하는 한 줄로 작성하세요.
+각 질문은 단순 사실 확인보다 참가자의 성찰, 가치관, 삶과의 연결을 이끌어낼 수 있어야 합니다.`;
+}
+
+function buildMoviePrompt(title: string, director: string): string {
+  return `영화 "${title}" (감독: ${director})에 대한 인문학 모임 발제 질문 5개를 작성해주세요.
+
+반드시 다음 형식으로 작성하세요:
+1. (질문 내용)
+2. (질문 내용)
+3. (질문 내용)
+4. (질문 내용)
+5. (질문 내용)
+
+질문 줄에는 굵게(**) 등 마크다운 장식을 쓰지 말고, 숫자로 시작하는 한 줄로 작성하세요.
+각 질문은 단순 사실 확인보다 참가자의 성찰, 가치관, 삶과의 연결을 이끌어낼 수 있어야 합니다.`;
+}
+
+function parsePrompts(text: string): string[] {
+  const prompts: string[] = [];
+  for (const rawLine of text.split('\n')) {
+    // "**1. 질문**", "### 1) 질문" 같은 마크다운 장식을 허용
+    const line = rawLine.trim().replace(/^[#>*\s]+/, '');
+    const m = line.match(/^(\d+)[.、)]\s*(.+)/);
+    if (m && Number(m[1]) >= 1 && Number(m[1]) <= 5) {
+      prompts.push(m[2].replace(/\*+\s*$/, '').trim());
+    }
+    if (prompts.length === 5) break;
+  }
+  return prompts;
+}
+
+// KST 기준 날짜(YYYY-MM-DD) 문자열로 변환 — 모임 당일 판정용
+function toKstDateString(d: Date): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(d);
+}
+
+// GENERATED라도 파싱된 질문이 하나도 없으면 실패한 생성으로 보고 재생성 대상으로 취급
+function hasUsablePrompts(discussion: {
+  bookPrompts: unknown;
+  moviePrompts: unknown;
+}): boolean {
+  const book = (discussion.bookPrompts as string[] | null) ?? [];
+  const movie = (discussion.moviePrompts as string[] | null) ?? [];
+  return book.length > 0 || movie.length > 0;
+}
 
 @Injectable()
 export class DiscussionService {
@@ -21,124 +75,187 @@ export class DiscussionService {
     private readonly claude: ClaudeService,
   ) {}
 
+  async generate(meetingId: string): Promise<void> {
+    const meeting = await this.prisma.meeting.findUnique({
+      where: { id: meetingId },
+    });
+    if (!meeting) throw new NotFoundException('모임을 찾을 수 없습니다');
+
+    const existing = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+    });
+    if (existing?.status === 'GENERATED' && hasUsablePrompts(existing)) return;
+
+    const discussion = await this.prisma.discussion.upsert({
+      where: { meetingId },
+      create: { meetingId, groupId: meeting.groupId, status: 'GENERATING' },
+      update: { status: 'GENERATING' },
+    });
+
+    let bookPrompts: string[] | null = null;
+    let bookContext: string | null = null;
+    let moviePrompts: string[] | null = null;
+    let movieContext: string | null = null;
+
+    if (meeting.bookTitle && meeting.bookAuthor) {
+      let text = '';
+      for await (const chunk of this.claude.streamText(
+        buildBookPrompt(meeting.bookTitle, meeting.bookAuthor),
+        SYSTEM_PROMPT,
+      )) {
+        text += chunk;
+      }
+      bookContext = text;
+      bookPrompts = parsePrompts(text);
+    }
+
+    if (meeting.movieTitle && meeting.movieDirector) {
+      let text = '';
+      for await (const chunk of this.claude.streamText(
+        buildMoviePrompt(meeting.movieTitle, meeting.movieDirector),
+        SYSTEM_PROMPT,
+      )) {
+        text += chunk;
+      }
+      movieContext = text;
+      moviePrompts = parsePrompts(text);
+    }
+
+    await this.prisma.discussion.update({
+      where: { id: discussion.id },
+      data: {
+        bookPrompts: bookPrompts ?? undefined,
+        bookContext,
+        moviePrompts: moviePrompts ?? undefined,
+        movieContext,
+        status: 'GENERATED',
+        generatedAt: new Date(),
+      },
+    });
+  }
+
   streamGenerate(meetingId: string): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
       void (async () => {
         try {
           const meeting = await this.prisma.meeting.findUnique({
             where: { id: meetingId },
-            include: {
-              groupContent: {
-                include: {
-                  content: {
-                    select: { title: true, synopsis: true, type: true, creator: true },
-                  },
-                },
-              },
-            },
           });
 
           if (!meeting) {
             subscriber.next({
-              data: JSON.stringify({ type: 'error', error: '모임을 찾을 수 없습니다' }),
+              data: JSON.stringify({ type: 'error', message: '모임을 찾을 수 없습니다' }),
             } as MessageEvent);
             subscriber.complete();
             return;
           }
 
-          const { content } = meeting.groupContent;
-          const ragContext = `제목: ${content.title}\n유형: ${content.type}\n창작자: ${content.creator}\n줄거리: ${content.synopsis ?? '없음'}`;
+          let existing = await this.prisma.discussion.findUnique({
+            where: { meetingId },
+          });
+
+          // If another process is already generating, poll until done (up to 3 min)
+          if (existing?.status === 'GENERATING') {
+            let waited = 0;
+            while (existing?.status === 'GENERATING' && waited < 180_000) {
+              await new Promise((r) => setTimeout(r, 3000));
+              waited += 3000;
+              existing = await this.prisma.discussion.findUnique({ where: { meetingId } });
+            }
+          }
+
+          if (existing?.status === 'GENERATED' && hasUsablePrompts(existing)) {
+            if (existing.bookPrompts) {
+              subscriber.next({ data: JSON.stringify({ type: 'section-start', section: 'BOOK' }) } as MessageEvent);
+              subscriber.next({
+                data: JSON.stringify({
+                  type: 'section-end',
+                  section: 'BOOK',
+                  prompts: existing.bookPrompts as string[],
+                }),
+              } as MessageEvent);
+            }
+            if (existing.moviePrompts) {
+              subscriber.next({ data: JSON.stringify({ type: 'section-start', section: 'MOVIE' }) } as MessageEvent);
+              subscriber.next({
+                data: JSON.stringify({
+                  type: 'section-end',
+                  section: 'MOVIE',
+                  prompts: existing.moviePrompts as string[],
+                }),
+              } as MessageEvent);
+            }
+            subscriber.next({ data: JSON.stringify({ type: 'done' }) } as MessageEvent);
+            subscriber.complete();
+            return;
+          }
 
           const discussion = await this.prisma.discussion.upsert({
             where: { meetingId },
-            create: {
-              meetingId,
-              groupId: meeting.groupId,
-              groupContentId: meeting.groupContentId,
-              ragContext,
-              status: 'GENERATING',
-            },
-            update: { status: 'GENERATING', ragContext },
+            create: { meetingId, groupId: meeting.groupId, status: 'GENERATING' },
+            update: { status: 'GENERATING' },
           });
 
-          const prompt = `다음 콘텐츠에 대한 인문학 모임 발제문을 작성해주세요.\n\n${ragContext}\n\n발제문에는 다음을 포함해주세요:\n1. 주제 소개 및 배경\n2. 핵심 토론 질문 5~7개\n3. 생각해볼 관점들\n4. 모임 진행 가이드`;
-          const system =
-            '당신은 인문학 모임 발제문 전문 작성자입니다. 깊이 있는 토론을 이끌어낼 수 있는 발제문을 한국어로 작성하세요. 웹 검색을 활용해 최신 정보와 다양한 관점을 포함하세요.';
+          let bookPrompts: string[] | null = null;
+          let bookContext: string | null = null;
+          let moviePrompts: string[] | null = null;
+          let movieContext: string | null = null;
 
-          let fullText = '';
-
-          for await (const chunk of this.claude.streamText(prompt, system)) {
-            fullText += chunk;
+          if (meeting.bookTitle && meeting.bookAuthor) {
+            subscriber.next({ data: JSON.stringify({ type: 'section-start', section: 'BOOK' }) } as MessageEvent);
+            let text = '';
+            for await (const chunk of this.claude.streamText(
+              buildBookPrompt(meeting.bookTitle, meeting.bookAuthor),
+              SYSTEM_PROMPT,
+            )) {
+              text += chunk;
+              subscriber.next({
+                data: JSON.stringify({ type: 'chunk', section: 'BOOK', content: chunk }),
+              } as MessageEvent);
+            }
+            bookContext = text;
+            bookPrompts = parsePrompts(text);
             subscriber.next({
-              data: JSON.stringify({ type: 'chunk', content: chunk }),
+              data: JSON.stringify({ type: 'section-end', section: 'BOOK', prompts: bookPrompts }),
+            } as MessageEvent);
+          }
+
+          if (meeting.movieTitle && meeting.movieDirector) {
+            subscriber.next({ data: JSON.stringify({ type: 'section-start', section: 'MOVIE' }) } as MessageEvent);
+            let text = '';
+            for await (const chunk of this.claude.streamText(
+              buildMoviePrompt(meeting.movieTitle, meeting.movieDirector),
+              SYSTEM_PROMPT,
+            )) {
+              text += chunk;
+              subscriber.next({
+                data: JSON.stringify({ type: 'chunk', section: 'MOVIE', content: chunk }),
+              } as MessageEvent);
+            }
+            movieContext = text;
+            moviePrompts = parsePrompts(text);
+            subscriber.next({
+              data: JSON.stringify({ type: 'section-end', section: 'MOVIE', prompts: moviePrompts }),
             } as MessageEvent);
           }
 
           await this.prisma.discussion.update({
             where: { id: discussion.id },
             data: {
-              generatedBody: fullText,
+              bookPrompts: bookPrompts ?? undefined,
+              bookContext,
+              moviePrompts: moviePrompts ?? undefined,
+              movieContext,
               status: 'GENERATED',
               generatedAt: new Date(),
             },
           });
 
-          subscriber.next({
-            data: JSON.stringify({ type: 'done' }),
-          } as MessageEvent);
-          subscriber.complete();
-        } catch (error) {
-          subscriber.next({
-            data: JSON.stringify({
-              type: 'error',
-              error: (error as Error).message,
-            }),
-          } as MessageEvent);
-          subscriber.complete();
-        }
-      })();
-    });
-  }
-
-  streamPersonal(contentId: string, userId: string): Observable<MessageEvent> {
-    return new Observable<MessageEvent>((subscriber) => {
-      void (async () => {
-        try {
-          const [content, user] = await Promise.all([
-            this.prisma.content.findUnique({
-              where: { id: contentId },
-              select: { title: true, synopsis: true, type: true, creator: true },
-            }),
-            this.prisma.user.findUnique({
-              where: { id: userId },
-              select: { tasteProfile: true },
-            }),
-          ]);
-
-          if (!content) {
-            subscriber.next({
-              data: JSON.stringify({ type: 'error', error: '콘텐츠를 찾을 수 없습니다' }),
-            } as MessageEvent);
-            subscriber.complete();
-            return;
-          }
-
-          const profileText = JSON.stringify(user?.tasteProfile ?? '취향 정보 없음');
-          const prompt = `다음 콘텐츠에 대한 개인 감상 질문을 생성해주세요.\n\n콘텐츠: ${content.title} (${content.type})\n줄거리: ${content.synopsis ?? '없음'}\n\n사용자 취향: ${profileText}\n\n개인적인 성찰과 감상을 이끌어낼 질문 5개를 제시해주세요.`;
-          const system =
-            '당신은 인문학적 감상과 성찰을 돕는 전문가입니다. 사용자의 취향에 맞춰 개인적이고 깊이 있는 질문을 한국어로 제시하세요.';
-
-          for await (const chunk of this.claude.streamText(prompt, system)) {
-            subscriber.next({
-              data: JSON.stringify({ type: 'chunk', content: chunk }),
-            } as MessageEvent);
-          }
-
           subscriber.next({ data: JSON.stringify({ type: 'done' }) } as MessageEvent);
           subscriber.complete();
         } catch (error) {
           subscriber.next({
-            data: JSON.stringify({ type: 'error', error: (error as Error).message }),
+            data: JSON.stringify({ type: 'error', message: (error as Error).message }),
           } as MessageEvent);
           subscriber.complete();
         }
@@ -146,110 +263,119 @@ export class DiscussionService {
     });
   }
 
-  async findByMeetingId(meetingId: string): Promise<DiscussionResponseDto> {
+  async findByMeetingId(meetingId: string): Promise<DiscussionDto> {
     const discussion = await this.prisma.discussion.findUnique({
       where: { meetingId },
-      include: { notes: true },
     });
     if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
-    return this.mapToDto(discussion);
-  }
-
-  async findById(id: string): Promise<DiscussionResponseDto> {
-    const discussion = await this.prisma.discussion.findUnique({
-      where: { id },
-      include: { notes: true },
-    });
-    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
-    return this.mapToDto(discussion);
-  }
-
-  async update(id: string, dto: UpdateDiscussionDto): Promise<DiscussionResponseDto> {
-    const existing = await this.prisma.discussion.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('발제문을 찾을 수 없습니다');
-
-    const updated = await this.prisma.discussion.update({
-      where: { id },
-      data: { editedBody: dto.editedBody },
-      include: { notes: true },
-    });
-    return this.mapToDto(updated);
-  }
-
-  async publish(id: string): Promise<DiscussionResponseDto> {
-    const existing = await this.prisma.discussion.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('발제문을 찾을 수 없습니다');
-    if (existing.status === 'GENERATING') {
-      throw new BadRequestException('발제문 생성 중입니다. 완료 후 발행해주세요.');
-    }
-
-    const updated = await this.prisma.discussion.update({
-      where: { id },
-      data: { status: 'PUBLISHED', publishedAt: new Date() },
-      include: { notes: true },
-    });
-    return this.mapToDto(updated);
-  }
-
-  async addNote(
-    discussionId: string,
-    userId: string,
-    dto: AddDiscussionNoteDto,
-  ): Promise<DiscussionNoteResponseDto> {
-    const discussion = await this.prisma.discussion.findUnique({
-      where: { id: discussionId },
-    });
-    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
-
-    const note = await this.prisma.discussionNote.create({
-      data: { discussionId, userId, content: dto.content },
-    });
-    return {
-      id: note.id,
-      discussionId: note.discussionId,
-      userId: note.userId,
-      content: note.content,
-      createdAt: note.createdAt,
-    };
-  }
-
-  private mapToDto(
-    discussion: {
-      id: string;
-      meetingId: string;
-      groupId: string;
-      groupContentId: string;
-      status: string;
-      generatedBody: string | null;
-      editedBody: string | null;
-      generatedAt: Date | null;
-      publishedAt: Date | null;
-      notes?: Array<{
-        id: string;
-        discussionId: string;
-        userId: string;
-        content: string;
-        createdAt: Date;
-      }>;
-    },
-  ): DiscussionResponseDto {
     return {
       id: discussion.id,
       meetingId: discussion.meetingId,
       groupId: discussion.groupId,
-      groupContentId: discussion.groupContentId,
-      status: discussion.status,
-      generatedBody: discussion.generatedBody,
-      editedBody: discussion.editedBody,
-      generatedAt: discussion.generatedAt,
-      publishedAt: discussion.publishedAt,
-      notes: discussion.notes?.map((n) => ({
-        id: n.id,
-        discussionId: n.discussionId,
-        userId: n.userId,
-        content: n.content,
-        createdAt: n.createdAt,
-      })),
+      status: discussion.status as DiscussionDto['status'],
+      bookPrompts: discussion.bookPrompts as string[] | null,
+      moviePrompts: discussion.moviePrompts as string[] | null,
+      bookContext: discussion.bookContext,
+      movieContext: discussion.movieContext,
+      generatedAt: discussion.generatedAt?.toISOString() ?? null,
+      publishedAt: discussion.publishedAt?.toISOString() ?? null,
+    };
+  }
+
+  async upsertNote(
+    meetingId: string,
+    userId: string,
+    dto: UpsertNoteDto,
+  ): Promise<DiscussionNoteDto> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+      include: { meeting: { select: { status: true, confirmedDate: true } } },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+
+    if (discussion.meeting.status === 'DONE') {
+      throw new ForbiddenException('종료된 모임의 노트는 수정할 수 없어요');
+    }
+    if (
+      !discussion.meeting.confirmedDate ||
+      toKstDateString(new Date()) < toKstDateString(discussion.meeting.confirmedDate)
+    ) {
+      throw new ForbiddenException('발제 노트는 모임 당일부터 작성할 수 있어요');
+    }
+
+    const note = await this.prisma.discussionNote.upsert({
+      where: {
+        discussionId_userId_promptKind_questionIndex: {
+          discussionId: discussion.id,
+          userId,
+          promptKind: dto.promptKind as 'BOOK' | 'MOVIE',
+          questionIndex: dto.questionIndex,
+        },
+      },
+      create: {
+        discussionId: discussion.id,
+        userId,
+        promptKind: dto.promptKind as 'BOOK' | 'MOVIE',
+        questionIndex: dto.questionIndex,
+        content: dto.content,
+        isPublic: dto.isPublic,
+        publishedAt: dto.isPublic ? new Date() : null,
+      },
+      update: {
+        content: dto.content,
+        isPublic: dto.isPublic,
+        publishedAt: dto.isPublic ? new Date() : null,
+      },
+      include: { user: { select: { nickname: true, profileImageUrl: true } } },
+    });
+
+    return this.mapNote(note);
+  }
+
+  async listNotes(meetingId: string, userId: string): Promise<DiscussionNoteDto[]> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+
+    const notes = await this.prisma.discussionNote.findMany({
+      where: {
+        discussionId: discussion.id,
+        OR: [{ userId }, { isPublic: true }],
+      },
+      include: { user: { select: { nickname: true, profileImageUrl: true } } },
+      orderBy: [{ promptKind: 'asc' }, { questionIndex: 'asc' }, { createdAt: 'asc' }],
+    });
+
+    return notes.map((n) => this.mapNote(n));
+  }
+
+  private mapNote(note: {
+    id: string;
+    discussionId: string;
+    userId: string;
+    promptKind: string;
+    questionIndex: number;
+    content: string;
+    isPublic: boolean;
+    publishedAt: Date | null;
+    createdAt: Date;
+    user: { nickname: string; profileImageUrl: string | null };
+  }): DiscussionNoteDto {
+    return {
+      id: note.id,
+      discussionId: note.discussionId,
+      userId: note.userId,
+      promptKind: note.promptKind as DiscussionNoteDto['promptKind'],
+      questionIndex: note.questionIndex,
+      content: note.content,
+      isPublic: note.isPublic,
+      publishedAt: note.publishedAt?.toISOString() ?? null,
+      createdAt: note.createdAt.toISOString(),
+      author: {
+        nickname: note.user.nickname,
+        profileImageUrl: note.user.profileImageUrl,
+      },
     };
   }
 }

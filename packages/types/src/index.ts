@@ -1,160 +1,238 @@
-// Auth DTOs
-export interface GoogleOAuthUserDto {
-  email: string;
-  nickname: string;
-  profileImageUrl?: string;
-  oauthId: string;
-}
-
-export interface JwtPayload {
-  sub: string;
-  email: string;
-  iat?: number;
-  exp?: number;
-}
-
-export interface AuthTokensDto {
-  accessToken: string;
-  refreshToken: string;
-}
-
 // User DTOs
 export interface UserDto {
   id: string;
   email: string;
   nickname: string;
-  profileImageUrl?: string | null;
-  createdAt: Date;
+  profileImageUrl: string | null;
+  isAdmin: boolean;
+  createdAt: string;
 }
 
-// Group DTOs
-export type GroupMode = 'GROUP' | 'SOLO';
-export type GroupRole = 'LEADER' | 'MEMBER';
-
-export interface CreateGroupDto {
+// Admin DTOs
+export interface AdminCreateOrgDto {
   name: string;
   description?: string;
-  mode?: GroupMode;
+  ownerEmail: string;
 }
 
-export interface GroupDto {
+export interface AdminCreateOrgResponseDto {
   id: string;
   name: string;
-  description?: string | null;
-  inviteCode: string;
-  mode: GroupMode;
-  createdAt: Date;
+  description: string | null;
+  ownerId: string;
+  ownerEmail: string;
+  ownerNickname: string;
+  createdAt: string;
+}
+
+export interface AdminOrgDto {
+  id: string;
+  name: string;
+  description: string | null;
+  ownerId: string;
+  ownerEmail: string;
+  ownerNickname: string;
+  memberCount: number;
+  meetingCount: number;
+  createdAt: string;
+}
+
+export interface AdminUpdateOrgDto {
+  name?: string;
+  description?: string;
+}
+
+export interface AdminUserDto {
+  id: string;
+  email: string;
+  nickname: string;
+  profileImageUrl: string | null;
+  isAdmin: boolean;
+  orgCount: number;
+  createdAt: string;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface UpdateUserDto {
+  nickname?: string;
+  profileImageUrl?: string;
+}
+
+// Auth DTOs
+export interface LoginRedirectDto {
+  token: string;
+}
+
+// Group / Organization DTOs
+export type GroupRole = 'OWNER' | 'MEMBER';
+
+export interface GroupSummaryDto {
+  id: string;
+  name: string;
+  description: string | null;
+  myRole: GroupRole;
+  memberCount: number;
+  createdAt: string;
 }
 
 export interface GroupMemberDto {
   id: string;
   userId: string;
-  groupId: string;
+  nickname: string;
+  profileImageUrl: string | null;
   role: GroupRole;
-  joinedAt: Date;
-  user?: UserDto;
+  joinedAt: string;
 }
 
-// Content DTOs
-export type ContentType = 'MOVIE' | 'BOOK';
-export type ContentSource = 'TMDB' | 'KAKAO' | 'GOOGLE_BOOKS' | 'USER_ADDED';
-export type GroupContentStatus = 'VOTING' | 'SELECTED' | 'COMPLETED' | 'CANCELLED';
-export type UserContentStatus = 'COMPLETED' | 'IN_PROGRESS' | 'WISHLIST';
-
-export interface ContentDto {
+export interface GroupDetailDto {
   id: string;
-  type: ContentType;
-  title: string;
-  creator: string;
-  releaseYear?: number | null;
-  thumbnailUrl?: string | null;
-  synopsis?: string | null;
-  source: ContentSource;
+  name: string;
+  description: string | null;
+  greeting: string | null;
+  ownerId: string;
+  myRole: GroupRole;
+  members: GroupMemberDto[];
+  createdAt: string;
 }
 
-export interface CreateGroupContentDto {
-  contentId: string;
+export interface UpdateGroupSettingsDto {
+  name?: string;
+  description?: string | null;
+  greeting?: string | null;
 }
 
-export interface VoteContentDto {
-  score: number;
+// Invitation DTOs
+export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+
+export interface InviteMemberDto {
+  email: string;
+}
+
+export interface InvitationPreviewDto {
+  groupId: string;
+  groupName: string;
+  inviterName: string;
+  inviteeEmail: string;
+  status: InvitationStatus;
+  expiresAt: string;
+}
+
+export interface InvitationAcceptResponseDto {
+  groupId: string;
 }
 
 // Meeting DTOs
 export type MeetingStatus = 'PENDING' | 'CONFIRMED' | 'DONE' | 'CANCELLED';
 
 export interface CreateMeetingDto {
-  groupContentId: string;
+  bookTitle?: string;
+  bookAuthor?: string;
+  movieTitle?: string;
+  movieDirector?: string;
+  candidateFrom: string;
+  candidateTo: string;
   location?: string;
 }
 
-export interface MeetingAvailabilityDto {
-  availableDates: string[];
+export interface UpdateMeetingDto {
+  bookTitle?: string;
+  bookAuthor?: string;
+  movieTitle?: string;
+  movieDirector?: string;
+  location?: string;
+  confirmedDate?: string;
 }
 
 export interface MeetingDto {
   id: string;
   groupId: string;
-  groupContentId: string;
-  confirmedDate?: Date | null;
-  location?: string | null;
+  createdById: string;
+  bookTitle: string | null;
+  bookAuthor: string | null;
+  movieTitle: string | null;
+  movieDirector: string | null;
+  confirmedDate: string | null;
+  location: string | null;
+  candidateFrom: string;
+  candidateTo: string;
   status: MeetingStatus;
-  createdAt: Date;
+  createdAt: string;
+  respondedCount: number;
+  totalMembers: number;
+  discussionId: string | null;
+  myAvailability: string[] | null;
+  /** 조율 중 날짜별 가능 인원 (PENDING일 때만) */
+  dateCounts: Record<string, number> | null;
+}
+
+export interface SubmitAvailabilityDto {
+  availableDates: string[]; // ISO date-only strings
+}
+
+export interface SubmitAvailabilityResponseDto {
+  confirmed: boolean;
+  confirmedDate: string | null;
+  respondedCount: number;
+  totalMembers: number;
 }
 
 // Discussion DTOs
+export type PromptKind = 'BOOK' | 'MOVIE';
 export type DiscussionStatus = 'GENERATING' | 'GENERATED' | 'PUBLISHED';
 
 export interface DiscussionDto {
   id: string;
   meetingId: string;
   groupId: string;
-  groupContentId: string;
   status: DiscussionStatus;
-  generatedBody?: string | null;
-  editedBody?: string | null;
-  generatedAt?: Date | null;
-  publishedAt?: Date | null;
+  bookPrompts: string[] | null;
+  moviePrompts: string[] | null;
+  bookContext: string | null;
+  movieContext: string | null;
+  generatedAt: string | null;
+  publishedAt: string | null;
 }
 
-export interface CreateDiscussionNoteDto {
+export interface UpsertDiscussionNoteDto {
+  promptKind: PromptKind;
+  questionIndex: number;
   content: string;
+  isPublic: boolean;
 }
 
-// Archive DTOs
-export interface CreateArchiveDto {
-  body?: string;
-  photoUrls?: string[];
-}
-
-export interface ArchiveDto {
+export interface DiscussionNoteDto {
   id: string;
-  meetingId: string;
-  groupId: string;
+  discussionId: string;
   userId: string;
-  body?: string | null;
-  photoUrls?: string[] | null;
-  archivedAt: Date;
+  promptKind: PromptKind;
+  questionIndex: number;
+  content: string;
+  isPublic: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  author: {
+    nickname: string;
+    profileImageUrl: string | null;
+  };
 }
 
-// SSE DTOs
-export interface SseDiscussionChunkDto {
-  type: 'chunk' | 'done' | 'error';
-  content?: string;
-  error?: string;
-}
+// SSE stream envelope
+export type DiscussionStreamEvent =
+  | { type: 'section-start'; section: PromptKind }
+  | { type: 'chunk'; section: PromptKind; content: string }
+  | { type: 'section-end'; section: PromptKind; prompts: string[] }
+  | { type: 'done' }
+  | { type: 'error'; message: string };
 
 // API Response wrapper
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;
   error: string | null;
-}
-
-export interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
 }

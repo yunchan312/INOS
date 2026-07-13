@@ -2,78 +2,99 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
   Param,
   Body,
   Query,
-  UseGuards,
+  Headers,
   Sse,
-  MessageEvent,
+  HttpCode,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import type { MessageEvent } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
-import type { JwtPayload } from '@inos/types';
-import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
-import { CurrentUser } from '../../shared/decorators/current-user.decorator';
 import { DiscussionService } from './discussion.service';
-import {
-  UpdateDiscussionDto,
-  AddDiscussionNoteDto,
-  PersonalStreamQueryDto,
-  DiscussionResponseDto,
-  DiscussionNoteResponseDto,
-} from './dto/discussion.dto';
+import { NotesGateway } from './notes.gateway';
+import { UpsertNoteDto, TokenQueryDto } from './dto/discussion.dto';
+import { JwtValidatorService } from '../../shared/auth/jwt-validator.service';
+import type { DiscussionDto, DiscussionNoteDto } from '@inos/types';
 
 @ApiTags('discussions')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('discussions')
 export class DiscussionController {
-  constructor(private readonly discussionService: DiscussionService) {}
+  constructor(
+    private readonly discussionService: DiscussionService,
+    private readonly notesGateway: NotesGateway,
+    private readonly jwtValidator: JwtValidatorService,
+  ) {}
 
-  @Sse('personal/stream')
-  @ApiOperation({ summary: '개인 감상 질문 SSE 스트리밍' })
-  streamPersonal(
-    @Query() query: PersonalStreamQueryDto,
-    @CurrentUser() user: JwtPayload,
-  ): Observable<MessageEvent> {
-    return this.discussionService.streamPersonal(query.contentId, user.sub);
+  @Post(':meetingId/generate')
+  @HttpCode(202)
+  @ApiOperation({ summary: '발제문 생성 트리거 (서버-투-서버)' })
+  triggerGenerate(@Param('meetingId') meetingId: string): { accepted: boolean } {
+    void this.discussionService.generate(meetingId);
+    return { accepted: true };
+  }
+
+  @Post(':meetingId/events/finished')
+  @HttpCode(202)
+  @ApiOperation({ summary: '모임 종료 실시간 브로드캐스트 (서버-투-서버)' })
+  notifyFinished(@Param('meetingId') meetingId: string): { accepted: boolean } {
+    this.notesGateway.broadcastMeetingFinished(meetingId);
+    return { accepted: true };
   }
 
   @Sse('stream/:meetingId')
-  @ApiOperation({ summary: '발제문 생성 SSE 스트리밍' })
-  streamGenerate(@Param('meetingId') meetingId: string): Observable<MessageEvent> {
+  @ApiOperation({ summary: '발제문 생성 SSE 스트리밍 (브라우저)' })
+  streamGenerate(
+    @Param('meetingId') meetingId: string,
+    @Query() query: TokenQueryDto,
+  ): Observable<MessageEvent> {
+    try {
+      this.jwtValidator.validate(query.token);
+    } catch {
+      throw new UnauthorizedException('유효하지 않은 토큰입니다');
+    }
     return this.discussionService.streamGenerate(meetingId);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: '발제문 상세 조회' })
-  async findById(@Param('id') id: string): Promise<DiscussionResponseDto> {
-    return this.discussionService.findById(id);
+  @Get(':meetingId')
+  @ApiOperation({ summary: '발제문 조회' })
+  async findByMeetingId(
+    @Param('meetingId') meetingId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionDto> {
+    this.requireAuth(authHeader);
+    return this.discussionService.findByMeetingId(meetingId);
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: '발제문 수정' })
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateDiscussionDto,
-  ): Promise<DiscussionResponseDto> {
-    return this.discussionService.update(id, dto);
+  @Post(':meetingId/notes')
+  @ApiOperation({ summary: '노트 추가/수정 (upsert)' })
+  async upsertNote(
+    @Param('meetingId') meetingId: string,
+    @Body() dto: UpsertNoteDto,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionNoteDto> {
+    const payload = this.requireAuth(authHeader);
+    const note = await this.discussionService.upsertNote(meetingId, payload.sub, dto);
+    this.notesGateway.broadcastNote(meetingId, note);
+    return note;
   }
 
-  @Post(':id/publish')
-  @ApiOperation({ summary: '발제문 발행' })
-  async publish(@Param('id') id: string): Promise<DiscussionResponseDto> {
-    return this.discussionService.publish(id);
+  @Get(':meetingId/notes')
+  @ApiOperation({ summary: '발제문 노트 목록 조회' })
+  async listNotes(
+    @Param('meetingId') meetingId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionNoteDto[]> {
+    const payload = this.requireAuth(authHeader);
+    return this.discussionService.listNotes(meetingId, payload.sub);
   }
 
-  @Post(':id/notes')
-  @ApiOperation({ summary: '토론 노트 추가' })
-  async addNote(
-    @Param('id') discussionId: string,
-    @Body() dto: AddDiscussionNoteDto,
-    @CurrentUser() user: JwtPayload,
-  ): Promise<DiscussionNoteResponseDto> {
-    return this.discussionService.addNote(discussionId, user.sub, dto);
+  private requireAuth(authHeader?: string) {
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('인증이 필요합니다');
+    }
+    return this.jwtValidator.validate(authHeader.slice(7));
   }
 }

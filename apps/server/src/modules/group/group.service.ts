@@ -1,171 +1,306 @@
+import { randomBytes } from 'node:crypto';
 import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  ConflictException,
-  Logger,
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import { GroupRole, InvitationStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import {
-  CreateGroupDto,
-  UpdateGroupDto,
-  GroupResponseDto,
-  GroupMemberResponseDto,
+  GroupDetailDto,
+  GroupMemberDto,
+  GroupSummaryDto,
+  UpdateGroupSettingsDto,
 } from './dto/group.dto';
+import {
+  InvitationAcceptResponseDto,
+  InvitationPreviewDto,
+} from './dto/invitation.dto';
 
 @Injectable()
 export class GroupService {
-  private readonly logger = new Logger(GroupService.name);
-
   constructor(
     private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
     private readonly config: ConfigService,
   ) {}
 
-  async create(userId: string, dto: CreateGroupDto): Promise<GroupResponseDto> {
-    return this.prisma.group.create({
-      data: {
-        name: dto.name,
-        description: dto.description,
-        ownerId: userId,
-        members: {
-          create: { userId, role: 'LEADER' },
-        },
-      },
-      select: this.groupSelect(),
-    });
-  }
-
-  async findAll(userId: string): Promise<GroupResponseDto[]> {
+  async findMineForUser(userId: string): Promise<GroupSummaryDto[]> {
     const memberships = await this.prisma.groupMember.findMany({
       where: { userId },
-      select: { groupId: true },
+      orderBy: { joinedAt: 'desc' },
+      include: {
+        group: { include: { _count: { select: { members: true } } } },
+      },
     });
-    const groupIds = memberships.map((m) => m.groupId);
-    return this.prisma.group.findMany({
-      where: { id: { in: groupIds } },
-      select: this.groupSelect(),
-    });
+
+    return memberships.map((m) => ({
+      id: m.group.id,
+      name: m.group.name,
+      description: m.group.description,
+      myRole: m.role,
+      memberCount: m.group._count.members,
+      createdAt: m.group.createdAt,
+    }));
   }
 
-  async findOne(groupId: string, userId: string): Promise<GroupResponseDto> {
-    await this.assertMember(groupId, userId);
+  async findDetailForUser(groupId: string, userId: string): Promise<GroupDetailDto> {
     const group = await this.prisma.group.findUnique({
       where: { id: groupId },
-      select: this.groupSelect(),
+      include: {
+        members: {
+          orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
+          include: {
+            user: {
+              select: { id: true, nickname: true, profileImageUrl: true },
+            },
+          },
+        },
+      },
     });
+
     if (!group) throw new NotFoundException('그룹을 찾을 수 없습니다');
-    return group;
+
+    const myMembership = group.members.find((m) => m.userId === userId);
+    if (!myMembership) throw new ForbiddenException('그룹 멤버가 아닙니다');
+
+    return {
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      greeting: group.greeting,
+      ownerId: group.ownerId,
+      myRole: myMembership.role,
+      members: group.members.map((m) => this.toMemberDto(m)),
+      createdAt: group.createdAt,
+    };
   }
 
-  async update(groupId: string, userId: string, dto: UpdateGroupDto): Promise<GroupResponseDto> {
-    await this.assertLeader(groupId, userId);
-    return this.prisma.group.update({
+  async listMembers(groupId: string, userId: string): Promise<GroupMemberDto[]> {
+    await this.assertMember(groupId, userId);
+    const members = await this.prisma.groupMember.findMany({
+      where: { groupId },
+      orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
+      include: {
+        user: { select: { id: true, nickname: true, profileImageUrl: true } },
+      },
+    });
+    return members.map((m) => this.toMemberDto(m));
+  }
+
+  async updateSettings(
+    groupId: string,
+    dto: UpdateGroupSettingsDto,
+  ): Promise<GroupDetailDto> {
+    const group = await this.prisma.group.findUnique({ where: { id: groupId } });
+    if (!group) throw new NotFoundException('그룹을 찾을 수 없습니다');
+
+    const updated = await this.prisma.group.update({
       where: { id: groupId },
       data: {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.description !== undefined && { description: dto.description }),
+        name: dto.name ?? group.name,
+        description: dto.description === undefined ? group.description : dto.description,
+        greeting: dto.greeting === undefined ? group.greeting : dto.greeting,
       },
-      select: this.groupSelect(),
+    });
+
+    return this.findDetailForUser(updated.id, group.ownerId);
+  }
+
+  async removeMember(
+    groupId: string,
+    targetUserId: string,
+    callerId: string,
+  ): Promise<void> {
+    if (targetUserId === callerId) {
+      throw new BadRequestException('자기 자신은 제거할 수 없습니다');
+    }
+    const group = await this.prisma.group.findUnique({ where: { id: groupId } });
+    if (!group) throw new NotFoundException('그룹을 찾을 수 없습니다');
+    if (group.ownerId === targetUserId) {
+      throw new BadRequestException('소유자는 제거할 수 없습니다');
+    }
+    await this.prisma.groupMember.deleteMany({
+      where: { groupId, userId: targetUserId },
     });
   }
 
-  async remove(groupId: string, userId: string): Promise<void> {
-    await this.assertLeader(groupId, userId);
-    await this.prisma.group.delete({ where: { id: groupId } });
-  }
-
-  async join(userId: string, inviteCode: string): Promise<void> {
-    const group = await this.prisma.group.findFirst({ where: { inviteCode } });
-    if (!group) throw new NotFoundException('유효하지 않은 초대 코드입니다');
-
-    const existing = await this.prisma.groupMember.findUnique({
-      where: { groupId_userId: { groupId: group.id, userId } },
-    });
-    if (existing) throw new ConflictException('이미 그룹 멤버입니다');
-
-    await this.prisma.groupMember.create({
-      data: { groupId: group.id, userId, role: 'MEMBER' },
-    });
-  }
-
-  async refreshInviteCode(groupId: string, userId: string): Promise<{ inviteCode: string }> {
-    await this.assertLeader(groupId, userId);
-    const newCode = randomUUID();
-    const group = await this.prisma.group.update({
+  async inviteMember(
+    groupId: string,
+    ownerUserId: string,
+    email: string,
+  ): Promise<InvitationPreviewDto> {
+    const group = await this.prisma.group.findUnique({
       where: { id: groupId },
-      data: { inviteCode: newCode },
-      select: { inviteCode: true },
+      include: { owner: true },
     });
-    return { inviteCode: group.inviteCode };
-  }
+    if (!group) throw new NotFoundException('그룹을 찾을 수 없습니다');
 
-  async getMembers(groupId: string, userId: string): Promise<GroupMemberResponseDto[]> {
-    await this.assertMember(groupId, userId);
-    return this.prisma.groupMember.findMany({
-      where: { groupId },
-      select: {
-        userId: true,
-        role: true,
-        joinedAt: true,
-        user: { select: { nickname: true, profileImageUrl: true } },
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingMember = await this.prisma.user.findFirst({
+      where: {
+        email: normalizedEmail,
+        groupMembers: { some: { groupId } },
+      },
+      select: { id: true },
+    });
+    if (existingMember) {
+      throw new ConflictException('이미 그룹 멤버입니다');
+    }
+
+    const ttlDays = this.config.get<number>('INVITATION_TTL_DAYS', 7);
+    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
+    const token = this.generateToken();
+
+    const invitation = await this.prisma.invitation.upsert({
+      where: { groupId_email: { groupId, email: normalizedEmail } },
+      update: {
+        token,
+        status: InvitationStatus.PENDING,
+        expiresAt,
+        invitedById: ownerUserId,
+        acceptedAt: null,
+      },
+      create: {
+        groupId,
+        email: normalizedEmail,
+        token,
+        invitedById: ownerUserId,
+        expiresAt,
       },
     });
-  }
 
-  async inviteMember(groupId: string, requesterId: string, targetUserId: string): Promise<void> {
-    await this.assertLeader(groupId, requesterId);
-    const user = await this.prisma.user.findUnique({ where: { id: targetUserId } });
-    if (!user) throw new NotFoundException('유저를 찾을 수 없습니다');
-
-    await this.prisma.groupMember.upsert({
-      where: { groupId_userId: { groupId, userId: targetUserId } },
-      update: {},
-      create: { groupId, userId: targetUserId, role: 'MEMBER' },
+    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
+    const inviter = await this.prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { nickname: true },
     });
-  }
 
-  async removeMember(groupId: string, requesterId: string, targetUserId: string): Promise<void> {
-    await this.assertLeader(groupId, requesterId);
-    await this.prisma.groupMember.delete({
-      where: { groupId_userId: { groupId, userId: targetUserId } },
+    await this.mailService.sendMembershipInvite({
+      toEmail: normalizedEmail,
+      groupName: group.name,
+      inviterName: inviter?.nickname ?? '관리자',
+      greeting: group.greeting,
+      acceptUrl: `${frontendUrl}/invitations/${token}`,
     });
+
+    return {
+      groupId: invitation.groupId,
+      groupName: group.name,
+      inviterName: inviter?.nickname ?? '관리자',
+      inviteeEmail: invitation.email,
+      status: invitation.status,
+      expiresAt: invitation.expiresAt,
+    };
   }
 
-  async assertMember(groupId: string, userId: string): Promise<void> {
+  async getInvitationPreview(token: string): Promise<InvitationPreviewDto> {
+    const invitation = await this.prisma.invitation.findUnique({
+      where: { token },
+      include: {
+        group: { select: { id: true, name: true } },
+        invitedBy: { select: { nickname: true } },
+      },
+    });
+    if (!invitation) throw new NotFoundException('초대장을 찾을 수 없습니다');
+
+    const status = this.resolveStatus(invitation.status, invitation.expiresAt);
+    return {
+      groupId: invitation.group.id,
+      groupName: invitation.group.name,
+      inviterName: invitation.invitedBy.nickname,
+      inviteeEmail: invitation.email,
+      status,
+      expiresAt: invitation.expiresAt,
+    };
+  }
+
+  async acceptInvitation(
+    token: string,
+    userId: string,
+  ): Promise<InvitationAcceptResponseDto> {
+    const invitation = await this.prisma.invitation.findUnique({
+      where: { token },
+    });
+    if (!invitation) throw new NotFoundException('초대장을 찾을 수 없습니다');
+    if (invitation.status !== InvitationStatus.PENDING) {
+      throw new BadRequestException('이미 사용된 초대장입니다');
+    }
+    if (invitation.expiresAt < new Date()) {
+      await this.prisma.invitation.update({
+        where: { id: invitation.id },
+        data: { status: InvitationStatus.EXPIRED },
+      });
+      throw new BadRequestException('만료된 초대장입니다');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
+    if (user.email.toLowerCase() !== invitation.email.toLowerCase()) {
+      throw new ForbiddenException(
+        '초대받은 이메일과 로그인한 이메일이 달라요',
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.groupMember.upsert({
+        where: { groupId_userId: { groupId: invitation.groupId, userId } },
+        update: {},
+        create: {
+          groupId: invitation.groupId,
+          userId,
+          role: GroupRole.MEMBER,
+        },
+      }),
+      this.prisma.invitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: InvitationStatus.ACCEPTED,
+          acceptedAt: new Date(),
+        },
+      }),
+    ]);
+
+    return { groupId: invitation.groupId };
+  }
+
+  async assertMember(groupId: string, userId: string): Promise<GroupRole> {
     const membership = await this.prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId, userId } },
+      select: { role: true },
     });
     if (!membership) throw new ForbiddenException('그룹 멤버가 아닙니다');
+    return membership.role;
   }
 
-  async assertLeader(groupId: string, userId: string): Promise<void> {
-    const member = await this.prisma.groupMember.findUnique({
-      where: { groupId_userId: { groupId, userId } },
-    });
-    if (!member || member.role !== 'LEADER') throw new ForbiddenException('그룹 리더만 가능합니다');
+  private generateToken(): string {
+    return randomBytes(32).toString('base64url');
   }
 
-  private triggerGroupEmbeddingUpdate(groupId: string): void {
-    const aiUrl = this.config.get<string>('AI_SERVER_URL', 'http://localhost:3001');
-    void axios
-      .post(`${aiUrl}/api/embed/group/${groupId}`)
-      .catch((err: unknown) =>
-        this.logger.warn(`그룹 임베딩 갱신 실패: groupId=${groupId}`, err),
-      );
+  private resolveStatus(status: InvitationStatus, expiresAt: Date): InvitationStatus {
+    if (status === InvitationStatus.PENDING && expiresAt < new Date()) {
+      return InvitationStatus.EXPIRED;
+    }
+    return status;
   }
 
-  private groupSelect() {
+  private toMemberDto(
+    m: Prisma.GroupMemberGetPayload<{
+      include: { user: { select: { id: true; nickname: true; profileImageUrl: true } } };
+    }>,
+  ): GroupMemberDto {
     return {
-      id: true,
-      name: true,
-      description: true,
-      ownerId: true,
-      inviteCode: true,
-      createdAt: true,
-    } as const;
+      id: m.id,
+      userId: m.userId,
+      nickname: m.user.nickname,
+      profileImageUrl: m.user.profileImageUrl,
+      role: m.role,
+      joinedAt: m.joinedAt,
+    };
   }
 }

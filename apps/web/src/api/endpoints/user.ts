@@ -1,14 +1,9 @@
-import type { UserDto } from '@inos/types';
 import { apiClient } from '@/api/client';
-
-interface MeResponse {
-  user: UserDto;
-  isNew: boolean;
-}
+import type { UpdateUserDto, UserDto } from '@inos/types';
 
 export const userApi = {
-  getMe: () => apiClient.get<MeResponse>('/users/me'),
+  getMe: () => apiClient.get<UserDto>('/users/me').then((r) => r.data),
 
-  updateProfile: (data: { nickname?: string; profileImageUrl?: string }) =>
-    apiClient.patch<UserDto>('/users/me', data),
+  updateMe: (dto: UpdateUserDto) =>
+    apiClient.patch<UserDto>('/users/me', dto).then((r) => r.data),
 };

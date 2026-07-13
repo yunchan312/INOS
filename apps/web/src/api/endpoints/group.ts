@@ -1,26 +1,37 @@
-import type {
-  GroupDto,
-  GroupMemberDto,
-  CreateGroupDto,
-} from '@inos/types';
 import { apiClient } from '@/api/client';
+import type {
+  GroupDetailDto,
+  GroupMemberDto,
+  GroupSummaryDto,
+  InviteMemberDto,
+  InvitationPreviewDto,
+  UpdateGroupSettingsDto,
+} from '@inos/types';
 
 export const groupApi = {
-  getMyGroups: () =>
-    apiClient.get<GroupDto[]>('/groups'),
+  getMine: () =>
+    apiClient.get<GroupSummaryDto[]>('/groups').then((r) => r.data),
 
-  getGroup: (groupId: string) =>
-    apiClient.get<GroupDto>(`/groups/${groupId}`),
+  getById: (groupId: string) =>
+    apiClient.get<GroupDetailDto>(`/groups/${groupId}`).then((r) => r.data),
 
-  createGroup: (data: CreateGroupDto) =>
-    apiClient.post<GroupDto>('/groups', data),
+  listMembers: (groupId: string) =>
+    apiClient
+      .get<GroupMemberDto[]>(`/groups/${groupId}/members`)
+      .then((r) => r.data),
 
-  joinGroup: (inviteCode: string) =>
-    apiClient.post<GroupMemberDto>('/groups/join', { inviteCode }),
+  updateSettings: (groupId: string, dto: UpdateGroupSettingsDto) =>
+    apiClient
+      .patch<GroupDetailDto>(`/groups/${groupId}/settings`, dto)
+      .then((r) => r.data),
 
-  getMembers: (groupId: string) =>
-    apiClient.get<GroupMemberDto[]>(`/groups/${groupId}/members`),
+  inviteMember: (groupId: string, dto: InviteMemberDto) =>
+    apiClient
+      .post<InvitationPreviewDto>(`/groups/${groupId}/members/invite`, dto)
+      .then((r) => r.data),
 
-  leaveGroup: (groupId: string) =>
-    apiClient.delete(`/groups/${groupId}/members/me`),
+  removeMember: (groupId: string, userId: string) =>
+    apiClient
+      .delete<void>(`/groups/${groupId}/members/${userId}`)
+      .then((r) => r.data),
 };

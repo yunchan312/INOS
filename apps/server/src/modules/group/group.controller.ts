@@ -1,127 +1,93 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
   UseGuards,
-  HttpCode,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { User } from '@prisma/client';
-import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
-import { CurrentUser } from '../../shared/decorators/current-user.decorator';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GroupService } from './group.service';
 import {
-  CreateGroupDto,
-  UpdateGroupDto,
-  InviteMemberDto,
-  JoinGroupDto,
-  GroupResponseDto,
-  GroupMemberResponseDto,
+  GroupDetailDto,
+  GroupMemberDto,
+  GroupSummaryDto,
+  UpdateGroupSettingsDto,
 } from './dto/group.dto';
+import {
+  InviteMemberDto,
+  InvitationPreviewDto,
+} from './dto/invitation.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GroupRoleGuard } from '../auth/guards/group-role.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser, AuthUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('groups')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('groups')
+@UseGuards(JwtAuthGuard)
 export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
-  @Post()
-  @ApiOperation({ summary: '그룹 생성' })
-  create(
-    @CurrentUser() user: User,
-    @Body() dto: CreateGroupDto,
-  ): Promise<GroupResponseDto> {
-    return this.groupService.create(user.id, dto);
-  }
-
-  @Get('me')
-  @ApiOperation({ summary: '내 그룹 목록' })
-  findAll(@CurrentUser() user: User): Promise<GroupResponseDto[]> {
-    return this.groupService.findAll(user.id);
-  }
-
-  @Post('join')
-  @HttpCode(200)
-  @ApiOperation({ summary: '초대 코드로 그룹 참가' })
-  join(
-    @CurrentUser() user: User,
-    @Body() dto: JoinGroupDto,
-  ): Promise<void> {
-    return this.groupService.join(user.id, dto.inviteCode);
+  @Get()
+  @ApiOperation({ summary: '내가 속한 오가니제이션 목록' })
+  findMine(@CurrentUser() user: AuthUser): Promise<GroupSummaryDto[]> {
+    return this.groupService.findMineForUser(user.id);
   }
 
   @Get(':groupId')
-  @ApiOperation({ summary: '그룹 상세 조회' })
+  @ApiOperation({ summary: '오가니제이션 상세 (멤버 전용)' })
   findOne(
-    @Param('groupId') groupId: string,
-    @CurrentUser() user: User,
-  ): Promise<GroupResponseDto> {
-    return this.groupService.findOne(groupId, user.id);
-  }
-
-  @Patch(':groupId')
-  @ApiOperation({ summary: '그룹 수정' })
-  update(
-    @Param('groupId') groupId: string,
-    @CurrentUser() user: User,
-    @Body() dto: UpdateGroupDto,
-  ): Promise<GroupResponseDto> {
-    return this.groupService.update(groupId, user.id, dto);
-  }
-
-  @Delete(':groupId')
-  @HttpCode(204)
-  @ApiOperation({ summary: '그룹 삭제' })
-  remove(
-    @Param('groupId') groupId: string,
-    @CurrentUser() user: User,
-  ): Promise<void> {
-    return this.groupService.remove(groupId, user.id);
-  }
-
-  @Post(':groupId/invite/refresh')
-  @HttpCode(200)
-  @ApiOperation({ summary: '초대 코드 갱신' })
-  refreshInviteCode(
-    @Param('groupId') groupId: string,
-    @CurrentUser() user: User,
-  ): Promise<{ inviteCode: string }> {
-    return this.groupService.refreshInviteCode(groupId, user.id);
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<GroupDetailDto> {
+    return this.groupService.findDetailForUser(groupId, user.id);
   }
 
   @Get(':groupId/members')
-  @ApiOperation({ summary: '그룹 멤버 조회' })
-  getMembers(
-    @Param('groupId') groupId: string,
-    @CurrentUser() user: User,
-  ): Promise<GroupMemberResponseDto[]> {
-    return this.groupService.getMembers(groupId, user.id);
+  @ApiOperation({ summary: '오가니제이션 멤버 목록' })
+  listMembers(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<GroupMemberDto[]> {
+    return this.groupService.listMembers(groupId, user.id);
   }
 
-  @Post(':groupId/members')
-  @HttpCode(200)
-  @ApiOperation({ summary: '멤버 초대' })
-  inviteMember(
-    @Param('groupId') groupId: string,
-    @CurrentUser() user: User,
+  @Patch(':groupId/settings')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '오가니제이션 설정 변경 (소유자)' })
+  updateSettings(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+    @Body() dto: UpdateGroupSettingsDto,
+  ): Promise<GroupDetailDto> {
+    return this.groupService.updateSettings(groupId, dto);
+  }
+
+  @Post(':groupId/members/invite')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '멤버 이메일 초대 (소유자)' })
+  invite(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+    @CurrentUser() user: AuthUser,
     @Body() dto: InviteMemberDto,
-  ): Promise<void> {
-    return this.groupService.inviteMember(groupId, user.id, dto.userId);
+  ): Promise<InvitationPreviewDto> {
+    return this.groupService.inviteMember(groupId, user.id, dto.email);
   }
 
   @Delete(':groupId/members/:userId')
-  @HttpCode(204)
-  @ApiOperation({ summary: '멤버 강퇴' })
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '멤버 제거 (소유자, 자기 자신 제외)' })
   removeMember(
-    @Param('groupId') groupId: string,
-    @Param('userId') targetUserId: string,
-    @CurrentUser() user: User,
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+    @Param('userId', new ParseUUIDPipe()) targetUserId: string,
+    @CurrentUser() user: AuthUser,
   ): Promise<void> {
-    return this.groupService.removeMember(groupId, user.id, targetUserId);
+    return this.groupService.removeMember(groupId, targetUserId, user.id);
   }
 }
