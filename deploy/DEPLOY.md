@@ -97,6 +97,23 @@ docker compose exec postgres pg_dump -U inos inos > backup_$(date +%Y%m%d).sql
 cat backup.sql | docker compose exec -T postgres psql -U inos -d inos
 ```
 
+## (선택) 프론트엔드를 Vercel로 분리 배포
+
+EC2의 Caddy가 웹까지 서빙하는 것이 기본 구성이지만, 프론트만 Vercel로 뺄 수도 있다.
+이 경우에도 API/socket은 EC2로 직접 붙으므로 **EC2에 HTTPS 도메인이 반드시 필요**하다
+(https 페이지가 http IP를 호출하면 브라우저가 차단).
+
+1. Vercel → Add New Project → GitHub 저장소 import
+2. **Root Directory: `apps/web`** 지정 (Framework: Vite 자동 감지, 빌드 설정은 `apps/web/vercel.json`이 처리)
+3. Environment Variables 등록:
+   - `VITE_API_URL` = `https://<EC2 도메인>/api`
+   - `VITE_AI_API_URL` = `https://<EC2 도메인>/ai`
+4. EC2의 `.env`에서 `FRONTEND_URL`을 Vercel 배포 URL로 설정 후 `docker compose up -d`
+   (OAuth 로그인 후 리다이렉트, CORS, 메일 링크가 이 값을 사용)
+5. Google Console redirect URI는 그대로 EC2 도메인: `https://<EC2 도메인>/api/auth/google/callback`
+
+master push 시 Vercel(웹)과 GitHub Actions(EC2 서버)가 각각 자동 배포된다.
+
 ## 트러블슈팅
 
 - **HTTPS 발급 실패** — DNS A 레코드 전파 확인, 보안 그룹 80/443 오픈 확인. `docker compose logs caddy`

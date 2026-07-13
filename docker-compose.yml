@@ -49,8 +49,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_CALLBACK_URL: https://${DOMAIN}/api/auth/google/callback
-      FRONTEND_URL: https://${DOMAIN}
-      CORS_ORIGIN: https://${DOMAIN}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ORIGIN: ${FRONTEND_URL}
       AI_SERVER_URL: http://ai-server:3001
       INVITATION_TTL_DAYS: 7
       SMTP_HOST: ${SMTP_HOST}
@@ -73,7 +73,7 @@ services:
       PORT: 3001
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      FRONTEND_URL: https://${DOMAIN}
+      FRONTEND_URL: ${FRONTEND_URL}
 
   caddy:
     build:
