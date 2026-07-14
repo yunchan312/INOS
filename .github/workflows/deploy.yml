@@ -21,7 +21,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @inos/types build
       - run: pnpm --filter @inos/prisma exec prisma generate
-      - run: pnpm -r type-check
+      # desktop(Electron 셸)은 서버 배포와 무관하므로 CI 타입체크에서 제외
+      - run: pnpm -r --filter '!@inos/desktop' type-check
 
   deploy:
     needs: type-check
