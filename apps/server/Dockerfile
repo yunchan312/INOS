@@ -9,6 +9,8 @@ WORKDIR /repo
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
 COPY apps/server/package.json apps/server/
 COPY packages/prisma/package.json packages/prisma/
+# prisma의 postinstall(prisma generate)이 install 중 실행되므로 스키마를 먼저 복사
+COPY packages/prisma/schema.prisma packages/prisma/
 COPY packages/types/package.json packages/types/
 COPY packages/utils/package.json packages/utils/
 RUN pnpm install --frozen-lockfile --filter @inos/server...
