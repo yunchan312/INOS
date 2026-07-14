@@ -1,0 +1,43 @@
+// Grafana Alloy — Docker 컨테이너 로그를 수집해 Grafana Cloud Loki로 전송.
+// `docker compose --profile logging up -d` 로 활성화.
+
+// 실행 중인 컨테이너 목록 발견
+discovery.docker "containers" {
+	host = "unix:///var/run/docker.sock"
+}
+
+// 컨테이너 메타데이터로 라벨 정리 (compose 서비스명을 label로)
+discovery.relabel "containers" {
+	targets = discovery.docker.containers.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		target_label  = "service"
+	}
+}
+
+// 컨테이너 로그 수집
+loki.source.docker "containers" {
+	host       = "unix:///var/run/docker.sock"
+	targets    = discovery.relabel.containers.output
+	labels     = {job = "inos"}
+	forward_to = [loki.write.grafanacloud.receiver]
+}
+
+// Grafana Cloud Loki로 전송 (자격증명은 env)
+loki.write "grafanacloud" {
+	endpoint {
+		url = sys.env("GRAFANA_LOKI_URL")
+
+		basic_auth {
+			username = sys.env("GRAFANA_LOKI_USER")
+			password = sys.env("GRAFANA_LOKI_TOKEN")
+		}
+	}
+}

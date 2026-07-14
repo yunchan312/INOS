@@ -29,6 +29,7 @@
     "@prisma/client": "^5.14.0",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
+    "@sentry/node": "^10.65.0",
     "axios": "^1.7.0",
     "bullmq": "^5.0.0",
     "class-transformer": "^0.5.1",

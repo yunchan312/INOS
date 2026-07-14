@@ -114,6 +114,41 @@ EC2의 Caddy가 웹까지 서빙하는 것이 기본 구성이지만, 프론트�
 
 master push 시 Vercel(웹)과 GitHub Actions(EC2 서버)가 각각 자동 배포된다.
 
+## 모니터링
+
+SSH 없이 로그·에러·업타임을 보기 위한 3종. 모두 자격증명이 없으면 자동으로 비활성(무해)이다.
+
+### 1. Sentry — 에러 트래킹 (권장)
+
+서버가 던지는 5xx 예외와 프론트 런타임 에러를 스택트레이스와 함께 대시보드로 모으고 알림을 보낸다.
+
+1. https://sentry.io 가입 → 프로젝트 생성 (Node 2개: server/ai-server, React 1개: web — 또는 통합 1개)
+2. 각 프로젝트의 **DSN** 복사
+3. EC2 `.env`에 `SERVER_SENTRY_DSN`, `AI_SENTRY_DSN` 설정 → `docker compose up -d`
+4. 프론트(Vercel): 환경변수 `VITE_SENTRY_DSN` 추가 후 Redeploy
+
+DSN을 비워두면 Sentry 초기화를 건너뛰므로 로컬/미설정 환경에 영향 없다.
+
+### 2. Grafana Cloud Loki — 로그 조회 (선택)
+
+`docker compose logs` 대신 웹에서 전체 컨테이너 로그를 검색·필터한다. Grafana Alloy 컨테이너가 로그를 수집해 전송한다.
+
+1. https://grafana.com 무료 가입 → Loki 스택 생성
+2. Loki 전송 정보 확인: **URL**(`https://logs-prod-xxx.grafana.net/loki/api/v1/push`), **User(instance ID)**, **API Token**
+3. EC2 `.env`에 `GRAFANA_LOKI_URL`, `GRAFANA_LOKI_USER`, `GRAFANA_LOKI_TOKEN` 설정
+4. 로그 수집 활성화: `docker compose --profile logging up -d`
+   (이 프로파일을 붙이지 않으면 Alloy는 실행되지 않는다)
+5. Grafana → Explore → Loki → `{job="inos"}` 또는 `{service="server"}` 로 조회
+
+### 3. UptimeRobot — 업타임 감시 (5분 설정)
+
+서버가 죽으면 이메일/슬랙 알림. 헬스 엔드포인트가 준비돼 있다: `GET /api/health`, `GET /ai/health` (둘 다 `{"status":"ok"}`, 인증 불필요).
+
+1. https://uptimerobot.com 가입
+2. Add New Monitor → HTTP(s)
+3. URL: `https://<DOMAIN>/api/health` (ai-server용으로 `/ai/health`도 하나 더)
+4. 간격 5분, 알림 연락처 지정 → 저장
+
 ## 트러블슈팅
 
 - **HTTPS 발급 실패** — DNS A 레코드 전파 확인, 보안 그룹 80/443 오픈 확인. `docker compose logs caddy`

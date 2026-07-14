@@ -1,9 +1,19 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react';
 import App from './App';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import './index.css';
+
+// VITE_SENTRY_DSN이 없으면 init을 건너뛴다 → Sentry 호출이 no-op
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    tracesSampleRate: 0.1,
+  });
+}
 
 document.documentElement.setAttribute('data-theme', 'inos-light');
 

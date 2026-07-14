@@ -1,9 +1,11 @@
-import { NestFactory } from '@nestjs/core';
+import './instrument';
+import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { SentryExceptionFilter } from './shared/sentry-exception.filter';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -12,6 +14,9 @@ async function bootstrap(): Promise<void> {
   );
 
   app.setGlobalPrefix('ai');
+
+  const { httpAdapter } = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new SentryExceptionFilter(httpAdapter));
 
   app.enableCors({
     origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',

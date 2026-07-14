@@ -59,6 +59,8 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       MAIL_FROM: ${MAIL_FROM}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
+      SENTRY_DSN: ${SERVER_SENTRY_DSN:-}
+      NODE_ENV: production
 
   ai-server:
     build:
@@ -74,6 +76,8 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       FRONTEND_URL: ${FRONTEND_URL}
+      SENTRY_DSN: ${AI_SENTRY_DSN:-}
+      NODE_ENV: production
 
   caddy:
     build:
@@ -92,8 +96,29 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 
+  # 로그 수집 → Grafana Cloud Loki. 옵트인: `docker compose --profile logging up -d`
+  # Grafana Cloud 자격증명(GRAFANA_* env)이 있을 때만 실행하며, 없으면 메인 스택에 영향 없음.
+  alloy:
+    image: grafana/alloy:latest
+    restart: unless-stopped
+    profiles: ['logging']
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+    environment:
+      GRAFANA_LOKI_URL: ${GRAFANA_LOKI_URL}
+      GRAFANA_LOKI_USER: ${GRAFANA_LOKI_USER}
+      GRAFANA_LOKI_TOKEN: ${GRAFANA_LOKI_TOKEN}
+    volumes:
+      - ./deploy/alloy-config.alloy:/etc/alloy/config.alloy:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy_data:/var/lib/alloy/data
+
 volumes:
   pgdata:
   redisdata:
   caddy_data:
   caddy_config:
+  alloy_data:
