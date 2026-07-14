@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "echo 'prisma package does not need build'",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:reset": "prisma migrate reset --force",

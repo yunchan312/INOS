@@ -236,3 +236,12 @@ export interface ApiResponse<T> {
   data: T | null;
   error: string | null;
 }
+
+// Paginated API response wrapper
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
