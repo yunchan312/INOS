@@ -137,7 +137,9 @@ DSN을 비워두면 Sentry 초기화를 건너뛰므로 로컬/미설정 환경�
 2. Loki 전송 정보 확인: **URL**(`https://logs-prod-xxx.grafana.net/loki/api/v1/push`), **User(instance ID)**, **API Token**
 3. EC2 `.env`에 `GRAFANA_LOKI_URL`, `GRAFANA_LOKI_USER`, `GRAFANA_LOKI_TOKEN` 설정
 4. 로그 수집 활성화: `docker compose --profile logging up -d`
-   (이 프로파일을 붙이지 않으면 Alloy는 실행되지 않는다)
+   (이 프로파일을 붙이지 않으면 Alloy는 실행되지 않는다.
+   GitHub Actions 자동 배포는 이 프로파일을 포함하므로 배포 후에도 유지된다 —
+   단, `.env`에 GRAFANA_* 값이 채워져 있어야 Alloy가 정상 기동한다)
 5. Grafana → Explore → Loki → `{job="inos"}` 또는 `{service="server"}` 로 조회
 
 ### 3. UptimeRobot — 업타임 감시 (5분 설정)

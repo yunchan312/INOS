@@ -40,5 +40,5 @@ jobs:
             cd ~/INOS
             git fetch origin master
             git reset --hard origin/master
-            docker compose up -d --build
+            docker compose --profile logging up -d --build
             docker image prune -f
