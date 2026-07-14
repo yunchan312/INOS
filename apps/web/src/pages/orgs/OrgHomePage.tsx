@@ -7,6 +7,7 @@ import { useMeetings } from '@/hooks/useMeetings';
 import { useRemoveMember } from '@/hooks/useRemoveMember';
 import { useOrgEvents } from '@/hooks/useOrgEvents';
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { Card } from '@/components/Card';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
@@ -51,6 +52,17 @@ function partitionMeetings(meetings: MeetingDto[] | undefined): Sections {
   return { today, upcoming, past };
 }
 
+function SectionLabel({ num, children }: { num: string; children: string }) {
+  return (
+    <div className="flex items-baseline gap-3 mb-4">
+      <span className="text-xs font-bold uppercase tracking-[0.16em]">{num}</span>
+      <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted whitespace-nowrap">
+        {children}
+      </h2>
+    </div>
+  );
+}
+
 export default function OrgHomePage() {
   const { orgId } = useParams<{ orgId: string }>();
   const { isAuthenticated } = useAuth();
@@ -78,9 +90,9 @@ export default function OrgHomePage() {
   );
 
   return (
-    <div className="min-h-dvh bg-neutral-50">
+    <div className="min-h-dvh bg-paper flex flex-col">
       <Header />
-      <main className="mx-auto max-w-3xl px-4 pt-6 pb-nav-safe page-enter">
+      <main className="mx-auto max-w-3xl w-full flex-1 px-6 pt-10 page-enter">
         {orgQuery.isLoading && (
           <div className="space-y-3">
             <Skeleton className="h-8 w-40" />
@@ -90,38 +102,41 @@ export default function OrgHomePage() {
 
         {orgQuery.data && (
           <>
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-4 pb-6 border-b-2 border-ink">
               <div>
-                <h1 className="text-2xl font-semibold text-neutral-900">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  오가니제이션
+                </p>
+                <h1 className="mt-2.5 text-[clamp(30px,5vw,48px)] font-extrabold tracking-tight">
                   {orgQuery.data.name}
                 </h1>
                 {orgQuery.data.description && (
-                  <p className="mt-1 text-sm text-neutral-500">
-                    {orgQuery.data.description}
+                  <p className="mt-2 text-sm text-muted">
+                    {orgQuery.data.description} · {orgQuery.data.members.length}명
                   </p>
                 )}
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-xs text-neutral-500">
-                  {orgQuery.data.members.length}명
-                </span>
-                {isOwner && (
-                  <Link
-                    to={`/orgs/${orgId}/settings`}
-                    className="text-xs text-neutral-500 hover:text-neutral-800"
-                  >
-                    설정
+              {isOwner && (
+                <div className="flex gap-2">
+                  <Link to={`/orgs/${orgId}/meetings/new`}>
+                    <Button variant="primary" size="md">
+                      <span className="whitespace-nowrap">새 모임 만들기</span>
+                      <span aria-hidden="true">＋</span>
+                    </Button>
                   </Link>
-                )}
-              </div>
+                  <Link to={`/orgs/${orgId}/settings`}>
+                    <Button variant="outline" size="md">
+                      설정
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
 
             {sections.today.length > 0 && (
-              <section className="mt-6">
-                <h2 className="text-sm font-medium text-neutral-500 mb-2">
-                  오늘 모임
-                </h2>
-                <div className="space-y-2">
+              <section className="mt-10">
+                <SectionLabel num="01">오늘 모임</SectionLabel>
+                <div className="space-y-3">
                   {sections.today.map((m) => (
                     <MeetingCard key={m.id} meeting={m} orgId={orgId as string} />
                   ))}
@@ -129,15 +144,13 @@ export default function OrgHomePage() {
               </section>
             )}
 
-            <section className="mt-8">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-medium text-neutral-500">
-                  예정된 모임
-                </h2>
+            <section className="mt-10">
+              <div className="flex items-center justify-between mb-4">
+                <SectionLabel num="02">예정된 모임</SectionLabel>
                 {isOwner && (
                   <Link
                     to={`/orgs/${orgId}/meetings/new`}
-                    className="text-xs text-neutral-800 underline underline-offset-2"
+                    className="text-xs font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
                   >
                     + 새 모임
                   </Link>
@@ -164,7 +177,7 @@ export default function OrgHomePage() {
                   />
                 </Card>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {sections.upcoming.map((m) => (
                     <MeetingCard
                       key={m.id}
@@ -178,11 +191,9 @@ export default function OrgHomePage() {
             </section>
 
             {sections.past.length > 0 && (
-              <section className="mt-8">
-                <h2 className="text-sm font-medium text-neutral-500 mb-2">
-                  지난 모임
-                </h2>
-                <div className="space-y-2">
+              <section className="mt-10">
+                <SectionLabel num="03">지난 모임</SectionLabel>
+                <div className="space-y-3">
                   {sections.past.map((m) => (
                     <MeetingCard key={m.id} meeting={m} orgId={orgId as string} />
                   ))}
@@ -190,47 +201,49 @@ export default function OrgHomePage() {
               </section>
             )}
 
-            <section className="mt-8">
-              <h2 className="text-sm font-medium text-neutral-500 mb-2">멤버</h2>
-              <Card>
-                <ul className="divide-y divide-neutral-100">
-                  {orgQuery.data.members.map((m) => (
-                    <li key={m.id} className="py-3 flex items-center gap-3">
-                      {m.profileImageUrl ? (
-                        <img
-                          src={m.profileImageUrl}
-                          alt={m.nickname}
-                          className="w-9 h-9 rounded-full object-cover border border-neutral-200"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-neutral-200 flex items-center justify-center text-sm">
-                          {m.nickname[0]}
-                        </div>
-                      )}
-                      <span className="flex-1 text-sm text-neutral-900">
-                        {m.nickname}
-                      </span>
-                      <span className="text-xs text-neutral-500">
-                        {m.role === 'OWNER' ? '소유자' : '멤버'}
-                      </span>
-                      {isOwner && m.role !== 'OWNER' && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMember(m.userId, m.nickname)}
-                          disabled={removeMember.isPending}
-                          className="text-xs text-red-500 hover:text-red-600 underline underline-offset-2 disabled:opacity-50"
-                        >
-                          퇴장
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
+            <section className="mt-10">
+              <SectionLabel num="04">{`멤버 · ${orgQuery.data.members.length}`}</SectionLabel>
+              <div className="border-t-2 border-ink">
+                {orgQuery.data.members.map((m) => (
+                  <div
+                    key={m.id}
+                    className="py-3.5 border-b border-line flex items-center gap-3.5"
+                  >
+                    {m.profileImageUrl ? (
+                      <img
+                        src={m.profileImageUrl}
+                        alt={m.nickname}
+                        className="w-[34px] h-[34px] object-cover border-2 border-ink shrink-0"
+                      />
+                    ) : (
+                      <div className="w-[34px] h-[34px] bg-ink text-point flex items-center justify-center text-[13px] font-bold shrink-0">
+                        {m.nickname[0]}
+                      </div>
+                    )}
+                    <span className="flex-1 text-sm font-medium">
+                      {m.nickname}
+                    </span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted whitespace-nowrap">
+                      {m.role === 'OWNER' ? '소유자' : '멤버'}
+                    </span>
+                    {isOwner && m.role !== 'OWNER' && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMember(m.userId, m.nickname)}
+                        disabled={removeMember.isPending}
+                        className="text-xs font-medium text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2 disabled:opacity-50"
+                      >
+                        퇴장
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </section>
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

@@ -10,6 +10,8 @@ interface CalendarProps {
   minDate?: string;
   maxDate?: string;
   initialMonth?: string; // YYYY-MM
+  /** 날짜별 배지 숫자 (예: 그 날짜를 선택한 다른 멤버 수) */
+  badges?: Record<string, number>;
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -43,6 +45,7 @@ export function Calendar({
   minDate,
   maxDate,
   initialMonth,
+  badges,
 }: CalendarProps) {
   const initial = useMemo(() => {
     if (initialMonth) return firstOfMonth(initialMonth + '-01');
@@ -112,7 +115,7 @@ export function Calendar({
 
   return (
     <div className="select-none">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <button
           type="button"
           onClick={() =>
@@ -122,11 +125,11 @@ export function Calendar({
             )
           }
           disabled={!canGoPrev}
-          className="w-8 h-8 rounded-lg text-neutral-500 hover:bg-neutral-100 disabled:opacity-30"
+          className="w-10 h-10 border-2 border-ink text-ink font-bold hover:bg-ink/[0.06] disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ‹
         </button>
-        <span className="text-sm font-medium text-neutral-900">
+        <span className="text-base font-bold tracking-wide">
           {isoMonth(monthAnchor).replace('-', '년 ')}월
         </span>
         <button
@@ -138,21 +141,34 @@ export function Calendar({
             )
           }
           disabled={!canGoNext}
-          className="w-8 h-8 rounded-lg text-neutral-500 hover:bg-neutral-100 disabled:opacity-30"
+          className="w-10 h-10 border-2 border-ink text-ink font-bold hover:bg-ink/[0.06] disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ›
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-neutral-400 mb-1">
+      <div className="grid grid-cols-7 border-t-2 border-l-2 border-ink">
         {WEEKDAYS.map((w) => (
-          <div key={w}>{w}</div>
+          <div
+            key={w}
+            className="py-2 text-center text-[11px] font-bold tracking-[0.1em] border-r-2 border-b-2 border-ink bg-ink text-paper"
+          >
+            {w}
+          </div>
         ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1">
         {cells.map((cell, idx) => {
-          if (!cell) return <div key={idx} className="h-10" />;
+          if (!cell) {
+            return (
+              <div
+                key={idx}
+                className="h-[52px] border-r-2 border-b-2 border-ink"
+                style={{
+                  background:
+                    'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(32,30,29,0.08) 5px, rgba(32,30,29,0.08) 6px)',
+                }}
+              />
+            );
+          }
           const inRange =
             (!minD || parseIsoLocal(cell.iso) >= minD) &&
             (!maxD || parseIsoLocal(cell.iso) <= maxD);
@@ -161,18 +177,18 @@ export function Calendar({
           const isSingle = singleSelected === cell.iso;
           const disabled = !inRange;
 
+          const badge = !disabled ? (badges?.[cell.iso] ?? 0) : 0;
+
           const classes = [
-            'h-10 rounded-lg text-sm flex items-center justify-center transition-colors',
+            'relative h-[52px] border-r-2 border-b-2 border-ink text-sm flex items-center justify-center transition-colors',
             disabled
-              ? 'text-neutral-300 cursor-not-allowed'
+              ? 'text-line cursor-not-allowed'
               : mode === 'multi-select'
-                ? 'cursor-pointer hover:bg-neutral-100'
-                : 'text-neutral-800',
-            isSelected
-              ? 'bg-[color:var(--color-point)] text-neutral-900 font-medium hover:brightness-95'
-              : '',
+                ? 'cursor-pointer hover:bg-ink/[0.06]'
+                : 'text-ink',
+            isSelected ? 'bg-point text-ink font-bold' : 'bg-paper',
             !isSelected && (isHighlighted || isSingle)
-              ? 'ring-2 ring-[color:var(--color-point)] font-medium text-neutral-900'
+              ? 'ring-2 ring-inset ring-point font-bold text-ink'
               : '',
           ]
             .filter(Boolean)
@@ -187,6 +203,15 @@ export function Calendar({
               className={classes}
             >
               {cell.day}
+              {badge > 0 && (
+                <span
+                  className={`absolute top-1 right-1.5 text-[10px] font-bold leading-none ${
+                    isSelected ? 'text-ink' : 'text-muted'
+                  }`}
+                >
+                  {badge}
+                </span>
+              )}
             </button>
           );
         })}

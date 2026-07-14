@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMe } from '@/hooks/useMe';
 import { adminApi } from '@/api/endpoints/admin';
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Skeleton } from '@/components/Skeleton';
@@ -23,8 +24,7 @@ function extractErrorMessage(e: unknown): string {
   return '요청에 실패했어요. 다시 시도해주세요.';
 }
 
-const inputClass =
-  'w-full rounded-lg border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:border-neutral-400 focus:outline-none';
+const inputClass = 'input-underline text-sm';
 
 function Pagination({
   page,
@@ -45,18 +45,18 @@ function Pagination({
         type="button"
         onClick={() => onChange(page - 1)}
         disabled={page <= 1}
-        className="text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-30"
+        className="text-sm font-medium text-muted hover:text-ink disabled:opacity-30"
       >
         ← 이전
       </button>
-      <span className="text-xs text-neutral-500">
+      <span className="text-xs text-muted">
         {page} / {totalPages} 페이지 · 총 {total}개
       </span>
       <button
         type="button"
         onClick={() => onChange(page + 1)}
         disabled={page >= totalPages}
-        className="text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-30"
+        className="text-sm font-medium text-muted hover:text-ink disabled:opacity-30"
       >
         다음 →
       </button>
@@ -119,21 +119,21 @@ function CreateOrgForm() {
   return (
     <div className="space-y-4">
       {created && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm">
-          <p className="font-medium text-green-800">
+        <div className="border-2 border-ink bg-point/20 p-4 text-sm">
+          <p className="font-bold">
             「{created.name}」 생성 완료
           </p>
-          <p className="mt-1 text-green-700">
+          <p className="mt-1 text-muted-2">
             소유자: {created.ownerNickname} ({created.ownerEmail}) — 알림 메일을
             보냈어요.
           </p>
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
-            오가니제이션 이름 <span className="text-red-500">*</span>
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+            오가니제이션 이름 <span className="text-danger">*</span>
           </label>
           <input
             type="text"
@@ -145,7 +145,7 @@ function CreateOrgForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
             설명
           </label>
           <textarea
@@ -158,8 +158,8 @@ function CreateOrgForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
-            소유자 이메일 <span className="text-red-500">*</span>
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+            소유자 이메일 <span className="text-danger">*</span>
           </label>
           <input
             type="email"
@@ -168,12 +168,12 @@ function CreateOrgForm() {
             placeholder="owner@example.com"
             className={inputClass}
           />
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="mt-1 text-xs text-muted">
             한 번 이상 로그인한 적 있는 계정이어야 해요.
           </p>
         </div>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <Button
           variant="primary"
@@ -239,7 +239,7 @@ function OrgRow({ org }: { org: AdminOrgDto }) {
             rows={2}
             className={`${inputClass} resize-none`}
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex gap-2">
             <Button
               variant="primary"
@@ -272,13 +272,13 @@ function OrgRow({ org }: { org: AdminOrgDto }) {
     <Card>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium text-neutral-900">{org.name}</p>
+          <p className="font-bold">{org.name}</p>
           {org.description && (
-            <p className="mt-0.5 text-sm text-neutral-500 line-clamp-1">
+            <p className="mt-0.5 text-sm text-muted line-clamp-1">
               {org.description}
             </p>
           )}
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="mt-1 text-xs text-muted">
             소유자 {org.ownerNickname} ({org.ownerEmail}) · 멤버{' '}
             {org.memberCount}명 · 모임 {org.meetingCount}회
           </p>
@@ -292,7 +292,7 @@ function OrgRow({ org }: { org: AdminOrgDto }) {
                 loading={deleteMutation.isPending}
                 onClick={() => deleteMutation.mutate()}
               >
-                <span className="text-red-600">정말 삭제</span>
+                <span className="text-danger">정말 삭제</span>
               </Button>
               <Button
                 variant="ghost"
@@ -312,14 +312,14 @@ function OrgRow({ org }: { org: AdminOrgDto }) {
                 size="sm"
                 onClick={() => setConfirmingDelete(true)}
               >
-                <span className="text-red-600">삭제</span>
+                <span className="text-danger">삭제</span>
               </Button>
             </>
           )}
         </div>
       </div>
       {error && !editing && (
-        <p className="mt-2 text-sm text-red-500">{error}</p>
+        <p className="mt-2 text-sm text-danger">{error}</p>
       )}
     </Card>
   );
@@ -390,7 +390,7 @@ function OrgManageSection() {
         ))}
 
       {orgsQuery.isError && (
-        <p className="text-sm text-red-500">목록을 불러오지 못했어요.</p>
+        <p className="text-sm text-danger">목록을 불러오지 못했어요.</p>
       )}
 
       {orgsQuery.data && orgsQuery.data.items.length === 0 && (
@@ -493,7 +493,7 @@ function UserManageSection({ myId }: { myId: string }) {
 
       <div className="flex items-center gap-3">
         <div className="flex-1">
-          <label className="block text-xs text-neutral-500 mb-1">
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
             가입일 (이후)
           </label>
           <input
@@ -514,13 +514,13 @@ function UserManageSection({ myId }: { myId: string }) {
               setAdminOnly(e.target.checked);
               setPage(1);
             }}
-            className="rounded border-neutral-300"
+            className="border-ink"
           />
-          <span className="text-sm text-neutral-700">관리자만</span>
+          <span className="text-sm font-medium">관리자만</span>
         </label>
       </div>
 
-      {actionError && <p className="text-sm text-red-500">{actionError}</p>}
+      {actionError && <p className="text-sm text-danger">{actionError}</p>}
 
       {usersQuery.isLoading &&
         Array.from({ length: 3 }).map((_, i) => (
@@ -528,7 +528,7 @@ function UserManageSection({ myId }: { myId: string }) {
         ))}
 
       {usersQuery.isError && (
-        <p className="text-sm text-red-500">목록을 불러오지 못했어요.</p>
+        <p className="text-sm text-danger">목록을 불러오지 못했어요.</p>
       )}
 
       {usersQuery.data && usersQuery.data.items.length === 0 && (
@@ -540,32 +540,32 @@ function UserManageSection({ myId }: { myId: string }) {
 
       {usersQuery.data && usersQuery.data.items.length > 0 && (
         <Card>
-          <ul className="divide-y divide-neutral-100">
+          <ul className="divide-y divide-line">
             {usersQuery.data.items.map((u) => (
               <li key={u.id} className="py-3 flex items-center gap-3">
                 {u.profileImageUrl ? (
                   <img
                     src={u.profileImageUrl}
                     alt={u.nickname}
-                    className="w-9 h-9 rounded-full object-cover border border-neutral-200"
+                    className="w-9 h-9 object-cover border-2 border-ink"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-neutral-200 flex items-center justify-center text-sm">
+                  <div className="w-9 h-9 bg-ink text-point flex items-center justify-center text-sm font-bold">
                     {u.nickname[0]}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-neutral-900 truncate">
+                  <p className="text-sm truncate">
                     {u.nickname}
                     {u.isAdmin && (
-                      <span className="ml-2 text-[10px] bg-neutral-900 text-white px-1.5 py-0.5 rounded-full align-middle">
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-[0.06em] bg-ink text-point px-1.5 py-0.5 align-middle">
                         관리자
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-neutral-500 truncate">{u.email}</p>
+                  <p className="text-xs text-muted truncate">{u.email}</p>
                 </div>
-                <div className="shrink-0 text-right text-xs text-neutral-500">
+                <div className="shrink-0 text-right text-xs text-muted">
                   <p>오가니제이션 {u.orgCount}개</p>
                   <p>{new Date(u.createdAt).toLocaleDateString('ko-KR')} 가입</p>
                 </div>
@@ -575,7 +575,7 @@ function UserManageSection({ myId }: { myId: string }) {
                       type="button"
                       onClick={() => handleToggleAdmin(u.id, u.nickname, !u.isAdmin)}
                       disabled={setAdminMutation.isPending}
-                      className="text-neutral-500 hover:text-neutral-800 underline underline-offset-2 disabled:opacity-50"
+                      className="font-medium text-muted border-b border-muted hover:text-ink hover:border-ink disabled:opacity-50"
                     >
                       {u.isAdmin ? '관리자 해제' : '관리자 부여'}
                     </button>
@@ -583,7 +583,7 @@ function UserManageSection({ myId }: { myId: string }) {
                       type="button"
                       onClick={() => handleDelete(u.id, u.nickname)}
                       disabled={deleteMutation.isPending}
-                      className="text-red-500 hover:text-red-600 underline underline-offset-2 disabled:opacity-50"
+                      className="font-medium text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2 disabled:opacity-50"
                     >
                       삭제
                     </button>
@@ -625,9 +625,9 @@ export default function AdminPage() {
 
   if (meQuery.isLoading || !meQuery.data?.isAdmin) {
     return (
-      <div className="min-h-dvh bg-neutral-50">
+      <div className="min-h-dvh bg-paper">
         <Header />
-        <main className="mx-auto max-w-3xl px-4 pt-6 pb-safe">
+        <main className="mx-auto max-w-3xl px-6 pt-10 pb-safe">
           <Skeleton className="h-40" />
         </main>
       </div>
@@ -641,13 +641,15 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="min-h-dvh bg-neutral-50">
+    <div className="min-h-dvh bg-paper flex flex-col">
       <Header />
-      <main className="mx-auto max-w-3xl px-4 pt-6 pb-safe page-enter">
-        <h2 className="text-xl font-semibold text-neutral-900">관리자</h2>
-        <p className="text-sm text-neutral-500 mt-1">
-          INOS 운영 도구 모음이에요.
+      <main className="mx-auto max-w-3xl w-full flex-1 px-6 pt-10 page-enter">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+          관리자
         </p>
+        <h2 className="mt-2.5 text-[clamp(28px,4vw,40px)] font-extrabold tracking-tight">
+          운영 도구
+        </h2>
 
         <div className="mt-6 flex gap-2">
           {menus.map((menu) => (
@@ -655,10 +657,10 @@ export default function AdminPage() {
               key={menu.key}
               type="button"
               onClick={() => setActiveMenu(menu.key)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              className={`border-2 px-4 py-2 text-sm font-bold transition-colors ${
                 activeMenu === menu.key
-                  ? 'bg-neutral-900 text-white'
-                  : 'bg-white text-neutral-600 border border-neutral-200 hover:border-neutral-400'
+                  ? 'bg-ink border-ink text-paper'
+                  : 'bg-transparent border-ink text-ink hover:bg-ink/[0.06]'
               }`}
             >
               {menu.label}
@@ -666,12 +668,12 @@ export default function AdminPage() {
           ))}
         </div>
 
-        <section className="mt-4">
+        <section className="mt-6">
           {activeMenu === 'orgs' && <OrgManageSection />}
           {activeMenu === 'users' && <UserManageSection myId={meQuery.data.id} />}
           {activeMenu === 'create-org' && (
             <Card>
-              <h3 className="font-medium text-neutral-900 mb-4">
+              <h3 className="font-bold mb-4">
                 새 오가니제이션 만들기
               </h3>
               <CreateOrgForm />
@@ -679,6 +681,7 @@ export default function AdminPage() {
           )}
         </section>
       </main>
+      <Footer />
     </div>
   );
 }

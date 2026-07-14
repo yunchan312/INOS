@@ -26,20 +26,20 @@ export function ErrorPage({
   const isDev = import.meta.env.DEV;
 
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center bg-neutral-50 px-6 pt-safe pb-safe">
+    <main className="min-h-dvh flex flex-col items-center justify-center bg-paper px-6 pt-safe pb-safe">
       <div className="w-full max-w-sm text-center page-enter">
         {code && (
-          <p className="text-5xl font-bold tracking-tight text-neutral-300">
+          <p className="text-5xl font-extrabold tracking-tight text-line">
             {code}
           </p>
         )}
-        <h1 className="mt-4 text-2xl font-bold tracking-tight text-neutral-900">
+        <h1 className="mt-4 text-2xl font-extrabold tracking-tight">
           {title}
         </h1>
-        <p className="mt-3 text-sm text-neutral-500">{description}</p>
+        <p className="mt-3 text-sm text-muted">{description}</p>
 
         {isDev && detail && (
-          <pre className="mt-6 max-h-40 overflow-auto rounded-lg bg-neutral-100 p-3 text-left text-xs text-red-600 whitespace-pre-wrap break-words">
+          <pre className="mt-6 max-h-40 overflow-auto border-2 border-ink bg-white p-3 text-left text-xs text-danger whitespace-pre-wrap break-words">
             {detail}
           </pre>
         )}

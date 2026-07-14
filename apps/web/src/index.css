@@ -3,6 +3,15 @@
 
 @theme {
   --color-point: #ffdf05;
+  --color-point-hover: #f0d000;
+  --color-ink: #201e1d;
+  --color-paper: #f3f2f2;
+  --color-muted: #6b6963;
+  --color-muted-2: #45433f;
+  --color-line: #b5b3ae;
+  --color-danger: #a3271b;
+  --color-danger-2: #7c1d13;
+  --font-sans: "Archivo", "Pretendard Variable", Pretendard, sans-serif;
 }
 
 /* ─── Base ──────────────────────────────────────────────────────── */
@@ -15,11 +24,31 @@
 
   body {
     overflow-x: hidden;
+    margin: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
   }
 
   * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  input,
+  textarea {
+    font-family: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-point);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-point);
+    color: var(--color-ink);
   }
 }
 
@@ -83,20 +112,21 @@
   /* Underline-style input */
   .input-underline {
     border: none;
-    border-bottom: 1.5px solid oklch(88% 0.005 80);
+    border-bottom: 2px solid var(--color-ink);
     border-radius: 0;
     outline: none;
     background: transparent;
+    color: var(--color-ink);
     padding-block: 8px;
     width: 100%;
     transition: border-color 200ms ease;
     appearance: none;
   }
   .input-underline:focus {
-    border-bottom-color: oklch(42% 0.15 90);
+    border-bottom-color: var(--color-point);
   }
   .input-underline::placeholder {
-    color: oklch(70% 0.003 80);
+    color: var(--color-muted);
   }
 
   /* Timeline vertical rule */

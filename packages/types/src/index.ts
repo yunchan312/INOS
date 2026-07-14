@@ -149,6 +149,17 @@ export interface UpdateMeetingDto {
   confirmedDate?: string;
 }
 
+export interface MeetingResponderDto {
+  userId: string;
+  nickname: string;
+  availableDates: string[];
+}
+
+export interface MeetingNonResponderDto {
+  userId: string;
+  nickname: string;
+}
+
 export interface MeetingDto {
   id: string;
   groupId: string;
@@ -169,6 +180,10 @@ export interface MeetingDto {
   myAvailability: string[] | null;
   /** 조율 중 날짜별 가능 인원 (PENDING일 때만) */
   dateCounts: Record<string, number> | null;
+  /** 조율 중 멤버별 응답 (PENDING일 때만) */
+  responses: MeetingResponderDto[] | null;
+  /** 조율 중 미응답 멤버 (PENDING일 때만) */
+  nonResponders: MeetingNonResponderDto[] | null;
 }
 
 export interface SubmitAvailabilityDto {

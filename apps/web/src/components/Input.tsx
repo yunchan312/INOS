@@ -13,7 +13,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div>
       {label && (
-        <label className="block text-xs font-medium text-neutral-500 mb-1">
+        <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
           {label}
         </label>
       )}
@@ -23,9 +23,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {...rest}
       />
       {hint && !error && (
-        <p className="mt-1 text-xs text-neutral-400">{hint}</p>
+        <p className="mt-1 text-xs text-muted">{hint}</p>
       )}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
     </div>
   );
 });
@@ -41,7 +41,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div>
         {label && (
-          <label className="block text-xs font-medium text-neutral-500 mb-1">
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
             {label}
           </label>
         )}
@@ -53,9 +53,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...rest}
         />
         {hint && !error && (
-          <p className="mt-1 text-xs text-neutral-400">{hint}</p>
+          <p className="mt-1 text-xs text-muted">{hint}</p>
         )}
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   },

@@ -19,6 +19,8 @@ const AcceptInvitePage = lazy(
   () => import('@/pages/invitations/AcceptInvitePage'),
 );
 const AdminPage = lazy(() => import('@/pages/admin/AdminPage'));
+const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'));
+const TermsPage = lazy(() => import('@/pages/legal/TermsPage'));
 
 const fallback = (
   <div className="min-h-dvh flex items-center justify-center bg-base-100">
@@ -52,6 +54,8 @@ export const router = createBrowserRouter([
       },
       { path: '/invitations/:token', element: suspend(<AcceptInvitePage />) },
       { path: '/admin', element: suspend(<AdminPage />) },
+      { path: '/privacy', element: suspend(<PrivacyPage />) },
+      { path: '/terms', element: suspend(<TermsPage />) },
       { path: '*', element: suspend(<NotFoundPage />) },
     ],
   },

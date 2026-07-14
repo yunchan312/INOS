@@ -4,6 +4,6 @@ interface SkeletonProps {
 
 export function Skeleton({ className = '' }: SkeletonProps) {
   return (
-    <div className={['skeleton-shimmer rounded-md', className].join(' ').trim()} />
+    <div className={['skeleton-shimmer', className].join(' ').trim()} />
   );
 }

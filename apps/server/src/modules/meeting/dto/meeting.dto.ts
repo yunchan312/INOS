@@ -94,6 +94,25 @@ export class SubmitAvailabilityDto {
   availableDates!: string[];
 }
 
+export class MeetingResponderDto {
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  nickname!: string;
+
+  @ApiProperty({ type: [String] })
+  availableDates!: string[];
+}
+
+export class MeetingNonResponderDto {
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  nickname!: string;
+}
+
 export class MeetingResponseDto {
   @ApiProperty()
   id!: string;
@@ -152,6 +171,22 @@ export class MeetingResponseDto {
     description: '조율 중 날짜별 가능 인원 (PENDING일 때만)',
   })
   dateCounts!: Record<string, number> | null;
+
+  @ApiProperty({
+    type: [MeetingResponderDto],
+    required: false,
+    nullable: true,
+    description: '조율 중 멤버별 응답 (PENDING일 때만)',
+  })
+  responses!: MeetingResponderDto[] | null;
+
+  @ApiProperty({
+    type: [MeetingNonResponderDto],
+    required: false,
+    nullable: true,
+    description: '조율 중 미응답 멤버 (PENDING일 때만)',
+  })
+  nonResponders!: MeetingNonResponderDto[] | null;
 }
 
 export class SubmitAvailabilityResponseDto {

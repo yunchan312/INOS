@@ -31,10 +31,16 @@ interface MeetingWithAvailability {
   meeting: Prisma.MeetingGetPayload<{
     include: {
       discussion: { select: { id: true } };
-      availabilities: { select: { userId: true; availableDates: true } };
+      availabilities: {
+        select: {
+          userId: true;
+          availableDates: true;
+          user: { select: { nickname: true } };
+        };
+      };
     };
   }>;
-  memberCount: number;
+  members: { userId: string; nickname: string }[];
 }
 
 @Injectable()
@@ -95,18 +101,34 @@ export class MeetingService {
 
   async list(groupId: string, userId: string): Promise<MeetingResponseDto[]> {
     await this.groupService.assertMember(groupId, userId);
-    const memberCount = await this.prisma.groupMember.count({ where: { groupId } });
+    const members = await this.loadMembers(groupId);
 
     const meetings = await this.prisma.meeting.findMany({
       where: { groupId },
       orderBy: [{ confirmedDate: 'desc' }, { createdAt: 'desc' }],
       include: {
         discussion: { select: { id: true } },
-        availabilities: { select: { userId: true, availableDates: true } },
+        availabilities: {
+          select: {
+            userId: true,
+            availableDates: true,
+            user: { select: { nickname: true } },
+          },
+        },
       },
     });
 
-    return meetings.map((m) => this.toDto({ meeting: m, memberCount }, userId));
+    return meetings.map((m) => this.toDto({ meeting: m, members }, userId));
+  }
+
+  private async loadMembers(
+    groupId: string,
+  ): Promise<{ userId: string; nickname: string }[]> {
+    const members = await this.prisma.groupMember.findMany({
+      where: { groupId },
+      select: { userId: true, user: { select: { nickname: true } } },
+    });
+    return members.map((m) => ({ userId: m.userId, nickname: m.user.nickname }));
   }
 
   async findOne(
@@ -133,7 +155,13 @@ export class MeetingService {
       ? this.parseDateOnly(dto.confirmedDate)
       : meeting.confirmedDate;
 
-    if (confirmedDate) {
+    // 조율 중(PENDING) 확정은 후보 기간 안에서만.
+    // 이미 확정된 모임의 일정 변경은 소유자가 자유롭게.
+    if (
+      dto.confirmedDate &&
+      confirmedDate &&
+      meeting.status === MeetingStatus.PENDING
+    ) {
       const from = meeting.candidateFrom;
       const to = meeting.candidateTo;
       if (confirmedDate < from || confirmedDate > to) {
@@ -367,21 +395,30 @@ export class MeetingService {
       where: { id: meetingId },
       include: {
         discussion: { select: { id: true } },
-        availabilities: { select: { userId: true, availableDates: true } },
+        availabilities: {
+          select: {
+            userId: true,
+            availableDates: true,
+            user: { select: { nickname: true } },
+          },
+        },
       },
     });
     if (!meeting || meeting.groupId !== groupId) {
       throw new NotFoundException('모임을 찾을 수 없습니다');
     }
-    const memberCount = await this.prisma.groupMember.count({ where: { groupId } });
-    return this.toDto({ meeting, memberCount }, userId);
+    const members = await this.loadMembers(groupId);
+    return this.toDto({ meeting, members }, userId);
   }
 
   private toDto(
-    { meeting, memberCount }: MeetingWithAvailability,
+    { meeting, members }: MeetingWithAvailability,
     userId: string,
   ): MeetingResponseDto {
+    const memberCount = members.length;
     const mine = meeting.availabilities.find((a) => a.userId === userId);
+    const isPending = meeting.status === MeetingStatus.PENDING;
+    const respondedIds = new Set(meeting.availabilities.map((a) => a.userId));
     return {
       id: meeting.id,
       groupId: meeting.groupId,
@@ -401,8 +438,7 @@ export class MeetingService {
       discussionId: meeting.discussion?.id ?? null,
       myAvailability: (mine?.availableDates as string[] | undefined) ?? null,
       dateCounts:
-        meeting.status === MeetingStatus.PENDING &&
-        meeting.availabilities.length > 0
+        isPending && meeting.availabilities.length > 0
           ? Object.fromEntries(
               this.countDates(
                 meeting.availabilities.map((a) => a.availableDates as string[]),
@@ -411,6 +447,16 @@ export class MeetingService {
               ),
             )
           : null,
+      responses: isPending
+        ? meeting.availabilities.map((a) => ({
+            userId: a.userId,
+            nickname: a.user.nickname,
+            availableDates: (a.availableDates as string[]) ?? [],
+          }))
+        : null,
+      nonResponders: isPending
+        ? members.filter((m) => !respondedIds.has(m.userId))
+        : null,
     };
   }
 

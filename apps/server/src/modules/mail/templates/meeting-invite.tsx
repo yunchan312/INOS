@@ -1,14 +1,14 @@
+import { Section, Text } from '@react-email/components';
 import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Section,
-  Text,
-} from '@react-email/components';
+  bodyText,
+  Cta,
+  EmailShell,
+  formatKoreanDate,
+  GreetingQuote,
+  InfoBox,
+  INK,
+  MUTED,
+} from './email-shell';
 
 export interface MeetingInviteProps {
   toName: string;
@@ -23,80 +23,6 @@ export interface MeetingInviteProps {
   availabilityUrl: string;
 }
 
-const styles = {
-  body: {
-    backgroundColor: '#FAFAF8',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    padding: '32px 0',
-  } as const,
-  container: {
-    backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    margin: '0 auto',
-    padding: '32px',
-    maxWidth: '480px',
-  } as const,
-  heading: {
-    fontSize: '20px',
-    fontWeight: 600,
-    color: '#111111',
-    margin: '0 0 8px',
-  } as const,
-  text: {
-    fontSize: '15px',
-    lineHeight: '1.6',
-    color: '#333333',
-    margin: '0 0 16px',
-  } as const,
-  contentRow: {
-    fontSize: '15px',
-    lineHeight: '1.6',
-    color: '#111111',
-    margin: '0 0 8px',
-  } as const,
-  muted: {
-    fontSize: '13px',
-    color: '#888888',
-    margin: '24px 0 0',
-  } as const,
-  greeting: {
-    fontSize: '15px',
-    lineHeight: '1.6',
-    color: '#555555',
-    fontStyle: 'italic',
-    borderLeft: '3px solid #FFDF05',
-    paddingLeft: '12px',
-    margin: '0 0 24px',
-  } as const,
-  contentBox: {
-    backgroundColor: '#FAFAF8',
-    borderRadius: '10px',
-    padding: '16px 20px',
-    margin: '16px 0',
-  } as const,
-  button: {
-    backgroundColor: '#FFDF05',
-    color: '#111111',
-    padding: '12px 24px',
-    borderRadius: '10px',
-    fontWeight: 600,
-    fontSize: '15px',
-    textDecoration: 'none',
-    display: 'inline-block',
-  } as const,
-  buttonSection: {
-    margin: '24px 0',
-    textAlign: 'center',
-  } as const,
-};
-
-function formatKoreanDate(d: Date): string {
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  return `${y}.${m}.${day}`;
-}
-
 export function MeetingInvite({
   toName,
   groupName,
@@ -109,53 +35,92 @@ export function MeetingInvite({
   candidateTo,
   availabilityUrl,
 }: MeetingInviteProps) {
+  const rows: { label: string; value: React.ReactNode }[] = [];
+  if (bookTitle) {
+    rows.push({
+      label: '책',
+      value: (
+        <>
+          <strong>{bookTitle}</strong>
+          {bookAuthor && <span style={{ color: MUTED }}> — {bookAuthor}</span>}
+        </>
+      ),
+    });
+  }
+  if (movieTitle) {
+    rows.push({
+      label: '영화',
+      value: (
+        <>
+          <strong>{movieTitle}</strong>
+          {movieDirector && (
+            <span style={{ color: MUTED }}> — {movieDirector} 감독</span>
+          )}
+        </>
+      ),
+    });
+  }
+  rows.push({
+    label: '기간',
+    value: (
+      <>
+        {formatKoreanDate(candidateFrom)} – {formatKoreanDate(candidateTo)}{' '}
+        <span style={{ color: MUTED }}>중 선택</span>
+      </>
+    ),
+  });
+
   return (
-    <Html>
-      <Head />
-      <Preview>{`${groupName} — 다음 모임 날짜를 선택해주세요`}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <Heading style={styles.heading}>다음 모임이 열려요</Heading>
-
-          {greeting && <Text style={styles.greeting}>{greeting}</Text>}
-
-          <Text style={styles.text}>
-            <strong>{toName}</strong>님, 「{groupName}」의 다음 모임이 열려요.
-          </Text>
-
-          <Section style={styles.contentBox}>
-            {bookTitle && (
-              <Text style={styles.contentRow}>
-                📖 {bookTitle}
-                {bookAuthor ? ` — ${bookAuthor}` : ''}
-              </Text>
-            )}
-            {movieTitle && (
-              <Text style={styles.contentRow}>
-                🎬 {movieTitle}
-                {movieDirector ? ` — ${movieDirector} 감독` : ''}
-              </Text>
-            )}
+    <EmailShell
+      preview={`${groupName} — 다음 모임 날짜를 선택해주세요`}
+      headerLabel={groupName}
+    >
+      <Section style={{ padding: '28px 28px 0' }}>
+        <Text
+          style={{
+            margin: 0,
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: MUTED,
+          }}
+        >
+          다음 모임
+        </Text>
+        <Text
+          style={{
+            margin: '10px 0 0',
+            fontSize: '24px',
+            fontWeight: 800,
+            lineHeight: '1.25',
+            letterSpacing: '-0.01em',
+            color: INK,
+          }}
+        >
+          {toName}님,
+          <br />
+          다음 모임이 열려요
+        </Text>
+        {greeting && (
+          <Section style={{ marginTop: '20px' }}>
+            <GreetingQuote>&ldquo;{greeting}&rdquo;</GreetingQuote>
           </Section>
+        )}
+      </Section>
 
-          <Text style={styles.text}>
-            {formatKoreanDate(candidateFrom)} ~ {formatKoreanDate(candidateTo)}{' '}
-            사이 가능한 날짜를 선택해주세요.
-          </Text>
+      <Section style={{ padding: '4px 28px 0' }}>
+        <InfoBox rows={rows} />
+      </Section>
 
-          <Section style={styles.buttonSection}>
-            <Button href={availabilityUrl} style={styles.button}>
-              가능한 날짜 선택
-            </Button>
-          </Section>
-
-          <Text style={styles.muted}>
-            모든 멤버가 응답하면 모임 날짜가 자동으로 확정돼요.
-            <br />— INOS
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+      <Section style={{ padding: '24px 28px 28px' }}>
+        <Text style={{ ...bodyText, margin: '0 0 20px' }}>
+          위 기간 중 가능한 날짜를 선택해주세요. 모든 멤버가 응답하면 날짜가
+          자동으로 확정돼요.
+        </Text>
+        <Cta href={availabilityUrl}>가능한 날짜 선택</Cta>
+      </Section>
+    </EmailShell>
   );
 }
 

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOrg } from '@/hooks/useOrg';
 import { useCreateMeeting } from '@/hooks/useCreateMeeting';
 import { Header } from '@/components/Header';
-import { Card } from '@/components/Card';
+import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 
@@ -22,6 +22,18 @@ function addDays(iso: string, days: number): string {
     2,
     '0',
   )}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+function FieldLabelWithHint({ label, hint }: { label: string; hint: string }) {
+  return (
+    <p className="text-xs font-bold uppercase tracking-[0.12em]">
+      {label}
+      <br />
+      <span className="font-normal normal-case tracking-normal text-muted">
+        {hint}
+      </span>
+    </p>
+  );
 }
 
 export default function CreateMeetingPage() {
@@ -92,30 +104,31 @@ export default function CreateMeetingPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-neutral-50">
+    <div className="min-h-dvh bg-paper flex flex-col">
       <Header />
-      <main className="mx-auto max-w-2xl px-4 pt-6 pb-safe page-enter">
+      <main className="mx-auto max-w-[760px] w-full flex-1 px-6 pt-10 page-enter">
         <Link
           to={`/orgs/${orgId}`}
-          className="text-sm text-neutral-500 hover:text-neutral-800"
+          className="text-[13px] font-medium text-muted hover:text-ink"
         >
           ← 오가니제이션으로
         </Link>
 
-        <h1 className="mt-3 text-2xl font-semibold text-neutral-900">
-          새 모임 만들기
+        <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+          새 모임
+        </p>
+        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold tracking-tight">
+          무엇을 함께 읽을까요?
         </h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-3 text-sm text-muted leading-relaxed max-w-[52ch]">
           책·영화 중 하나 이상 선택하고 후보 날짜를 정해주세요. 모든 멤버에게
           이메일 초대장이 전송돼요.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <Card>
-            <div className="space-y-4">
-              <p className="text-xs font-medium text-neutral-500">
-                📖 책 (선택)
-              </p>
+        <form onSubmit={handleSubmit} className="mt-8 border-t-2 border-ink">
+          <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
+            <FieldLabelWithHint label="책" hint="선택" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <Input
                 label="제목"
                 placeholder="예: 1984"
@@ -132,13 +145,11 @@ export default function CreateMeetingPage() {
                 }
               />
             </div>
-          </Card>
+          </section>
 
-          <Card>
-            <div className="space-y-4">
-              <p className="text-xs font-medium text-neutral-500">
-                🎬 영화 (선택)
-              </p>
+          <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
+            <FieldLabelWithHint label="영화" hint="선택" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <Input
                 label="제목"
                 placeholder="예: 오펜하이머"
@@ -155,14 +166,12 @@ export default function CreateMeetingPage() {
                 }
               />
             </div>
-          </Card>
+          </section>
 
-          <Card>
-            <div className="space-y-4">
-              <p className="text-xs font-medium text-neutral-500">
-                후보 날짜 범위
-              </p>
-              <div className="grid grid-cols-2 gap-3">
+          <section className="py-7 border-b-2 border-ink grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
+            <FieldLabelWithHint label="일정" hint="후보 범위" />
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <Input
                   label="시작"
                   type="date"
@@ -185,11 +194,11 @@ export default function CreateMeetingPage() {
                 onChange={(e) => setLocation(e.target.value)}
               />
             </div>
-          </Card>
+          </section>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
-          <div className="pt-2">
+          <div className="mt-8">
             <Button
               type="submit"
               variant="primary"
@@ -198,11 +207,13 @@ export default function CreateMeetingPage() {
               loading={createMutation.isPending}
               disabled={!canSubmit}
             >
-              모임 만들기 · 초대장 발송
+              <span>모임 만들기 · 초대장 발송</span>
+              <span aria-hidden="true">→</span>
             </Button>
           </div>
         </form>
       </main>
+      <Footer />
     </div>
   );
 }

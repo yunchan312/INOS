@@ -9,7 +9,7 @@ import { useUpsertNote } from '@/hooks/useUpsertNote';
 import { useFinishMeeting } from '@/hooks/useFinishMeeting';
 import { useNotesSocket } from '@/hooks/useNotesSocket';
 import { Header } from '@/components/Header';
-import { Card } from '@/components/Card';
+import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
@@ -143,9 +143,9 @@ export default function MeetingPage() {
 
   if (meetingQuery.isLoading) {
     return (
-      <div className="min-h-dvh bg-neutral-50">
+      <div className="min-h-dvh bg-paper">
         <Header />
-        <main className="mx-auto max-w-3xl px-4 pt-6 pb-nav-safe page-enter space-y-3">
+        <main className="mx-auto max-w-3xl px-6 pt-10 pb-nav-safe page-enter space-y-3">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-32" />
           <Skeleton className="h-32" />
@@ -156,9 +156,9 @@ export default function MeetingPage() {
 
   if (!meeting) {
     return (
-      <div className="min-h-dvh bg-neutral-50">
+      <div className="min-h-dvh bg-paper flex flex-col">
         <Header />
-        <main className="mx-auto max-w-3xl px-4 pt-6 pb-nav-safe page-enter">
+        <main className="mx-auto max-w-3xl w-full flex-1 px-6 pt-10 page-enter">
           <EmptyState
             title="모임을 찾을 수 없어요"
             action={
@@ -168,6 +168,7 @@ export default function MeetingPage() {
             }
           />
         </main>
+        <Footer />
       </div>
     );
   }
@@ -178,37 +179,33 @@ export default function MeetingPage() {
       : meeting.bookTitle ?? meeting.movieTitle ?? '모임';
 
   return (
-    <div className="min-h-dvh bg-neutral-50">
+    <div className="min-h-dvh bg-paper flex flex-col">
       <Header />
-      <main className="mx-auto max-w-3xl px-4 pt-6 pb-nav-safe page-enter">
+      <main className="mx-auto max-w-3xl w-full flex-1 px-6 pt-10 page-enter">
         <Link
           to={`/orgs/${orgId}`}
-          className="text-sm text-neutral-500 hover:text-neutral-800"
+          className="text-[13px] font-medium text-muted hover:text-ink"
         >
           ← 오가니제이션으로
         </Link>
 
-        <div className="mt-3 flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-neutral-900">{label}</h1>
-            {meeting.location && (
-              <p className="mt-1 text-sm text-neutral-500">📍 {meeting.location}</p>
-            )}
-          </div>
-          {readOnly && (
-            <span className="text-xs bg-neutral-100 text-neutral-500 px-2 py-1 rounded-full shrink-0">
-              종료된 모임
-            </span>
-          )}
+        <div className="mt-6 pb-7 border-b-2 border-ink">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+            {readOnly ? '종료된 모임' : '모임'}
+            {meeting.location && ` · ${meeting.location}`}
+          </p>
+          <h1 className="mt-3 text-[clamp(30px,5vw,52px)] font-extrabold leading-[1.1] tracking-tight">
+            {label}
+          </h1>
         </div>
 
         {(isStreaming || (!hasStoredPrompts && !streamDone && discussionQuery.isLoading)) && (
-          <Card className="mt-6">
+          <div className="mt-6 border-2 border-ink bg-white px-4">
             <div className="flex items-center gap-3 py-4">
-              <div className="w-5 h-5 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin shrink-0" />
-              <p className="text-sm text-neutral-600">AI가 발제 질문을 생성하고 있어요…</p>
+              <div className="w-5 h-5 rounded-full border-2 border-line border-t-ink animate-spin shrink-0" />
+              <p className="text-sm font-medium">AI가 발제 질문을 생성하고 있어요…</p>
             </div>
-          </Card>
+          </div>
         )}
 
         {(streamError ||
@@ -222,21 +219,20 @@ export default function MeetingPage() {
         )}
 
         {notesLocked && (prompts.book.length > 0 || prompts.movie.length > 0) && (
-          <div className="mt-6 rounded-xl border border-neutral-200 bg-white px-4 py-3">
-            <p className="text-sm text-neutral-600">
+          <div className="mt-6 border-2 border-ink bg-white px-4 py-3">
+            <p className="text-sm">
               발제 질문을 미리 읽어보세요. 노트 작성은{' '}
-              <span className="font-medium text-neutral-900">모임 당일부터</span>{' '}
-              가능해요.
+              <span className="font-bold">모임 당일부터</span> 가능해요.
             </p>
           </div>
         )}
 
         {prompts.book.length > 0 && (
-          <section className="mt-6">
-            <h2 className="text-sm font-medium text-neutral-500 mb-3">
+          <section className="mt-8">
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted mb-1">
               📖 {meeting.bookTitle}
             </h2>
-            <div className="space-y-3">
+            <div>
               {prompts.book.map((q, i) => {
                 const { myNote, publicNotes } = notesByKey('BOOK', i);
                 return (
@@ -258,10 +254,10 @@ export default function MeetingPage() {
 
         {prompts.movie.length > 0 && (
           <section className="mt-8">
-            <h2 className="text-sm font-medium text-neutral-500 mb-3">
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted mb-1">
               🎬 {meeting.movieTitle}
             </h2>
-            <div className="space-y-3">
+            <div>
               {prompts.movie.map((q, i) => {
                 const { myNote, publicNotes } = notesByKey('MOVIE', i);
                 return (
@@ -282,10 +278,10 @@ export default function MeetingPage() {
         )}
 
         {!readOnly && !notesLocked && (prompts.book.length > 0 || prompts.movie.length > 0) && (
-          <div className="mt-8">
+          <div className="mt-10 flex justify-start">
             <Button
-              variant="ghost"
-              fullWidth
+              variant="outline"
+              size="lg"
               loading={finishMeeting.isPending}
               onClick={handleFinish}
             >
@@ -294,6 +290,7 @@ export default function MeetingPage() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }
