@@ -51,9 +51,7 @@ function OrgRequestForm() {
 
   return (
     <div className="border-2 border-ink bg-white p-4 space-y-3 w-full">
-      <p className="text-sm font-semibold text-ink">
-        오가니제이션 생성 신청
-      </p>
+      <p className="text-sm font-semibold text-ink">오가니제이션 생성 신청</p>
       <p className="text-xs text-muted">
         신청 내용이 관리자에게 전달돼요. 확인 후 초대장을 보내드릴게요.
       </p>
@@ -141,7 +139,7 @@ export default function OrgSelectorPage() {
                 <Link
                   key={org.id}
                   to={`/orgs/${org.id}`}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 items-center py-7 border-b-2 border-ink cursor-pointer transition-colors hover:bg-point/25"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 items-center px-5 py-7 border-b-2 border-ink cursor-pointer transition-colors hover:bg-point/25"
                 >
                   <div className="min-w-0">
                     <p className="text-[22px] font-bold">{org.name}</p>
