@@ -30,8 +30,7 @@ function isToday(iso: string): boolean {
   );
 }
 
-const inputClass =
-  'w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:border-neutral-400 focus:outline-none';
+const inputClass = 'input-underline text-sm';
 
 function toDateInputValue(iso: string): string {
   const d = new Date(iso);
@@ -84,8 +83,8 @@ function MeetingEditForm({
   };
 
   return (
-    <div className="mt-3 space-y-2 border-t border-neutral-100 pt-3">
-      <div className="grid grid-cols-2 gap-2">
+    <div className="mt-4 space-y-3 border-t-2 border-ink pt-4">
+      <div className="grid grid-cols-2 gap-3">
         <input
           type="text"
           value={bookTitle}
@@ -124,21 +123,19 @@ function MeetingEditForm({
       />
       {canEditDate && (
         <div>
-          <label className="block text-xs text-neutral-500 mb-1">
-            모임 날짜 (후보 기간 내에서 변경 가능)
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+            모임 날짜
           </label>
           <input
             type="date"
             value={confirmedDate}
             onChange={(e) => setConfirmedDate(e.target.value)}
-            min={toDateInputValue(meeting.candidateFrom)}
-            max={toDateInputValue(meeting.candidateTo)}
             className={inputClass}
           />
         </div>
       )}
       {updateMeeting.isError && (
-        <p className="text-xs text-red-500">수정에 실패했어요. 다시 시도해주세요.</p>
+        <p className="text-xs text-danger">수정에 실패했어요. 다시 시도해주세요.</p>
       )}
       <div className="flex gap-2">
         <Button
@@ -157,20 +154,26 @@ function MeetingEditForm({
   );
 }
 
-// 전원 응답했지만 모두 가능한 날짜가 없을 때, 소유자가 날짜별 인원을 보고 직접 확정
+// 조율 중(PENDING)일 때 소유자용 확정 도구.
+// 전원 응답 & 공통 날짜 없음이면 긴급 안내(urgent), 그 외에는 임의 확정 옵션.
 function ManualConfirmSection({
   meeting,
   orgId,
+  urgent,
 }: {
   meeting: MeetingDto;
   orgId: string;
+  urgent: boolean;
 }) {
+  const [manualDate, setManualDate] = useState('');
   const updateMeeting = useUpdateMeeting(orgId, meeting.id);
 
   const ranked = Object.entries(meeting.dateCounts ?? {}).sort((a, b) => {
     if (b[1] !== a[1]) return b[1] - a[1];
     return a[0].localeCompare(b[0]);
   });
+
+  const nonResponders = meeting.nonResponders ?? [];
 
   const handleConfirm = (date: string, count: number) => {
     if (
@@ -183,29 +186,71 @@ function ManualConfirmSection({
   };
 
   return (
-    <div className="mt-3 border-t border-neutral-100 pt-3">
-      <p className="text-xs font-medium text-amber-700">
-        전원 가능한 날짜가 없어요. 날짜를 직접 확정해주세요.
+    <div className="mt-4 border-t-2 border-ink pt-4 space-y-3">
+      <p
+        className={`text-xs font-semibold ${
+          urgent ? 'text-amber-800' : 'text-muted'
+        }`}
+      >
+        {urgent
+          ? '전원 가능한 날짜가 없어요. 날짜를 직접 확정해주세요.'
+          : '소유자는 응답을 기다리지 않고 날짜를 직접 확정할 수 있어요.'}
       </p>
-      <ul className="mt-2 space-y-1">
-        {ranked.slice(0, 5).map(([date, count]) => (
-          <li key={date} className="flex items-center justify-between text-xs">
-            <span className="text-neutral-700">
-              {formatKoreanDate(date)} — {count}/{meeting.totalMembers}명 가능
-            </span>
-            <button
-              type="button"
-              onClick={() => handleConfirm(date, count)}
-              disabled={updateMeeting.isPending}
-              className="text-neutral-800 hover:text-neutral-500 underline underline-offset-2 disabled:opacity-50"
-            >
-              이 날짜로 확정
-            </button>
-          </li>
-        ))}
-      </ul>
+
+      {nonResponders.length > 0 && (
+        <p className="text-xs text-muted">
+          미응답 — {nonResponders.map((n) => n.nickname).join(', ')}
+        </p>
+      )}
+
+      {ranked.length > 0 && (
+        <ul className="space-y-2">
+          {ranked.slice(0, 5).map(([date, count]) => (
+            <li key={date} className="flex items-center justify-between text-xs">
+              <span className="text-ink">
+                {formatKoreanDate(date)} — {count}/{meeting.totalMembers}명 가능
+              </span>
+              <button
+                type="button"
+                onClick={() => handleConfirm(date, count)}
+                disabled={updateMeeting.isPending}
+                className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2 disabled:opacity-50"
+              >
+                이 날짜로 확정
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex items-end gap-3">
+        <div className="flex-1 max-w-[200px]">
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+            직접 선택 (후보 기간 내)
+          </label>
+          <input
+            type="date"
+            value={manualDate}
+            onChange={(e) => setManualDate(e.target.value)}
+            min={toDateInputValue(meeting.candidateFrom)}
+            max={toDateInputValue(meeting.candidateTo)}
+            className={inputClass}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() =>
+            handleConfirm(manualDate, meeting.dateCounts?.[manualDate] ?? 0)
+          }
+          disabled={!manualDate || updateMeeting.isPending}
+          className="text-xs font-semibold text-ink border-b border-ink pb-0.5 hover:text-muted-2 hover:border-muted-2 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          이 날짜로 확정
+        </button>
+      </div>
+
       {updateMeeting.isError && (
-        <p className="mt-2 text-xs text-red-500">확정에 실패했어요. 다시 시도해주세요.</p>
+        <p className="text-xs text-danger">확정에 실패했어요. 다시 시도해주세요.</p>
       )}
     </div>
   );
@@ -239,28 +284,28 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
     statusPill = needsManualConfirm
       ? {
           text: '날짜 확정 필요',
-          className: 'bg-amber-100 text-amber-800',
+          className: 'border-2 border-amber-700 text-amber-800',
         }
       : {
           text: `일정 조율 중 · ${meeting.respondedCount}/${meeting.totalMembers}`,
-          className: 'bg-neutral-100 text-neutral-600',
+          className: 'border-2 border-ink text-ink',
         };
   } else if (meeting.status === 'CONFIRMED' && meeting.confirmedDate) {
     statusPill = {
       text: isToday(meeting.confirmedDate)
         ? '오늘'
         : `${formatKoreanDate(meeting.confirmedDate)} 확정`,
-      className: 'bg-[color:var(--color-point)]/20 text-neutral-900',
+      className: 'border-2 border-ink bg-point text-ink',
     };
   } else if (meeting.status === 'DONE') {
     statusPill = {
       text: '종료',
-      className: 'bg-neutral-100 text-neutral-500',
+      className: 'border-2 border-line text-muted',
     };
   } else {
     statusPill = {
       text: '취소됨',
-      className: 'bg-red-50 text-red-600',
+      className: 'border-2 border-danger text-danger',
     };
   }
 
@@ -268,8 +313,8 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
     <Card>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-neutral-900 truncate">{label}</p>
-          <div className="mt-1 flex flex-col gap-0.5 text-xs text-neutral-500">
+          <p className="font-bold text-lg truncate">{label}</p>
+          <div className="mt-1.5 flex flex-col gap-0.5 text-xs text-muted">
             {meeting.bookTitle && (
               <span>📖 {meeting.bookTitle} — {meeting.bookAuthor}</span>
             )}
@@ -280,17 +325,17 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
           </div>
         </div>
         <span
-          className={`shrink-0 text-xs px-2 py-1 rounded-full ${statusPill.className}`}
+          className={`shrink-0 text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-1 whitespace-nowrap ${statusPill.className}`}
         >
           {statusPill.text}
         </span>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
         {showAvailabilityLink && (
           <Link
             to={`/orgs/${orgId}/meetings/${meeting.id}/availability`}
-            className="text-neutral-800 hover:text-neutral-500 underline underline-offset-2"
+            className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
           >
             {meeting.myAvailability?.length ? '내 응답 수정' : '가능한 날짜 선택'}
           </Link>
@@ -298,7 +343,7 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
         {showMeetingLink && (
           <Link
             to={`/orgs/${orgId}/meetings/${meeting.id}`}
-            className="text-neutral-800 hover:text-neutral-500 underline underline-offset-2"
+            className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
           >
             모임 입장
           </Link>
@@ -306,28 +351,28 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
         {showDiscussionLink && (
           <Link
             to={`/orgs/${orgId}/meetings/${meeting.id}`}
-            className="text-neutral-500 hover:text-neutral-800 underline underline-offset-2"
+            className="font-medium text-muted border-b border-muted hover:text-ink hover:border-ink"
           >
             발제문 다시 보기
           </Link>
         )}
 
         {canManage && !editing && (
-          <span className="ml-auto flex items-center gap-3">
+          <span className="ml-auto flex items-center gap-4">
             {confirmingDelete ? (
               <>
                 <button
                   type="button"
                   onClick={() => deleteMeeting.mutate()}
                   disabled={deleteMeeting.isPending}
-                  className="text-red-600 hover:text-red-700 underline underline-offset-2 disabled:opacity-50"
+                  className="font-medium text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2 disabled:opacity-50"
                 >
                   {deleteMeeting.isPending ? '삭제 중…' : '정말 삭제'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
-                  className="text-neutral-500 hover:text-neutral-800 underline underline-offset-2"
+                  className="font-medium text-muted border-b border-muted hover:text-ink hover:border-ink"
                 >
                   취소
                 </button>
@@ -337,14 +382,14 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
-                  className="text-neutral-500 hover:text-neutral-800 underline underline-offset-2"
+                  className="font-medium text-muted border-b border-muted hover:text-ink hover:border-ink"
                 >
                   수정
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(true)}
-                  className="text-red-500 hover:text-red-600 underline underline-offset-2"
+                  className="font-medium text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2"
                 >
                   삭제
                 </button>
@@ -355,11 +400,15 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
       </div>
 
       {deleteMeeting.isError && (
-        <p className="mt-2 text-xs text-red-500">삭제에 실패했어요. 다시 시도해주세요.</p>
+        <p className="mt-2 text-xs text-danger">삭제에 실패했어요. 다시 시도해주세요.</p>
       )}
 
-      {canManage && needsManualConfirm && (
-        <ManualConfirmSection meeting={meeting} orgId={orgId} />
+      {canManage && meeting.status === 'PENDING' && (
+        <ManualConfirmSection
+          meeting={meeting}
+          orgId={orgId}
+          urgent={needsManualConfirm}
+        />
       )}
 
       {editing && (

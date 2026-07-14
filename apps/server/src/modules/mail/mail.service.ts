@@ -10,6 +10,9 @@ import {
   MeetingInvite,
   type MeetingInviteProps,
 } from './templates/meeting-invite';
+import { NoCommonDate } from './templates/no-common-date';
+import { OrgCreated } from './templates/org-created';
+import { SimpleNotice } from './templates/simple-notice';
 
 export interface SendMembershipInviteInput {
   toEmail: string;
@@ -85,13 +88,13 @@ export class MailService {
     meetingId: string;
   }): Promise<void> {
     const subject = `[INOS] 「${input.groupName}」 모임 날짜를 직접 정해주세요`;
-    const html = `
-      <p>${input.toName}님, 안녕하세요.</p>
-      <p>「<strong>${input.groupName}</strong>」의 새 모임에 멤버 전원이 응답했지만,
-      <strong>모두가 가능한 날짜가 없어요.</strong></p>
-      <p>오가니제이션 홈의 모임 카드에서 날짜별 가능 인원을 확인하고 직접 날짜를 확정해주세요.</p>
-      <p><a href="${input.orgUrl}">오가니제이션 홈으로 가기</a></p>
-    `;
+    const html = await render(
+      NoCommonDate({
+        toName: input.toName,
+        groupName: input.groupName,
+        orgUrl: input.orgUrl,
+      }),
+    );
     await this.send(input.toEmail, subject, html);
   }
 
@@ -102,12 +105,13 @@ export class MailService {
     orgUrl: string;
   }): Promise<void> {
     const subject = `[INOS] 「${input.orgName}」 오가니제이션이 생성됐어요`;
-    const html = `
-      <p>${input.toName}님, 안녕하세요.</p>
-      <p>「<strong>${input.orgName}</strong>」 오가니제이션이 생성됐고, ${input.toName}님이 소유자로 지정됐어요.</p>
-      <p>이제 멤버를 초대하고 모임을 만들 수 있어요.</p>
-      <p><a href="${input.orgUrl}">오가니제이션 바로가기</a></p>
-    `;
+    const html = await render(
+      OrgCreated({
+        toName: input.toName,
+        orgName: input.orgName,
+        orgUrl: input.orgUrl,
+      }),
+    );
     await this.send(input.toEmail, subject, html);
   }
 
@@ -119,12 +123,20 @@ export class MailService {
     changes: string[];
   }): Promise<void> {
     const subject = `[INOS] 「${input.orgName}」 오가니제이션 정보가 변경됐어요`;
-    const html = `
-      <p>${input.toName}님, 안녕하세요.</p>
-      <p>관리자가 「<strong>${input.orgName}</strong>」 오가니제이션 정보를 변경했어요.</p>
-      <ul>${input.changes.map((c) => `<li>${c}</li>`).join('')}</ul>
-      <p><a href="${input.orgUrl}">오가니제이션 바로가기</a></p>
-    `;
+    const html = await render(
+      SimpleNotice({
+        preview: subject,
+        headerLabel: input.orgName,
+        label: '변경 알림',
+        title: '오가니제이션 정보가 변경됐어요',
+        lines: [
+          `${input.toName}님, 관리자가 「${input.orgName}」 오가니제이션 정보를 변경했어요.`,
+        ],
+        listItems: input.changes,
+        ctaText: '오가니제이션 바로가기',
+        ctaUrl: input.orgUrl,
+      }),
+    );
     await this.send(input.toEmail, subject, html);
   }
 
@@ -134,11 +146,18 @@ export class MailService {
     orgName: string;
   }): Promise<void> {
     const subject = `[INOS] 「${input.orgName}」 오가니제이션이 삭제됐어요`;
-    const html = `
-      <p>${input.toName}님, 안녕하세요.</p>
-      <p>관리자가 「<strong>${input.orgName}</strong>」 오가니제이션을 삭제했어요.</p>
-      <p>모임 기록과 발제문도 함께 삭제됐어요. 문의사항이 있다면 이 메일에 회신해주세요.</p>
-    `;
+    const html = await render(
+      SimpleNotice({
+        preview: subject,
+        headerLabel: input.orgName,
+        label: '삭제 알림',
+        title: '오가니제이션이 삭제됐어요',
+        lines: [
+          `${input.toName}님, 관리자가 「${input.orgName}」 오가니제이션을 삭제했어요.`,
+          '모임 기록과 발제문도 함께 삭제됐어요. 문의사항이 있다면 이 메일에 회신해주세요.',
+        ],
+      }),
+    );
     await this.send(input.toEmail, subject, html);
   }
 

@@ -19,6 +19,10 @@ import { CurrentUser, AuthUser } from './decorators/current-user.decorator';
 import { MeResponseDto } from './dto/auth.dto';
 import { UserService } from '../user/user.service';
 import { MailService } from '../mail/mail.service';
+import {
+  decodeDesktopOauthState,
+  encodeDesktopOauthState,
+} from './desktop-oauth-state';
 
 class RequestOrgDto {
   @IsOptional()
@@ -50,8 +54,11 @@ export class AuthController {
 
   @Get('google')
   @Redirect()
-  @ApiOperation({ summary: 'Google OAuth 진입' })
-  googleRedirect(): { url: string; statusCode: number } {
+  @ApiOperation({ summary: 'Google OAuth 진입 (데스크톱 앱은 desktop_port+nonce 전달)' })
+  googleRedirect(
+    @Query('desktop_port') desktopPort?: string,
+    @Query('nonce') nonce?: string,
+  ): { url: string; statusCode: number } {
     const params = new URLSearchParams({
       client_id: this.config.getOrThrow<string>('GOOGLE_CLIENT_ID'),
       redirect_uri: this.config.getOrThrow<string>('GOOGLE_CALLBACK_URL'),
@@ -59,6 +66,17 @@ export class AuthController {
       scope: 'openid email profile',
       access_type: 'online',
     });
+
+    if (desktopPort !== undefined || nonce !== undefined) {
+      const state = encodeDesktopOauthState(desktopPort ?? '', nonce ?? '');
+      if (!state) {
+        throw new BadRequestException(
+          'desktop_port 또는 nonce 파라미터가 올바르지 않습니다',
+        );
+      }
+      params.set('state', state);
+    }
+
     return {
       url: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
       statusCode: 302,
@@ -70,6 +88,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Google OAuth 콜백 → JWT 발급 후 프론트로 리다이렉트' })
   async googleCallback(
     @Query('code') code: string,
+    @Query('state') state?: string,
   ): Promise<{ url: string; statusCode: number }> {
     if (!code) {
       throw new BadRequestException('code 파라미터가 없습니다');
@@ -104,6 +123,16 @@ export class AuthController {
       });
 
       const token = this.authService.issueAccessToken(user.id);
+
+      const desktopState = decodeDesktopOauthState(state);
+      if (desktopState) {
+        const query = new URLSearchParams({ token, nonce: desktopState.nonce });
+        return {
+          url: `http://127.0.0.1:${desktopState.port}/auth/callback?${query.toString()}`,
+          statusCode: 302,
+        };
+      }
+
       const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
       return { url: `${frontendUrl}/auth/callback?token=${token}`, statusCode: 302 };
     } catch (error) {

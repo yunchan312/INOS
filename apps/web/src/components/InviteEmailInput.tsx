@@ -42,15 +42,16 @@ export function InviteEmailInput({ orgId }: InviteEmailInputProps) {
         />
         <Button
           type="submit"
-          variant="primary"
+          variant="dark"
           size="md"
           loading={inviteMutation.isPending}
         >
-          초대
+          <span className="whitespace-nowrap">초대장 보내기</span>
+          <span aria-hidden="true">→</span>
         </Button>
       </div>
       {message && (
-        <p className="text-xs text-neutral-500">{message}</p>
+        <p className="text-xs text-muted">{message}</p>
       )}
     </form>
   );

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMeeting } from '@/hooks/useMeeting';
 import { useSubmitAvailability } from '@/hooks/useSubmitAvailability';
 import { Header } from '@/components/Header';
-import { Card } from '@/components/Card';
+import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
@@ -25,9 +25,14 @@ function formatKorean(iso: string): string {
   return `${y}.${m}.${d}`;
 }
 
+function formatShort(iso: string): string {
+  const [, m, d] = iso.split('-');
+  return `${Number(m)}.${Number(d)}`;
+}
+
 export default function AvailabilityPage() {
   const { orgId, meetingId } = useParams<{ orgId: string; meetingId: string }>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const meetingQuery = useMeeting(orgId, meetingId);
   const submitMutation = useSubmitAvailability(orgId, meetingId);
@@ -57,6 +62,20 @@ export default function AvailabilityPage() {
 
   const meeting = meetingQuery.data;
 
+  // 다른 멤버들의 응답 현황 (내 응답 제외)
+  const othersResponses = (meeting?.responses ?? []).filter(
+    (r) => r.userId !== user?.id,
+  );
+  const waiting = (meeting?.nonResponders ?? []).filter(
+    (n) => n.userId !== user?.id,
+  );
+  const badges: Record<string, number> = {};
+  for (const r of othersResponses) {
+    for (const d of r.availableDates) {
+      badges[d] = (badges[d] ?? 0) + 1;
+    }
+  }
+
   const handleSubmit = () => {
     if (selected.length === 0) return;
     submitMutation.mutate(
@@ -78,9 +97,9 @@ export default function AvailabilityPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-neutral-50">
+    <div className="min-h-dvh bg-paper flex flex-col">
       <Header />
-      <main className="mx-auto max-w-lg px-4 pt-6 pb-safe page-enter">
+      <main className="mx-auto max-w-[640px] w-full flex-1 px-6 pt-10 page-enter">
         {meetingQuery.isLoading && (
           <div className="space-y-3">
             <Skeleton className="h-6 w-40" />
@@ -103,42 +122,61 @@ export default function AvailabilityPage() {
           <>
             <Link
               to={`/orgs/${orgId}`}
-              className="text-sm text-neutral-500 hover:text-neutral-800"
+              className="text-[13px] font-medium text-muted hover:text-ink"
             >
               ← 오가니제이션으로
             </Link>
 
-            <h1 className="mt-3 text-2xl font-semibold text-neutral-900">
-              가능한 날짜를 선택해주세요
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+              일정 조율 · {meeting.respondedCount}/{meeting.totalMembers} 응답
+            </p>
+            <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold leading-[1.15] tracking-tight">
+              가능한 날짜를
+              <br />
+              선택해주세요
             </h1>
 
-            <div className="mt-4 space-y-1 text-sm text-neutral-500">
-              {meeting.bookTitle && (
-                <p>📖 {meeting.bookTitle} — {meeting.bookAuthor}</p>
-              )}
-              {meeting.movieTitle && (
-                <p>🎬 {meeting.movieTitle} — {meeting.movieDirector} 감독</p>
-              )}
-              <p className="mt-2">
-                후보 기간: {formatKorean(isoDate(meeting.candidateFrom))} ~{' '}
-                {formatKorean(isoDate(meeting.candidateTo))}
+            <div className="mt-4 pb-6 border-b-2 border-ink">
+              <p className="text-[15px] font-semibold">
+                {meeting.bookTitle && (
+                  <>
+                    {meeting.bookTitle}{' '}
+                    <span className="font-normal text-muted">
+                      — {meeting.bookAuthor} · 책
+                    </span>
+                  </>
+                )}
+                {meeting.movieTitle && (
+                  <>
+                    {meeting.bookTitle && ' · '}
+                    {meeting.movieTitle}{' '}
+                    <span className="font-normal text-muted">
+                      — {meeting.movieDirector} 감독 · 영화
+                    </span>
+                  </>
+                )}
+              </p>
+              <p className="mt-1.5 text-[13px] text-muted">
+                후보 기간 {formatKorean(isoDate(meeting.candidateFrom))} –{' '}
+                {formatKorean(isoDate(meeting.candidateTo))} · 전원이 겹치는
+                날로 자동 확정돼요
               </p>
             </div>
 
             {confirmed?.date ? (
-              <Card className="mt-6">
-                <div className="text-center py-6">
-                  <p className="text-xs text-neutral-500">확정된 모임 날짜</p>
-                  <p className="mt-2 text-3xl font-semibold text-neutral-900">
-                    {formatKorean(confirmed.date)}
-                  </p>
-                  <p className="mt-3 text-sm text-neutral-500">
-                    잠시 후 오가니제이션으로 이동해요…
-                  </p>
-                </div>
-              </Card>
+              <div className="mt-8 border-2 border-ink bg-white p-8 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                  확정된 모임 날짜
+                </p>
+                <p className="mt-3 text-3xl font-extrabold">
+                  {formatKorean(confirmed.date)}
+                </p>
+                <p className="mt-3 text-sm text-muted">
+                  잠시 후 오가니제이션으로 이동해요…
+                </p>
+              </div>
             ) : meeting.status !== 'PENDING' ? (
-              <Card className="mt-6">
+              <div className="mt-8 border-2 border-ink bg-white">
                 <EmptyState
                   title="이미 확정된 모임이에요"
                   description={
@@ -152,25 +190,50 @@ export default function AvailabilityPage() {
                     </Button>
                   }
                 />
-              </Card>
+              </div>
             ) : (
               <>
-                <Card className="mt-6">
+                {(othersResponses.length > 0 || waiting.length > 0) && (
+                  <div className="mt-6">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+                      멤버 응답 현황
+                    </p>
+                    <div className="mt-2.5 flex flex-col gap-1.5 text-[13px]">
+                      {othersResponses.map((r) => (
+                        <p key={r.userId}>
+                          <span className="font-semibold">{r.nickname}</span>{' '}
+                          <span className="text-muted">
+                            {r.availableDates.map(formatShort).join(' · ')}
+                          </span>
+                        </p>
+                      ))}
+                      {waiting.length > 0 && (
+                        <p className="text-muted">
+                          아직 응답 안 함 —{' '}
+                          {waiting.map((w) => w.nickname).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-7">
                   <When2meetGrid
                     value={selected}
                     onChange={setSelected}
                     minDate={isoDate(meeting.candidateFrom)}
                     maxDate={isoDate(meeting.candidateTo)}
+                    badges={badges}
                   />
-                </Card>
+                </div>
 
                 {confirmed && !confirmed.date && (
-                  <p className="mt-4 text-sm text-neutral-500 text-center">
+                  <p className="mt-4 text-sm text-muted text-center">
                     {confirmed.responded}/{confirmed.total}명 응답 완료
                   </p>
                 )}
 
-                <div className="mt-4">
+                <div className="mt-7">
                   <Button
                     variant="primary"
                     size="lg"
@@ -179,7 +242,8 @@ export default function AvailabilityPage() {
                     disabled={selected.length === 0}
                     onClick={handleSubmit}
                   >
-                    응답 제출
+                    <span>응답 제출</span>
+                    <span aria-hidden="true">→</span>
                   </Button>
                 </div>
               </>
@@ -187,6 +251,7 @@ export default function AvailabilityPage() {
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

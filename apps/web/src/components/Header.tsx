@@ -11,17 +11,23 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-neutral-200 pt-safe">
-      <div className="mx-auto max-w-3xl px-4 h-14 flex items-center justify-between">
-        <Link to={isAuthenticated ? '/orgs' : '/'} className="flex items-center gap-2">
-          <span className="text-lg font-semibold tracking-tight">INOS</span>
+    <header className="sticky top-0 z-40 bg-paper border-b-2 border-ink pt-safe">
+      <div className="mx-auto max-w-3xl px-4 h-[60px] flex items-center justify-between">
+        <Link
+          to={isAuthenticated ? '/orgs' : '/'}
+          className="flex items-baseline gap-2.5"
+        >
+          <span className="text-xl font-extrabold tracking-tight">INOS</span>
+          <span className="hidden sm:inline text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+            인문학의 OS
+          </span>
         </Link>
         {isAuthenticated && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-5">
             {user?.isAdmin && (
               <Link
                 to="/admin"
-                className="text-sm text-neutral-500 hover:text-neutral-800"
+                className="text-[13px] font-medium text-muted hover:text-ink"
               >
                 관리자
               </Link>
@@ -31,10 +37,10 @@ export function Header() {
                 <img
                   src={user.profileImageUrl}
                   alt={user.nickname}
-                  className="w-8 h-8 rounded-full border border-neutral-200 object-cover hover:border-neutral-400 transition-colors"
+                  className="w-8 h-8 border-2 border-ink object-cover"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center text-xs font-medium hover:bg-neutral-300 transition-colors">
+                <div className="w-8 h-8 bg-ink text-point flex items-center justify-center text-xs font-bold">
                   {user?.nickname?.[0] ?? '?'}
                 </div>
               )}
@@ -42,7 +48,7 @@ export function Header() {
             <button
               type="button"
               onClick={handleLogout}
-              className="text-sm text-neutral-500 hover:text-neutral-800"
+              className="text-[13px] font-medium text-muted hover:text-ink"
             >
               로그아웃
             </button>

@@ -7,6 +7,8 @@
 - apps/server: 일반 API (Auth/Group/Content/Schedule/Archive)
 - apps/ai-server: AI 전담 (추천/발제문SSE/요약)
 - apps/web: React 프론트 (웹뷰 겸용)
+- apps/desktop: Electron 데스크톱 셸 (배포된 웹앱 렌더링, `pnpm desktop`)
+  - Google 로그인은 시스템 브라우저 + 127.0.0.1 루프백 콜백으로 진행 (OAuth state에 desktop_port/nonce 왕복, apps/desktop/src/google-login.ts + auth.controller.ts)
 - packages/prisma: DB 스키마 공유
 - packages/types: DTO 타입 공유
 

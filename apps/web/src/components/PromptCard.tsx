@@ -60,57 +60,64 @@ export function PromptCard({
   const othersNotes = publicNotes.filter((n) => n.userId !== myNote?.userId);
 
   return (
-    <div className="border border-neutral-200 rounded-xl p-4 space-y-3 bg-white">
-      <p className="text-sm font-medium text-neutral-900 leading-relaxed">
-        Q{questionIndex + 1}. {prompt}
-      </p>
+    <article className="py-9 border-b border-line grid grid-cols-[56px_minmax(0,1fr)] sm:grid-cols-[72px_minmax(0,1fr)] gap-4">
+      <span className="text-3xl sm:text-[40px] font-extrabold leading-none">
+        {String(questionIndex + 1).padStart(2, '0')}
+      </span>
+      <div>
+        <p className="text-lg font-semibold leading-relaxed max-w-[62ch]">
+          {prompt}
+        </p>
 
-      {!readOnly && (
-        <div className="space-y-2">
-          <textarea
-            value={content}
-            onChange={(e) => handleContentChange(e.target.value)}
-            placeholder="내 생각을 적어보세요…"
-            rows={3}
-            className="w-full resize-none rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:border-neutral-400 focus:outline-none"
-          />
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isPublic}
-                onChange={handlePublicToggle}
-                className="rounded border-neutral-300 text-neutral-900 focus:ring-0 focus:ring-offset-0"
-              />
-              <span className="text-xs text-neutral-500">멤버에게 공개</span>
-            </label>
-            {content.trim() && (
-              <span className="text-xs text-neutral-400">자동 저장됨</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {myNote && readOnly && (
-        <div className="bg-neutral-50 rounded-lg px-3 py-2">
-          <p className="text-sm text-neutral-700 whitespace-pre-wrap">{myNote.content}</p>
-          <p className="mt-1 text-xs text-neutral-400">
-            내 노트{myNote.isPublic ? ' · 공개됨' : ''}
-          </p>
-        </div>
-      )}
-
-      {othersNotes.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs text-neutral-400 font-medium">멤버 노트</p>
-          {othersNotes.map((n) => (
-            <div key={n.id} className="bg-[color:var(--color-point)]/10 rounded-lg px-3 py-2">
-              <p className="text-sm text-neutral-700 whitespace-pre-wrap">{n.content}</p>
-              <p className="mt-1 text-xs text-neutral-500">{n.author.nickname}</p>
+        {!readOnly && (
+          <div className="mt-5 flex flex-col gap-2.5">
+            <textarea
+              value={content}
+              onChange={(e) => handleContentChange(e.target.value)}
+              placeholder="내 생각을 적어보세요…"
+              rows={3}
+              className="w-full box-border resize-y border-2 border-ink bg-white px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
+            />
+            <div className="flex items-center justify-between gap-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={handlePublicToggle}
+                  className="border-ink text-ink focus:ring-0 focus:ring-offset-0"
+                />
+                <span className="text-xs font-semibold text-muted-2">멤버에게 공개</span>
+              </label>
+              {content.trim() && (
+                <span className="text-xs text-muted">자동 저장됨</span>
+              )}
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+
+        {myNote && readOnly && (
+          <div className="mt-5 border-2 border-ink bg-white px-3.5 py-3">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{myNote.content}</p>
+            <p className="mt-1.5 text-xs text-muted">
+              내 노트{myNote.isPublic ? ' · 공개됨' : ''}
+            </p>
+          </div>
+        )}
+
+        {othersNotes.length > 0 && (
+          <div className="mt-5 flex flex-col gap-2.5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+              멤버 노트
+            </p>
+            {othersNotes.map((n) => (
+              <div key={n.id} className="border-l-4 border-point bg-point/15 px-4 py-3">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{n.content}</p>
+                <p className="mt-2 text-xs font-semibold text-muted-2">{n.author.nickname}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
   );
 }
