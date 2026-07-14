@@ -1,7 +1,9 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Outlet } from 'react-router-dom';
+import RouteErrorPage from '@/pages/error/RouteErrorPage';
 
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
+const NotFoundPage = lazy(() => import('@/pages/error/NotFoundPage'));
 const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
 const OrgSelectorPage = lazy(() => import('@/pages/orgs/OrgSelectorPage'));
 const OrgHomePage = lazy(() => import('@/pages/orgs/OrgHomePage'));
@@ -27,21 +29,30 @@ const fallback = (
 const suspend = (el: ReactNode) => <Suspense fallback={fallback}>{el}</Suspense>;
 
 export const router = createBrowserRouter([
-  { path: '/', element: suspend(<HomePage />) },
-  { path: '/auth/callback', element: suspend(<AuthCallbackPage />) },
-  { path: '/orgs', element: suspend(<OrgSelectorPage />) },
-  { path: '/orgs/:orgId', element: suspend(<OrgHomePage />) },
-  { path: '/orgs/:orgId/settings', element: suspend(<OrgSettingsPage />) },
-  { path: '/orgs/:orgId/meetings/new', element: suspend(<CreateMeetingPage />) },
   {
-    path: '/orgs/:orgId/meetings/:meetingId',
-    element: suspend(<MeetingPage />),
+    element: <Outlet />,
+    errorElement: <RouteErrorPage />,
+    children: [
+      { path: '/', element: suspend(<HomePage />) },
+      { path: '/auth/callback', element: suspend(<AuthCallbackPage />) },
+      { path: '/orgs', element: suspend(<OrgSelectorPage />) },
+      { path: '/orgs/:orgId', element: suspend(<OrgHomePage />) },
+      { path: '/orgs/:orgId/settings', element: suspend(<OrgSettingsPage />) },
+      {
+        path: '/orgs/:orgId/meetings/new',
+        element: suspend(<CreateMeetingPage />),
+      },
+      {
+        path: '/orgs/:orgId/meetings/:meetingId',
+        element: suspend(<MeetingPage />),
+      },
+      {
+        path: '/orgs/:orgId/meetings/:meetingId/availability',
+        element: suspend(<AvailabilityPage />),
+      },
+      { path: '/invitations/:token', element: suspend(<AcceptInvitePage />) },
+      { path: '/admin', element: suspend(<AdminPage />) },
+      { path: '*', element: suspend(<NotFoundPage />) },
+    ],
   },
-  {
-    path: '/orgs/:orgId/meetings/:meetingId/availability',
-    element: suspend(<AvailabilityPage />),
-  },
-  { path: '/invitations/:token', element: suspend(<AcceptInvitePage />) },
-  { path: '/admin', element: suspend(<AdminPage />) },
-  { path: '*', element: <Navigate to="/" replace /> },
 ]);
