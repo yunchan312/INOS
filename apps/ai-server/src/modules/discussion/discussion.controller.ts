@@ -29,11 +29,13 @@ export class DiscussionController {
   ) {}
 
   @Post(':meetingId/generate')
-  @HttpCode(202)
-  @ApiOperation({ summary: '발제문 생성 트리거 (서버-투-서버)' })
-  triggerGenerate(@Param('meetingId') meetingId: string): { accepted: boolean } {
-    void this.discussionService.generate(meetingId);
-    return { accepted: true };
+  @ApiOperation({ summary: '발제문 생성 (서버-투-서버, 완료까지 동기 대기)' })
+  // 생성이 끝난 뒤 응답 → 실패 시 호출한 BullMQ 잡이 실제로 재시도할 수 있음
+  async triggerGenerate(
+    @Param('meetingId') meetingId: string,
+  ): Promise<{ generated: boolean }> {
+    await this.discussionService.generate(meetingId);
+    return { generated: true };
   }
 
   @Post(':meetingId/events/finished')

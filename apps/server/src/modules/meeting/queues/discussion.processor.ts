@@ -24,8 +24,13 @@ export class DiscussionProcessor extends WorkerHost {
     this.logger.log(`Triggering discussion generation for meeting ${meetingId}`);
 
     try {
-      await axios.post(`${aiUrl}/ai/discussions/${meetingId}/generate`);
-      this.logger.log(`Discussion generation triggered for meeting ${meetingId}`);
+      // 생성 완료까지 동기 대기(책+영화 최대 수 분). 실패하면 throw → 잡 재시도
+      await axios.post(
+        `${aiUrl}/ai/discussions/${meetingId}/generate`,
+        undefined,
+        { timeout: 300_000 },
+      );
+      this.logger.log(`Discussion generation completed for meeting ${meetingId}`);
     } catch (error) {
       this.logger.error(
         `Failed to trigger discussion generation for meeting ${meetingId}: ${(error as Error).message}`,
