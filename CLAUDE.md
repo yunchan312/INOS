@@ -7,6 +7,7 @@
 - apps/server: 일반 API (Auth/Group/Content/Schedule/Archive)
 - apps/ai-server: AI 전담 (추천/발제문SSE/요약)
 - apps/web: React 프론트 (웹뷰 겸용)
+- apps/desktop: Electron 데스크톱 셸 (배포된 웹앱 렌더링, `pnpm desktop`)
 - packages/prisma: DB 스키마 공유
 - packages/types: DTO 타입 공유
 

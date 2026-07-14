@@ -7,6 +7,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "dev:api": "turbo dev --filter=@inos/server --filter=@inos/ai-server",
+    "desktop": "pnpm --filter @inos/desktop start",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "clean": "turbo clean && rm -rf node_modules"
