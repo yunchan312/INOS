@@ -14,7 +14,7 @@ export function Card({
   return (
     <div
       className={[
-        'bg-white border-2 border-ink p-4',
+        'bg-surface border-2 border-ink p-4',
         interactive ? 'card-hover hover:bg-point/20' : '',
         className,
       ]

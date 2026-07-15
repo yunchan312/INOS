@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -23,7 +24,8 @@ export function Header() {
           </span>
         </Link>
         {isAuthenticated && (
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Link
               to="/library"
               className="text-[13px] font-medium text-muted hover:text-ink"

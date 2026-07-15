@@ -39,7 +39,7 @@ export function ErrorPage({
         <p className="mt-3 text-sm text-muted">{description}</p>
 
         {isDev && detail && (
-          <pre className="mt-6 max-h-40 overflow-auto border-2 border-ink bg-white p-3 text-left text-xs text-danger whitespace-pre-wrap break-words">
+          <pre className="mt-6 max-h-40 overflow-auto border-2 border-ink bg-surface p-3 text-left text-xs text-danger whitespace-pre-wrap break-words">
             {detail}
           </pre>
         )}

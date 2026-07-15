@@ -6,12 +6,47 @@
   --color-point-hover: #f0d000;
   --color-ink: #201e1d;
   --color-paper: #f3f2f2;
+  --color-surface: #ffffff;
+  --color-surface-2: #f3f2f2;
   --color-muted: #6b6963;
   --color-muted-2: #45433f;
   --color-line: #b5b3ae;
   --color-danger: #a3271b;
   --color-danger-2: #7c1d13;
+  /* 색칠된 면(노랑 버튼·책등·포스터) 위 글자 — 라이트/다크 공통 고정 앵커 */
+  --color-on-accent: #201e1d;
+  /* 라이브러리 책꽂이 나무 선반 */
+  --color-shelf: #8a7a5f;
+  --color-shelf-shadow: #201e1d;
   --font-sans: "Archivo", "Pretendard Variable", Pretendard, sans-serif;
+}
+
+/* ─── Theme: solid-offset 리프트 그림자 (책등·포스터 hover) ─────────── */
+:root {
+  color-scheme: light;
+  --lift-shadow: 0 6px 0 rgba(32, 30, 29, 0.18);
+  --lift-shadow-lg: 0 8px 0 rgba(32, 30, 29, 0.18);
+}
+
+/* ─── Dark theme (클로드 디자인 "따뜻한 먹빛 위의 노랑" 팔레트) ─────── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #171514;
+  --color-surface: #201e1d;
+  --color-surface-2: #2a2725;
+  --color-ink: #f0ede8;
+  --color-muted: #a39e96;
+  --color-muted-2: #c7c2ba;
+  --color-line: #4a4642;
+  --color-point: #f0d000;
+  --color-point-hover: #ffdf05;
+  --color-danger: #d9604f;
+  --color-danger-2: #e87f70;
+  --color-shelf: #6f6250;
+  --color-shelf-shadow: #0d0c0b;
+  --lift-shadow: 0 6px 0 rgba(0, 0, 0, 0.45);
+  --lift-shadow-lg: 0 8px 0 rgba(0, 0, 0, 0.45);
+  /* --color-on-accent 은 덮지 않음 → 다크에서도 #201e1d 유지 */
 }
 
 /* ─── Base ──────────────────────────────────────────────────────── */

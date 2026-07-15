@@ -164,7 +164,7 @@ export default function AvailabilityPage() {
             </div>
 
             {confirmed?.date ? (
-              <div className="mt-8 border-2 border-ink bg-white p-8 text-center">
+              <div className="mt-8 border-2 border-ink bg-surface p-8 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
                   확정된 모임 날짜
                 </p>
@@ -176,7 +176,7 @@ export default function AvailabilityPage() {
                 </p>
               </div>
             ) : meeting.status !== 'PENDING' ? (
-              <div className="mt-8 border-2 border-ink bg-white">
+              <div className="mt-8 border-2 border-ink bg-surface">
                 <EmptyState
                   title="이미 확정된 모임이에요"
                   description={

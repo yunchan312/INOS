@@ -28,7 +28,7 @@ export function BookEditPanel({
   const meta = year ? `${item.groupName} · ${year}` : item.groupName;
 
   return (
-    <div className="mt-4 mb-2 max-w-[720px] box-border border-2 border-ink bg-white p-5">
+    <div className="mt-4 mb-2 max-w-[720px] box-border border-2 border-ink bg-surface p-5">
       <p className="mb-4 text-[15px] font-extrabold">
         {item.title}
         {item.creator && (
@@ -80,7 +80,7 @@ export function BookEditPanel({
           type="button"
           onClick={() => rating >= 1 && onSave({ rating, comment: comment.trim() || null })}
           disabled={rating < 1 || isSaving}
-          className="flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap border-2 border-ink bg-point px-[18px] text-[13px] font-bold text-ink hover:bg-point-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted"
+          className="flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap border-2 border-ink bg-point px-[18px] text-[13px] font-bold text-on-accent hover:bg-point-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted"
         >
           {isSaving ? <span className="loading loading-spinner loading-sm" /> : '저장'}
         </button>
