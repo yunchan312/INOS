@@ -1,8 +1,28 @@
 import { apiClient } from '@/api/client';
-import type { LibraryDto, PromptKind, UpsertLibraryReviewDto } from '@inos/types';
+import type {
+  LibraryDto,
+  LibraryShareDto,
+  PromptKind,
+  SharedLibraryDto,
+  UpsertLibraryReviewDto,
+} from '@inos/types';
 
 export const libraryApi = {
   getMine: () => apiClient.get<LibraryDto>('/users/me/library').then((r) => r.data),
+
+  getShareStatus: () =>
+    apiClient.get<LibraryShareDto>('/users/me/library/share').then((r) => r.data),
+
+  enableShare: () =>
+    apiClient.put<LibraryShareDto>('/users/me/library/share').then((r) => r.data),
+
+  disableShare: () =>
+    apiClient.delete<LibraryShareDto>('/users/me/library/share').then((r) => r.data),
+
+  getShared: (shareId: string) =>
+    apiClient
+      .get<SharedLibraryDto>(`/library/shared/${shareId}`)
+      .then((r) => r.data),
 
   getForGroup: (groupId: string) =>
     apiClient.get<LibraryDto>(`/groups/${groupId}/library`).then((r) => r.data),

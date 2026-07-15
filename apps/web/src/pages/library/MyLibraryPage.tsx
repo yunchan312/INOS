@@ -8,6 +8,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { LibraryContent } from '@/components/library/LibraryContent';
+import { LibraryShareBar } from '@/components/library/LibraryShareBar';
 
 export default function MyLibraryPage() {
   const { isAuthenticated } = useAuth();
@@ -40,6 +41,7 @@ export default function MyLibraryPage() {
             </Link>
           }
         />
+        <LibraryShareBar />
       </main>
       <Footer />
     </div>

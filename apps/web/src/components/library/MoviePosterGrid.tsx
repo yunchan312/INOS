@@ -3,6 +3,7 @@ import { MoviePosterCard } from './MoviePosterCard';
 
 interface MoviePosterGridProps {
   movies: LibraryItemDto[];
+  readOnly?: boolean;
   editingId: string | null;
   onSelect: (meetingId: string) => void;
   onClose: () => void;
@@ -15,6 +16,7 @@ interface MoviePosterGridProps {
 
 export function MoviePosterGrid({
   movies,
+  readOnly = false,
   editingId,
   onSelect,
   onClose,
@@ -41,6 +43,7 @@ export function MoviePosterGrid({
         <div key={item.meetingId} className="relative">
           <MoviePosterCard
             item={item}
+            readOnly={readOnly}
             isEditing={item.meetingId === editingId}
             onSelect={() => onSelect(item.meetingId)}
             onClose={onClose}

@@ -49,6 +49,7 @@ model User {
   oauthProvider   OAuthProvider
   oauthId         String
   isAdmin         Boolean       @default(false)
+  libraryShareId  String?       @unique // 공개 서가 공유 링크 슬러그 (null이면 비공개)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

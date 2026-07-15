@@ -5,6 +5,7 @@ import { pickSpineColor } from './libraryPalette';
 
 interface MoviePosterCardProps {
   item: LibraryItemDto;
+  readOnly?: boolean;
   isEditing: boolean;
   onSelect: () => void;
   onClose: () => void;
@@ -17,6 +18,7 @@ interface MoviePosterCardProps {
 
 export function MoviePosterCard({
   item,
+  readOnly = false,
   isEditing,
   onSelect,
   onClose,
@@ -83,6 +85,10 @@ export function MoviePosterCard({
               </span>
             )}
           </>
+        ) : readOnly ? (
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] opacity-50">
+            아직 리뷰 없음
+          </span>
         ) : (
           <span className="inline-block whitespace-nowrap border-[1.5px] border-on-accent px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]">
             리뷰 남기기

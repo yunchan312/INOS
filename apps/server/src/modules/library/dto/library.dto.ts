@@ -63,3 +63,16 @@ export class LibraryResponseDto {
   @ApiProperty({ type: [LibraryItemResponseDto] })
   movies!: LibraryItemResponseDto[];
 }
+
+export class LibraryShareResponseDto {
+  @ApiProperty({ required: false, nullable: true, description: '공개면 공유 슬러그, 비공개면 null' })
+  shareId!: string | null;
+}
+
+export class SharedLibraryResponseDto {
+  @ApiProperty()
+  ownerNickname!: string;
+
+  @ApiProperty({ type: LibraryResponseDto })
+  library!: LibraryResponseDto;
+}
