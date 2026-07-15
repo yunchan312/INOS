@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/Button';
 import { MeetingCard } from '@/components/MeetingCard';
+import { SectionLabel } from '@/components/SectionLabel';
 
 function toIsoDate(source: string | Date): string {
   const d = typeof source === 'string' ? new Date(source) : source;
@@ -50,17 +51,6 @@ function partitionMeetings(meetings: MeetingDto[] | undefined): Sections {
     upcoming.push(m);
   }
   return { today, upcoming, past };
-}
-
-function SectionLabel({ num, children }: { num: string; children: string }) {
-  return (
-    <div className="flex items-baseline gap-3 mb-4">
-      <span className="text-xs font-bold uppercase tracking-[0.16em]">{num}</span>
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted whitespace-nowrap">
-        {children}
-      </h2>
-    </div>
-  );
 }
 
 export default function OrgHomePage() {
@@ -116,21 +106,28 @@ export default function OrgHomePage() {
                   </p>
                 )}
               </div>
-              {isOwner && (
-                <div className="flex gap-2">
-                  <Link to={`/orgs/${orgId}/meetings/new`}>
-                    <Button variant="primary" size="md">
-                      <span className="whitespace-nowrap">새 모임 만들기</span>
-                      <span aria-hidden="true">＋</span>
-                    </Button>
-                  </Link>
-                  <Link to={`/orgs/${orgId}/settings`}>
-                    <Button variant="outline" size="md">
-                      설정
-                    </Button>
-                  </Link>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <Link to={`/orgs/${orgId}/library`}>
+                  <Button variant="outline" size="md">
+                    라이브러리
+                  </Button>
+                </Link>
+                {isOwner && (
+                  <>
+                    <Link to={`/orgs/${orgId}/meetings/new`}>
+                      <Button variant="primary" size="md">
+                        <span className="whitespace-nowrap">새 모임 만들기</span>
+                        <span aria-hidden="true">＋</span>
+                      </Button>
+                    </Link>
+                    <Link to={`/orgs/${orgId}/settings`}>
+                      <Button variant="outline" size="md">
+                        설정
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
 
             {sections.today.length > 0 && (

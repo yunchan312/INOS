@@ -19,6 +19,8 @@ const AcceptInvitePage = lazy(
   () => import('@/pages/invitations/AcceptInvitePage'),
 );
 const AdminPage = lazy(() => import('@/pages/admin/AdminPage'));
+const MyLibraryPage = lazy(() => import('@/pages/library/MyLibraryPage'));
+const OrgLibraryPage = lazy(() => import('@/pages/library/OrgLibraryPage'));
 const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'));
 const TermsPage = lazy(() => import('@/pages/legal/TermsPage'));
 
@@ -37,9 +39,11 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: suspend(<HomePage />) },
       { path: '/auth/callback', element: suspend(<AuthCallbackPage />) },
+      { path: '/library', element: suspend(<MyLibraryPage />) },
       { path: '/orgs', element: suspend(<OrgSelectorPage />) },
       { path: '/orgs/:orgId', element: suspend(<OrgHomePage />) },
       { path: '/orgs/:orgId/settings', element: suspend(<OrgSettingsPage />) },
+      { path: '/orgs/:orgId/library', element: suspend(<OrgLibraryPage />) },
       {
         path: '/orgs/:orgId/meetings/new',
         element: suspend(<CreateMeetingPage />),
