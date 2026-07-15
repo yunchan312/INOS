@@ -33,26 +33,34 @@ export function BookSpine({ item, isEditing, onClick }: BookSpineProps) {
     spineAuthor = room >= 5 ? spineAuthor.slice(0, room - 1) + '…' : '';
   }
 
+  // 버튼(히트 영역)은 고정하고 내부만 움직여서, hover 시 요소가 커서를 벗어나며
+  // hover가 풀렸다 걸렸다 반복하는 끊김(지터)을 방지한다.
   return (
     <button
       type="button"
       onClick={onClick}
-      className={[
-        'relative flex shrink-0 cursor-pointer flex-col items-center justify-end box-border px-1 pt-3.5 pb-2.5',
-        'border-2 border-ink text-ink transition-[transform,box-shadow] duration-500',
-        'hover:-translate-y-2.5 hover:shadow-[0_6px_0_rgba(32,30,29,0.18)]',
-        isEditing ? '-translate-y-2.5 shadow-[0_6px_0_rgba(32,30,29,0.18)]' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      style={{ width, height, backgroundColor: color }}
+      className="group relative shrink-0 cursor-pointer"
+      style={{ width, height }}
     >
-      <span className="[writing-mode:vertical-rl] flex-1 min-h-0 overflow-hidden whitespace-nowrap text-[13px] font-bold tracking-[0.01em]">
-        {spineTitle}
-        {spineAuthor && <span className="font-normal opacity-70">{spineAuthor}</span>}
-      </span>
-      <span className="mt-2 shrink-0 whitespace-nowrap text-[10px] font-extrabold">
-        {item.review ? `★${formatRating(item.review.rating)}` : '—'}
+      <span
+        className={[
+          'flex h-full w-full flex-col items-center justify-end box-border px-1 pt-3.5 pb-2.5',
+          'border-2 border-ink text-ink',
+          'transition-[transform,box-shadow] duration-150 ease-out will-change-transform',
+          'group-hover:-translate-y-2.5 group-hover:shadow-[0_6px_0_rgba(32,30,29,0.18)]',
+          isEditing ? '-translate-y-2.5 shadow-[0_6px_0_rgba(32,30,29,0.18)]' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        style={{ backgroundColor: color }}
+      >
+        <span className="[writing-mode:vertical-rl] flex-1 min-h-0 overflow-hidden whitespace-nowrap text-[13px] font-bold tracking-[0.01em]">
+          {spineTitle}
+          {spineAuthor && <span className="font-normal opacity-70">{spineAuthor}</span>}
+        </span>
+        <span className="mt-2 shrink-0 whitespace-nowrap text-[10px] font-extrabold">
+          {item.review ? `★${formatRating(item.review.rating)}` : '—'}
+        </span>
       </span>
     </button>
   );

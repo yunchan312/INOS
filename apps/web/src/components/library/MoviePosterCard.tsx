@@ -44,13 +44,17 @@ export function MoviePosterCard({
   const bg = pickSpineColor(item.meetingId);
   const year = item.finishedAt ? new Date(item.finishedAt).getFullYear() : null;
 
+  // 버튼(히트 영역)은 고정하고 내부만 scale해서 hover 경계 지터로 인한 끊김을 방지한다.
   return (
     <button
       type="button"
       onClick={onSelect}
-      className="relative flex aspect-[2/3] w-full cursor-pointer flex-col box-border border-2 border-ink p-4 text-left text-ink transition-[transform,box-shadow] duration-500 hover:z-[2] hover:scale-[1.03] hover:shadow-[0_8px_0_rgba(32,30,29,0.18)]"
-      style={{ backgroundColor: bg }}
+      className="group relative block w-full cursor-pointer hover:z-[2]"
     >
+      <span
+        className="flex aspect-[2/3] w-full flex-col box-border border-2 border-ink p-4 text-left text-ink transition-[transform,box-shadow] duration-150 ease-out will-change-transform group-hover:scale-[1.03] group-hover:shadow-[0_8px_0_rgba(32,30,29,0.18)]"
+        style={{ backgroundColor: bg }}
+      >
       <span className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">
         Film{year ? ` · ${year}` : ''}
       </span>
@@ -84,6 +88,7 @@ export function MoviePosterCard({
             리뷰 남기기
           </span>
         )}
+      </span>
       </span>
     </button>
   );
