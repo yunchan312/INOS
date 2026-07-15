@@ -24,6 +24,12 @@ export function Header() {
         </Link>
         {isAuthenticated && (
           <div className="flex items-center gap-5">
+            <Link
+              to="/library"
+              className="text-[13px] font-medium text-muted hover:text-ink"
+            >
+              라이브러리
+            </Link>
             {user?.isAdmin && (
               <Link
                 to="/admin"

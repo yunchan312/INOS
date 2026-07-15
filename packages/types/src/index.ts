@@ -237,6 +237,35 @@ export interface DiscussionNoteDto {
   };
 }
 
+// Library DTOs
+export interface LibraryReviewDto {
+  rating: number; // 1~10 (0.5개 단위 별점, 프론트에서 ÷2)
+  comment: string | null;
+  updatedAt: string;
+  updatedByNickname: string | null; // 그룹 리뷰에서만 채워짐
+}
+
+export interface LibraryItemDto {
+  meetingId: string;
+  groupId: string;
+  groupName: string;
+  kind: PromptKind;
+  title: string;
+  creator: string | null;
+  finishedAt: string | null;
+  review: LibraryReviewDto | null;
+}
+
+export interface LibraryDto {
+  books: LibraryItemDto[];
+  movies: LibraryItemDto[];
+}
+
+export interface UpsertLibraryReviewDto {
+  rating: number; // 1~10
+  comment?: string | null;
+}
+
 // SSE stream envelope
 export type DiscussionStreamEvent =
   | { type: 'section-start'; section: PromptKind }

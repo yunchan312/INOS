@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { GroupModule } from './modules/group/group.module';
 import { MeetingModule } from './modules/meeting/meeting.module';
+import { LibraryModule } from './modules/library/library.module';
 import { MailModule } from './modules/mail/mail.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HealthController } from './health.controller';
@@ -32,6 +33,7 @@ import { HealthController } from './health.controller';
     UserModule,
     GroupModule,
     MeetingModule,
+    LibraryModule,
     AdminModule,
   ],
 })

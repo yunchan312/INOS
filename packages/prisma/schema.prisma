@@ -52,12 +52,14 @@ model User {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  groupMembers    GroupMember[]
-  ownedGroups     Group[]               @relation("GroupOwner")
-  meetingAvails   MeetingAvailability[]
-  discussionNotes DiscussionNote[]
-  createdMeetings Meeting[]             @relation("MeetingCreatedBy")
-  sentInvitations Invitation[]          @relation("InvitationInvitedBy")
+  groupMembers           GroupMember[]
+  ownedGroups            Group[]                 @relation("GroupOwner")
+  meetingAvails          MeetingAvailability[]
+  discussionNotes        DiscussionNote[]
+  createdMeetings        Meeting[]               @relation("MeetingCreatedBy")
+  sentInvitations        Invitation[]            @relation("InvitationInvitedBy")
+  personalLibraryReviews PersonalLibraryReview[]
+  updatedGroupReviews    GroupLibraryReview[]    @relation("GroupReviewUpdatedBy")
 
   @@unique([oauthProvider, oauthId])
   @@index([email])
@@ -114,10 +116,12 @@ model Meeting {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  group          Group                 @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  createdBy      User                  @relation("MeetingCreatedBy", fields: [createdById], references: [id])
-  availabilities MeetingAvailability[]
-  discussion     Discussion?
+  group           Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy       User                    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
+  availabilities  MeetingAvailability[]
+  discussion      Discussion?
+  personalReviews PersonalLibraryReview[]
+  groupReviews    GroupLibraryReview[]
 
   @@index([groupId, status])
   @@index([groupId, confirmedDate])
@@ -196,4 +200,41 @@ model Invitation {
   @@index([token])
   @@index([groupId, status])
   @@map("invitations")
+}
+
+// 개인 라이브러리 리뷰 — 별점(1~10, 0.5단위 표현용) + 한줄평. 작성자 본인만 수정 가능.
+model PersonalLibraryReview {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @db.Uuid
+  meetingId String     @db.Uuid
+  kind      PromptKind
+  rating    Int
+  comment   String?    @db.VarChar(100)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, meetingId, kind])
+  @@index([meetingId, kind])
+  @@map("personal_library_reviews")
+}
+
+// 오가니제이션 단위 리뷰 — 그룹당 작품 하나. 멤버 누구나 작성/수정 가능, 마지막 수정자만 기록.
+model GroupLibraryReview {
+  id          String     @id @default(uuid()) @db.Uuid
+  meetingId   String     @db.Uuid
+  kind        PromptKind
+  rating      Int
+  comment     String?    @db.VarChar(100)
+  updatedById String     @db.Uuid
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  updatedBy User    @relation("GroupReviewUpdatedBy", fields: [updatedById], references: [id])
+
+  @@unique([meetingId, kind])
+  @@map("group_library_reviews")
 }
