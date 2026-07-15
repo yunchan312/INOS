@@ -24,6 +24,7 @@ const OrgLibraryPage = lazy(() => import('@/pages/library/OrgLibraryPage'));
 const SharedLibraryPage = lazy(
   () => import('@/pages/library/SharedLibraryPage'),
 );
+const RecapPage = lazy(() => import('@/pages/library/RecapPage'));
 const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'));
 const TermsPage = lazy(() => import('@/pages/legal/TermsPage'));
 
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       { path: '/', element: suspend(<HomePage />) },
       { path: '/auth/callback', element: suspend(<AuthCallbackPage />) },
       { path: '/library', element: suspend(<MyLibraryPage />) },
+      { path: '/library/recap', element: suspend(<RecapPage />) },
       { path: '/s/:shareId', element: suspend(<SharedLibraryPage />) },
       { path: '/orgs', element: suspend(<OrgSelectorPage />) },
       { path: '/orgs/:orgId', element: suspend(<OrgHomePage />) },

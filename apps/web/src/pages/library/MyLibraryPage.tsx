@@ -42,6 +42,14 @@ export default function MyLibraryPage() {
           }
         />
         <LibraryShareBar />
+        <div className="mt-4">
+          <Link to="/library/recap">
+            <Button variant="outline" size="md" fullWidth>
+              <span>{new Date().getFullYear()} 결산 카드 보기</span>
+              <span aria-hidden="true">→</span>
+            </Button>
+          </Link>
+        </div>
       </main>
       <Footer />
     </div>
