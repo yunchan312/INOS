@@ -39,7 +39,7 @@ export function BookSpine({ item, isEditing, onClick }: BookSpineProps) {
       onClick={onClick}
       className={[
         'relative flex shrink-0 cursor-pointer flex-col items-center justify-end box-border px-1 pt-3.5 pb-2.5',
-        'border-2 border-ink text-ink transition-[transform,box-shadow] duration-150',
+        'border-2 border-ink text-ink transition-[transform,box-shadow] duration-500',
         'hover:-translate-y-2.5 hover:shadow-[0_6px_0_rgba(32,30,29,0.18)]',
         isEditing ? '-translate-y-2.5 shadow-[0_6px_0_rgba(32,30,29,0.18)]' : '',
       ]

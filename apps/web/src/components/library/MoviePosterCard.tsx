@@ -48,7 +48,7 @@ export function MoviePosterCard({
     <button
       type="button"
       onClick={onSelect}
-      className="relative flex aspect-[2/3] w-full cursor-pointer flex-col box-border border-2 border-ink p-4 text-left text-ink transition-[transform,box-shadow] duration-150 hover:z-[2] hover:scale-[1.03] hover:shadow-[0_8px_0_rgba(32,30,29,0.18)]"
+      className="relative flex aspect-[2/3] w-full cursor-pointer flex-col box-border border-2 border-ink p-4 text-left text-ink transition-[transform,box-shadow] duration-500 hover:z-[2] hover:scale-[1.03] hover:shadow-[0_8px_0_rgba(32,30,29,0.18)]"
       style={{ backgroundColor: bg }}
     >
       <span className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">
