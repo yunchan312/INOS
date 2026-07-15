@@ -8,8 +8,8 @@ const PAGE_SIZE = 20;
 function ShelfBoard() {
   return (
     <>
-      <div className="h-3 border-t-2 border-ink bg-[#8a7a5f]" />
-      <div className="mx-1.5 h-1 bg-ink" />
+      <div className="h-3 border-t-2 border-ink bg-shelf" />
+      <div className="mx-1.5 h-1 bg-shelf-shadow" />
     </>
   );
 }

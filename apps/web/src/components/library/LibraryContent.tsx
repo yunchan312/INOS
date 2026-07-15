@@ -27,6 +27,8 @@ interface LibraryContentProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deleteReview: UseMutationResult<any, unknown, ReviewMutationVars>;
   emptyBooksAction?: ReactNode;
+  /** 공유(공개) 뷰에서 true — 리뷰 편집기를 열지 않는다 */
+  readOnly?: boolean;
 }
 
 export function LibraryContent({
@@ -38,10 +40,12 @@ export function LibraryContent({
   upsertReview,
   deleteReview,
   emptyBooksAction,
+  readOnly = false,
 }: LibraryContentProps) {
   const [editing, setEditing] = useState<Editing | null>(null);
 
   const openEditor = (kind: PromptKind) => (meetingId: string) => {
+    if (readOnly) return;
     upsertReview.reset();
     deleteReview.reset();
     setEditing({ kind, meetingId });
@@ -126,6 +130,7 @@ export function LibraryContent({
             </SectionLabel>
             <MoviePosterGrid
               movies={library?.movies ?? []}
+              readOnly={readOnly}
               editingId={editingIdOf('MOVIE')}
               onSelect={openEditor('MOVIE')}
               onClose={closeEditor}

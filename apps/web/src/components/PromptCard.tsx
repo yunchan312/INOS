@@ -76,7 +76,7 @@ export function PromptCard({
               onChange={(e) => handleContentChange(e.target.value)}
               placeholder="내 생각을 적어보세요…"
               rows={3}
-              className="w-full box-border resize-y border-2 border-ink bg-white px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
+              className="w-full box-border resize-y border-2 border-ink bg-surface px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
             />
             <div className="flex items-center justify-between gap-3">
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -96,7 +96,7 @@ export function PromptCard({
         )}
 
         {myNote && readOnly && (
-          <div className="mt-5 border-2 border-ink bg-white px-3.5 py-3">
+          <div className="mt-5 border-2 border-ink bg-surface px-3.5 py-3">
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{myNote.content}</p>
             <p className="mt-1.5 text-xs text-muted">
               내 노트{myNote.isPublic ? ' · 공개됨' : ''}

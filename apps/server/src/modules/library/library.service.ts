@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { MeetingStatus, Prisma, PromptKind } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GroupService } from '../group/group.service';
@@ -55,6 +56,51 @@ export class LibraryService {
     );
 
     return this.buildLibrary(meetings, reviewMap);
+  }
+
+  async getShareStatus(userId: string): Promise<{ shareId: string | null }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { libraryShareId: true },
+    });
+    return { shareId: user?.libraryShareId ?? null };
+  }
+
+  async enableShare(userId: string): Promise<{ shareId: string }> {
+    const existing = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { libraryShareId: true },
+    });
+    if (existing?.libraryShareId) return { shareId: existing.libraryShareId };
+
+    const shareId = randomUUID();
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { libraryShareId: shareId },
+    });
+    return { shareId };
+  }
+
+  async disableShare(userId: string): Promise<{ shareId: null }> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { libraryShareId: null },
+    });
+    return { shareId: null };
+  }
+
+  async getBySharedId(
+    shareId: string,
+  ): Promise<{ ownerNickname: string; library: LibraryResponseDto }> {
+    const owner = await this.prisma.user.findUnique({
+      where: { libraryShareId: shareId },
+      select: { id: true, nickname: true },
+    });
+    if (!owner) {
+      throw new NotFoundException('공유된 라이브러리를 찾을 수 없어요');
+    }
+    const library = await this.getMine(owner.id);
+    return { ownerNickname: owner.nickname, library };
   }
 
   async getForGroup(groupId: string, userId: string): Promise<LibraryResponseDto> {

@@ -200,7 +200,7 @@ export default function MeetingPage() {
         </div>
 
         {(isStreaming || (!hasStoredPrompts && !streamDone && discussionQuery.isLoading)) && (
-          <div className="mt-6 border-2 border-ink bg-white px-4">
+          <div className="mt-6 border-2 border-ink bg-surface px-4">
             <div className="flex items-center gap-3 py-4">
               <div className="w-5 h-5 rounded-full border-2 border-line border-t-ink animate-spin shrink-0" />
               <p className="text-sm font-medium">AI가 발제 질문을 생성하고 있어요…</p>
@@ -219,7 +219,7 @@ export default function MeetingPage() {
         )}
 
         {notesLocked && (prompts.book.length > 0 || prompts.movie.length > 0) && (
-          <div className="mt-6 border-2 border-ink bg-white px-4 py-3">
+          <div className="mt-6 border-2 border-ink bg-surface px-4 py-3">
             <p className="text-sm">
               발제 질문을 미리 읽어보세요. 노트 작성은{' '}
               <span className="font-bold">모임 당일부터</span> 가능해요.

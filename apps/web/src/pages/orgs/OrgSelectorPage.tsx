@@ -50,7 +50,7 @@ function OrgRequestForm() {
   }
 
   return (
-    <div className="border-2 border-ink bg-white p-4 space-y-3 w-full">
+    <div className="border-2 border-ink bg-surface p-4 space-y-3 w-full">
       <p className="text-sm font-semibold text-ink">오가니제이션 생성 신청</p>
       <p className="text-xs text-muted">
         신청 내용이 관리자에게 전달돼요. 확인 후 초대장을 보내드릴게요.

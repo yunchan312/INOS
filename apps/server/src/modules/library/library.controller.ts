@@ -13,7 +13,12 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PromptKind } from '@prisma/client';
 import { LibraryService } from './library.service';
-import { LibraryItemResponseDto, LibraryResponseDto, UpsertLibraryReviewDto } from './dto/library.dto';
+import {
+  LibraryItemResponseDto,
+  LibraryResponseDto,
+  LibraryShareResponseDto,
+  UpsertLibraryReviewDto,
+} from './dto/library.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, AuthUser } from '../auth/decorators/current-user.decorator';
 
@@ -27,6 +32,24 @@ export class LibraryController {
   @ApiOperation({ summary: '내 개인 라이브러리 조회' })
   getMine(@CurrentUser() user: AuthUser): Promise<LibraryResponseDto> {
     return this.libraryService.getMine(user.id);
+  }
+
+  @Get('share')
+  @ApiOperation({ summary: '내 서가 공유 상태 조회' })
+  getShareStatus(@CurrentUser() user: AuthUser): Promise<LibraryShareResponseDto> {
+    return this.libraryService.getShareStatus(user.id);
+  }
+
+  @Put('share')
+  @ApiOperation({ summary: '내 서가 공개(공유 링크 생성)' })
+  enableShare(@CurrentUser() user: AuthUser): Promise<LibraryShareResponseDto> {
+    return this.libraryService.enableShare(user.id);
+  }
+
+  @Delete('share')
+  @ApiOperation({ summary: '내 서가 비공개 전환' })
+  disableShare(@CurrentUser() user: AuthUser): Promise<LibraryShareResponseDto> {
+    return this.libraryService.disableShare(user.id);
   }
 
   @Put('reviews/:meetingId/:kind')

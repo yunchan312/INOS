@@ -8,6 +8,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { LibraryContent } from '@/components/library/LibraryContent';
+import { LibraryShareBar } from '@/components/library/LibraryShareBar';
 
 export default function MyLibraryPage() {
   const { isAuthenticated } = useAuth();
@@ -40,6 +41,15 @@ export default function MyLibraryPage() {
             </Link>
           }
         />
+        <LibraryShareBar />
+        <div className="mt-4">
+          <Link to="/library/recap">
+            <Button variant="outline" size="md" fullWidth>
+              <span>{new Date().getFullYear()} 결산 카드 보기</span>
+              <span aria-hidden="true">→</span>
+            </Button>
+          </Link>
+        </div>
       </main>
       <Footer />
     </div>

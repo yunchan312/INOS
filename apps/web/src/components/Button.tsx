@@ -15,7 +15,7 @@ const boxedVariants: Variant[] = ['primary', 'dark', 'outline'];
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-point text-ink border-2 border-ink hover:bg-point-hover disabled:bg-line disabled:border-line disabled:text-muted',
+    'bg-point text-on-accent border-2 border-ink hover:bg-point-hover disabled:bg-line disabled:border-line disabled:text-muted',
   dark: 'bg-ink text-paper border-2 border-ink hover:bg-muted-2 hover:border-muted-2 disabled:bg-line disabled:border-line disabled:text-paper',
   outline:
     'bg-transparent text-ink border-2 border-ink hover:bg-ink/[0.06] disabled:text-muted disabled:border-line',

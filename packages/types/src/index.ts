@@ -266,6 +266,16 @@ export interface UpsertLibraryReviewDto {
   comment?: string | null;
 }
 
+export interface LibraryShareDto {
+  /** 공개 상태면 공유 슬러그, 비공개면 null */
+  shareId: string | null;
+}
+
+export interface SharedLibraryDto {
+  ownerNickname: string;
+  library: LibraryDto;
+}
+
 // SSE stream envelope
 export type DiscussionStreamEvent =
   | { type: 'section-start'; section: PromptKind }

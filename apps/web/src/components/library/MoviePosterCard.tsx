@@ -5,6 +5,7 @@ import { pickSpineColor } from './libraryPalette';
 
 interface MoviePosterCardProps {
   item: LibraryItemDto;
+  readOnly?: boolean;
   isEditing: boolean;
   onSelect: () => void;
   onClose: () => void;
@@ -17,6 +18,7 @@ interface MoviePosterCardProps {
 
 export function MoviePosterCard({
   item,
+  readOnly = false,
   isEditing,
   onSelect,
   onClose,
@@ -52,7 +54,7 @@ export function MoviePosterCard({
       className="group relative block w-full cursor-pointer hover:z-[2]"
     >
       <span
-        className="flex aspect-[2/3] w-full flex-col box-border border-2 border-ink p-4 text-left text-ink transition-[transform,box-shadow] duration-150 ease-out will-change-transform group-hover:scale-[1.03] group-hover:shadow-[0_8px_0_rgba(32,30,29,0.18)]"
+        className="flex aspect-[2/3] w-full flex-col box-border border-2 border-ink p-4 text-left text-on-accent transition-[transform,box-shadow] duration-150 ease-out will-change-transform group-hover:scale-[1.03] group-hover:shadow-[var(--lift-shadow-lg)]"
         style={{ backgroundColor: bg }}
       >
       <span className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">
@@ -68,7 +70,7 @@ export function MoviePosterCard({
           </span>
         )}
       </span>
-      <span className="mt-3.5 block border-t-[1.5px] border-ink/35 pt-2.5">
+      <span className="mt-3.5 block border-t-[1.5px] border-on-accent/35 pt-2.5">
         {item.review ? (
           <>
             <span className="flex items-center gap-1.5">
@@ -83,8 +85,12 @@ export function MoviePosterCard({
               </span>
             )}
           </>
+        ) : readOnly ? (
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] opacity-50">
+            아직 리뷰 없음
+          </span>
         ) : (
-          <span className="inline-block whitespace-nowrap border-[1.5px] border-ink px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]">
+          <span className="inline-block whitespace-nowrap border-[1.5px] border-on-accent px-[7px] py-[3px] text-[10px] font-bold uppercase tracking-[0.1em]">
             리뷰 남기기
           </span>
         )}
@@ -117,7 +123,7 @@ function MoviePosterEditCard({
   const [comment, setComment] = useState(item.review?.comment ?? '');
 
   return (
-    <div className="flex aspect-[2/3] box-border flex-col border-2 border-ink bg-white p-4 text-left">
+    <div className="flex aspect-[2/3] box-border flex-col border-2 border-ink bg-surface p-4 text-left">
       <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
         리뷰 편집
       </span>
@@ -136,7 +142,7 @@ function MoviePosterEditCard({
         value={comment}
         onChange={(e) => setComment(e.target.value.slice(0, 100))}
         placeholder="한줄평 (100자)"
-        className="mt-3 w-full box-border resize-none border-2 border-ink bg-paper p-2 text-xs leading-[1.5] outline-none focus:border-point-hover"
+        className="mt-3 w-full box-border resize-none border-2 border-ink bg-surface-2 p-2 text-xs leading-[1.5] outline-none focus:border-point-hover"
       />
       <span className="mt-1 flex items-center justify-between text-[10px] text-muted">
         {item.review ? (
@@ -161,7 +167,7 @@ function MoviePosterEditCard({
           type="button"
           onClick={() => rating >= 1 && onSave({ rating, comment: comment.trim() || null })}
           disabled={rating < 1 || isSaving}
-          className="min-h-[38px] flex-1 cursor-pointer whitespace-nowrap border-2 border-ink bg-point px-3 text-left text-xs font-bold text-ink hover:bg-point-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted"
+          className="min-h-[38px] flex-1 cursor-pointer whitespace-nowrap border-2 border-ink bg-point px-3 text-left text-xs font-bold text-on-accent hover:bg-point-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted"
         >
           {isSaving ? '저장 중…' : '저장'}
         </button>

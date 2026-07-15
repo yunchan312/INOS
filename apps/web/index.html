@@ -9,6 +9,24 @@
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#ffdf05" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // FOUC 방지: 렌더 전에 저장된 테마를 data-theme에 적용
+      (function () {
+        try {
+          var m = localStorage.getItem('inos.theme') || 'system';
+          var dark =
+            m === 'dark' ||
+            (m === 'system' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute(
+            'data-theme',
+            dark ? 'dark' : 'light',
+          );
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
     <title>INOS — 인문학의 OS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
