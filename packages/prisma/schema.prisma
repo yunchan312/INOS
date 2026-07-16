@@ -134,6 +134,7 @@ model MeetingAvailability {
   meetingId      String   @db.Uuid
   userId         String   @db.Uuid
   availableDates Json
+  timeNote       String?  @db.VarChar(80) // 선호 시간 메모 (예: "저녁 7시 이후")
   respondedAt    DateTime @default(now())
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)

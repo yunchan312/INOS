@@ -35,6 +35,7 @@ interface MeetingWithAvailability {
         select: {
           userId: true;
           availableDates: true;
+          timeNote: true;
           user: { select: { nickname: true } };
         };
       };
@@ -112,6 +113,7 @@ export class MeetingService {
           select: {
             userId: true,
             availableDates: true,
+            timeNote: true,
             user: { select: { nickname: true } },
           },
         },
@@ -225,10 +227,11 @@ export class MeetingService {
       throw new BadRequestException('후보 기간 안의 유효한 날짜가 없어요');
     }
 
+    const timeNote = dto.timeNote?.trim().slice(0, 80) || null;
     await this.prisma.meetingAvailability.upsert({
       where: { meetingId_userId: { meetingId, userId } },
-      update: { availableDates: filtered, respondedAt: new Date() },
-      create: { meetingId, userId, availableDates: filtered },
+      update: { availableDates: filtered, timeNote, respondedAt: new Date() },
+      create: { meetingId, userId, availableDates: filtered, timeNote },
     });
 
     const memberCount = await this.prisma.groupMember.count({ where: { groupId } });
@@ -399,6 +402,7 @@ export class MeetingService {
           select: {
             userId: true,
             availableDates: true,
+            timeNote: true,
             user: { select: { nickname: true } },
           },
         },
@@ -437,6 +441,7 @@ export class MeetingService {
       totalMembers: memberCount,
       discussionId: meeting.discussion?.id ?? null,
       myAvailability: (mine?.availableDates as string[] | undefined) ?? null,
+      myTimeNote: mine?.timeNote ?? null,
       dateCounts:
         isPending && meeting.availabilities.length > 0
           ? Object.fromEntries(
@@ -452,6 +457,7 @@ export class MeetingService {
             userId: a.userId,
             nickname: a.user.nickname,
             availableDates: (a.availableDates as string[]) ?? [],
+            timeNote: a.timeNote ?? null,
           }))
         : null,
       nonResponders: isPending

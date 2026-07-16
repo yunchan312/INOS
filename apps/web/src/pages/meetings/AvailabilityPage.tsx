@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useMeeting } from '@/hooks/useMeeting';
@@ -8,7 +8,8 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
-import { When2meetGrid } from '@/components/When2meetGrid';
+import { SectionLabel } from '@/components/SectionLabel';
+import { AvailabilityCalendar } from '@/components/AvailabilityCalendar';
 
 const RETURN_TO_KEY = 'inos.auth.returnTo';
 
@@ -25,9 +26,12 @@ function formatKorean(iso: string): string {
   return `${y}.${m}.${d}`;
 }
 
-function formatShort(iso: string): string {
-  const [, m, d] = iso.split('-');
-  return `${Number(m)}.${Number(d)}`;
+const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
+
+function formatWithWeekday(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const day = WEEKDAY_KO[new Date(y, m - 1, d).getDay()];
+  return `${m}월 ${d}일 (${day})`;
 }
 
 export default function AvailabilityPage() {
@@ -38,6 +42,8 @@ export default function AvailabilityPage() {
   const submitMutation = useSubmitAvailability(orgId, meetingId);
 
   const [selected, setSelected] = useState<string[]>([]);
+  const [timeNote, setTimeNote] = useState('');
+  const [focusedDate, setFocusedDate] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<{
     date: string | null;
     responded: number;
@@ -58,28 +64,66 @@ export default function AvailabilityPage() {
     if (meetingQuery.data?.myAvailability) {
       setSelected(meetingQuery.data.myAvailability);
     }
-  }, [meetingQuery.data?.myAvailability]);
+    if (meetingQuery.data?.myTimeNote) {
+      setTimeNote(meetingQuery.data.myTimeNote);
+    }
+  }, [meetingQuery.data?.myAvailability, meetingQuery.data?.myTimeNote]);
 
   const meeting = meetingQuery.data;
 
-  // 다른 멤버들의 응답 현황 (내 응답 제외)
-  const othersResponses = (meeting?.responses ?? []).filter(
-    (r) => r.userId !== user?.id,
+  // 다른 멤버의 제출 응답 + 내 실시간 선택으로 히트맵 구성
+  const othersResponses = useMemo(
+    () => (meeting?.responses ?? []).filter((r) => r.userId !== user?.id),
+    [meeting?.responses, user?.id],
   );
   const waiting = (meeting?.nonResponders ?? []).filter(
     (n) => n.userId !== user?.id,
   );
-  const badges: Record<string, number> = {};
-  for (const r of othersResponses) {
-    for (const d of r.availableDates) {
-      badges[d] = (badges[d] ?? 0) + 1;
+  const totalMembers = meeting?.totalMembers ?? 0;
+
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const r of othersResponses) {
+      for (const d of r.availableDates) map[d] = (map[d] ?? 0) + 1;
     }
-  }
+    for (const d of selected) map[d] = (map[d] ?? 0) + 1;
+    return map;
+  }, [othersResponses, selected]);
+
+  // WhenSee식 추천: 최다 겹침 날짜
+  const best = useMemo(() => {
+    let bestCount = 0;
+    let bestDates: string[] = [];
+    for (const [d, c] of Object.entries(counts)) {
+      if (c > bestCount) {
+        bestCount = c;
+        bestDates = [d];
+      } else if (c === bestCount) {
+        bestDates.push(d);
+      }
+    }
+    bestDates.sort();
+    return { count: bestCount, dates: bestDates };
+  }, [counts]);
+
+  // 상세 조회 중인 날짜의 멤버 구분
+  const focusDetail = useMemo(() => {
+    if (!focusedDate) return null;
+    const availableNames: string[] = [];
+    const unavailableNames: string[] = [];
+    if (selected.includes(focusedDate)) availableNames.push('나');
+    else unavailableNames.push('나');
+    for (const r of othersResponses) {
+      if (r.availableDates.includes(focusedDate)) availableNames.push(r.nickname);
+      else unavailableNames.push(r.nickname);
+    }
+    return { availableNames, unavailableNames };
+  }, [focusedDate, selected, othersResponses]);
 
   const handleSubmit = () => {
     if (selected.length === 0) return;
     submitMutation.mutate(
-      { availableDates: selected },
+      { availableDates: selected, timeNote: timeNote.trim() || null },
       {
         onSuccess: (data) => {
           setConfirmed({
@@ -128,12 +172,12 @@ export default function AvailabilityPage() {
             </Link>
 
             <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-              일정 조율 · {meeting.respondedCount}/{meeting.totalMembers} 응답
+              일정 조율 · {meeting.respondedCount}/{meeting.totalMembers} 참여
             </p>
             <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold leading-[1.15] tracking-tight">
               가능한 날짜를
               <br />
-              선택해주세요
+              칠해주세요
             </h1>
 
             <div className="mt-4 pb-6 border-b-2 border-ink">
@@ -193,39 +237,145 @@ export default function AvailabilityPage() {
               </div>
             ) : (
               <>
-                {(othersResponses.length > 0 || waiting.length > 0) && (
-                  <div className="mt-6">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
-                      멤버 응답 현황
-                    </p>
-                    <div className="mt-2.5 flex flex-col gap-1.5 text-[13px]">
-                      {othersResponses.map((r) => (
-                        <p key={r.userId}>
-                          <span className="font-semibold">{r.nickname}</span>{' '}
-                          <span className="text-muted">
-                            {r.availableDates.map(formatShort).join(' · ')}
-                          </span>
-                        </p>
-                      ))}
-                      {waiting.length > 0 && (
-                        <p className="text-muted">
-                          아직 응답 안 함 —{' '}
-                          {waiting.map((w) => w.nickname).join(', ')}
-                        </p>
-                      )}
-                    </div>
+                {/* WhenSee식 추천 배너 */}
+                {best.count > 0 && (
+                  <div
+                    className={[
+                      'mt-6 border-2 border-ink px-4 py-3 text-sm font-semibold',
+                      best.count === totalMembers
+                        ? 'bg-point text-on-accent'
+                        : 'bg-surface',
+                    ].join(' ')}
+                  >
+                    {best.count === totalMembers ? (
+                      <>
+                        날짜 맞춰졌어요! {best.dates.map(formatWithWeekday).join(' · ')}{' '}
+                        — {totalMembers}명 모두 가능
+                      </>
+                    ) : (
+                      <>
+                        추천: {formatWithWeekday(best.dates[0])}
+                        {best.dates.length > 1 && ` 외 ${best.dates.length - 1}일`}{' '}
+                        <span className="font-normal text-muted">
+                          · {best.count}/{totalMembers}명 가능
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
 
-                <div className="mt-7">
-                  <When2meetGrid
-                    value={selected}
-                    onChange={setSelected}
+                <section className="mt-8">
+                  <SectionLabel num="01" hint="드래그로 칠하고, 다시 드래그하면 지워져요">
+                    내 가능 날짜
+                  </SectionLabel>
+                  <AvailabilityCalendar
+                    mode="paint"
                     minDate={isoDate(meeting.candidateFrom)}
                     maxDate={isoDate(meeting.candidateTo)}
-                    badges={badges}
+                    value={selected}
+                    onChange={setSelected}
                   />
-                </div>
+                  <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="text-[13px] font-semibold">
+                      선택한 날짜{' '}
+                      <span className="bg-point px-2 py-0.5 text-on-accent">
+                        {selected.length}개
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="mt-5">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <label
+                        htmlFor="time-note"
+                        className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted"
+                      >
+                        선호 시간 (선택)
+                      </label>
+                      <span className="text-[11px] text-muted">
+                        {timeNote.length}/80
+                      </span>
+                    </div>
+                    <input
+                      id="time-note"
+                      type="text"
+                      value={timeNote}
+                      onChange={(e) => setTimeNote(e.target.value.slice(0, 80))}
+                      maxLength={80}
+                      placeholder="예: 평일은 저녁 7시 이후, 주말은 아무 때나"
+                      className="input-underline mt-1.5 text-[15px]"
+                    />
+                  </div>
+                </section>
+
+                <section className="mt-10">
+                  <SectionLabel num="02" hint="칠할수록 겹치는 날이 선명해져요">
+                    모두의 현황
+                  </SectionLabel>
+                  <AvailabilityCalendar
+                    mode="heatmap"
+                    minDate={isoDate(meeting.candidateFrom)}
+                    maxDate={isoDate(meeting.candidateTo)}
+                    counts={counts}
+                    total={totalMembers}
+                    focusedDate={focusedDate}
+                    onFocusDate={setFocusedDate}
+                  />
+
+                  {focusedDate && focusDetail && (
+                    <div className="mt-3 border-2 border-ink bg-surface p-4 text-[13px]">
+                      <p className="font-bold">{formatWithWeekday(focusedDate)}</p>
+                      <p className="mt-1.5">
+                        <span className="font-semibold">가능</span>{' '}
+                        <span className="text-muted">
+                          {focusDetail.availableNames.length > 0
+                            ? focusDetail.availableNames.join(', ')
+                            : '아직 없음'}
+                        </span>
+                      </p>
+                      {focusDetail.unavailableNames.length > 0 && (
+                        <p className="mt-1">
+                          <span className="font-semibold">어려움</span>{' '}
+                          <span className="text-muted">
+                            {focusDetail.unavailableNames.join(', ')}
+                          </span>
+                        </p>
+                      )}
+                      {waiting.length > 0 && (
+                        <p className="mt-1">
+                          <span className="font-semibold">미응답</span>{' '}
+                          <span className="text-muted">
+                            {waiting.map((w) => w.nickname).join(', ')}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {(othersResponses.length > 0 || waiting.length > 0) && (
+                    <div className="mt-5 border-t border-line pt-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+                        멤버별 응답
+                      </p>
+                      <div className="mt-2.5 flex flex-col gap-1.5 text-[13px]">
+                        {othersResponses.map((r) => (
+                          <p key={r.userId}>
+                            <span className="font-semibold">{r.nickname}</span>{' '}
+                            <span className="text-muted">
+                              {r.availableDates.length}일 가능
+                              {r.timeNote && ` · ${r.timeNote}`}
+                            </span>
+                          </p>
+                        ))}
+                        {waiting.length > 0 && (
+                          <p className="text-muted">
+                            아직 응답 안 함 — {waiting.map((w) => w.nickname).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </section>
 
                 {confirmed && !confirmed.date && (
                   <p className="mt-4 text-sm text-muted text-center">
@@ -233,7 +383,7 @@ export default function AvailabilityPage() {
                   </p>
                 )}
 
-                <div className="mt-7">
+                <div className="mt-8">
                   <Button
                     variant="primary"
                     size="lg"
