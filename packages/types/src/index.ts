@@ -153,6 +153,8 @@ export interface MeetingResponderDto {
   userId: string;
   nickname: string;
   availableDates: string[];
+  /** 선호 시간 메모 (예: "저녁 7시 이후") */
+  timeNote: string | null;
 }
 
 export interface MeetingNonResponderDto {
@@ -178,6 +180,8 @@ export interface MeetingDto {
   totalMembers: number;
   discussionId: string | null;
   myAvailability: string[] | null;
+  /** 내가 제출한 선호 시간 메모 */
+  myTimeNote: string | null;
   /** 조율 중 날짜별 가능 인원 (PENDING일 때만) */
   dateCounts: Record<string, number> | null;
   /** 조율 중 멤버별 응답 (PENDING일 때만) */
@@ -188,6 +192,8 @@ export interface MeetingDto {
 
 export interface SubmitAvailabilityDto {
   availableDates: string[]; // ISO date-only strings
+  /** 선호 시간 메모 (선택, 최대 80자) */
+  timeNote?: string | null;
 }
 
 export interface SubmitAvailabilityResponseDto {
