@@ -30,7 +30,7 @@ const MAX_RANGE_DAYS = 30;
 interface MeetingWithAvailability {
   meeting: Prisma.MeetingGetPayload<{
     include: {
-      discussion: { select: { id: true } };
+      discussion: { select: { id: true; status: true } };
       availabilities: {
         select: {
           userId: true;
@@ -108,7 +108,7 @@ export class MeetingService {
       where: { groupId },
       orderBy: [{ confirmedDate: 'desc' }, { createdAt: 'desc' }],
       include: {
-        discussion: { select: { id: true } },
+        discussion: { select: { id: true, status: true } },
         availabilities: {
           select: {
             userId: true,
@@ -397,7 +397,7 @@ export class MeetingService {
     const meeting = await this.prisma.meeting.findUnique({
       where: { id: meetingId },
       include: {
-        discussion: { select: { id: true } },
+        discussion: { select: { id: true, status: true } },
         availabilities: {
           select: {
             userId: true,
@@ -440,6 +440,7 @@ export class MeetingService {
       respondedCount: meeting.availabilities.length,
       totalMembers: memberCount,
       discussionId: meeting.discussion?.id ?? null,
+      discussionStatus: meeting.discussion?.status ?? null,
       myAvailability: (mine?.availableDates as string[] | undefined) ?? null,
       myTimeNote: mine?.timeNote ?? null,
       dateCounts:

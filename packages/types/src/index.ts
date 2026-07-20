@@ -187,6 +187,8 @@ export interface MeetingDto {
   respondedCount: number;
   totalMembers: number;
   discussionId: string | null;
+  /** 발제문 생성 상태 (없으면 null — 확정 직후 큐 대기 중일 수 있음) */
+  discussionStatus: DiscussionStatus | null;
   myAvailability: string[] | null;
   /** 내가 제출한 선호 시간 메모 */
   myTimeNote: string | null;
