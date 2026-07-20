@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrg } from '@/hooks/useOrg';
+import { useOrgInvitations } from '@/hooks/useOrgInvitations';
+import { useRevokeInvitation } from '@/hooks/useRevokeInvitation';
 import { useUpdateOrgSettings } from '@/hooks/useUpdateOrgSettings';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -29,6 +31,8 @@ export default function OrgSettingsPage() {
   const navigate = useNavigate();
   const orgQuery = useOrg(orgId);
   const updateMutation = useUpdateOrgSettings(orgId);
+  const invitationsQuery = useOrgInvitations(orgId);
+  const revokeMutation = useRevokeInvitation(orgId);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -152,6 +156,47 @@ export default function OrgSettingsPage() {
               <FieldLabel>멤버 초대</FieldLabel>
               <InviteEmailInput orgId={orgQuery.data.id} />
             </section>
+
+            {(invitationsQuery.data?.length ?? 0) > 0 && (
+              <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
+                <div>
+                  <FieldLabel>대기 중인 초대</FieldLabel>
+                  <p className="mt-1 text-sm text-muted">
+                    {invitationsQuery.data!.length}명
+                  </p>
+                </div>
+                <div>
+                  {invitationsQuery.data!.map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="py-3 border-b border-line flex items-center gap-3.5 last:border-b-0"
+                    >
+                      <span className="w-[34px] h-[34px] border-2 border-dashed border-line text-muted flex items-center justify-center text-[13px] font-bold shrink-0">
+                        {inv.email[0]?.toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{inv.email}</p>
+                        <p className="text-[11px] text-muted">
+                          {new Date(inv.expiresAt).toLocaleDateString('ko-KR')}{' '}
+                          까지 유효
+                        </p>
+                      </div>
+                      <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+                        대기 중
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => revokeMutation.mutate(inv.id)}
+                        disabled={revokeMutation.isPending}
+                        className="text-xs font-medium text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2 disabled:opacity-50"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className="py-7 border-b-2 border-ink grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
               <div>

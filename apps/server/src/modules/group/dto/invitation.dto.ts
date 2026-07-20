@@ -32,3 +32,20 @@ export class InvitationAcceptResponseDto {
   @ApiProperty()
   groupId!: string;
 }
+
+export class GroupInvitationDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  email!: string;
+
+  @ApiProperty({ enum: ['PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED'] })
+  status!: InvitationStatus;
+
+  @ApiProperty()
+  expiresAt!: Date;
+
+  @ApiProperty()
+  createdAt!: Date;
+}

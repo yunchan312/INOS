@@ -9,6 +9,7 @@ interface MoviePosterGridProps {
   onClose: () => void;
   onSave: (meetingId: string, dto: UpsertLibraryReviewDto) => void;
   onDelete: (meetingId: string) => void;
+  onDeleteEntry?: (entryId: string) => void;
   isSaving: boolean;
   isDeleting: boolean;
   hasError: boolean;
@@ -22,6 +23,7 @@ export function MoviePosterGrid({
   onClose,
   onSave,
   onDelete,
+  onDeleteEntry,
   isSaving,
   isDeleting,
   hasError,
@@ -49,6 +51,11 @@ export function MoviePosterGrid({
             onClose={onClose}
             onSave={(dto) => onSave(item.meetingId, dto)}
             onDelete={() => onDelete(item.meetingId)}
+            onDeleteEntry={
+              item.source === 'MANUAL' && onDeleteEntry
+                ? () => onDeleteEntry(item.meetingId)
+                : undefined
+            }
             isSaving={isSaving}
             isDeleting={isDeleting}
             hasError={hasError}

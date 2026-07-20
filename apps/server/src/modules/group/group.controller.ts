@@ -18,6 +18,7 @@ import {
   UpdateGroupSettingsDto,
 } from './dto/group.dto';
 import {
+  GroupInvitationDto,
   InviteMemberDto,
   InvitationPreviewDto,
 } from './dto/invitation.dto';
@@ -77,6 +78,27 @@ export class GroupController {
     @Body() dto: InviteMemberDto,
   ): Promise<InvitationPreviewDto> {
     return this.groupService.inviteMember(groupId, user.id, dto.email);
+  }
+
+  @Get(':groupId/invitations')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '대기 중인 초대 목록 (소유자)' })
+  listInvitations(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+  ): Promise<GroupInvitationDto[]> {
+    return this.groupService.listPendingInvitations(groupId);
+  }
+
+  @Delete(':groupId/invitations/:invitationId')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '초대 취소 (소유자)' })
+  revokeInvitation(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+    @Param('invitationId', new ParseUUIDPipe()) invitationId: string,
+  ): Promise<void> {
+    return this.groupService.revokeInvitation(groupId, invitationId);
   }
 
   @Delete(':groupId/members/:userId')

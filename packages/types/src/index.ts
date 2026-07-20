@@ -127,6 +127,14 @@ export interface InvitationAcceptResponseDto {
   groupId: string;
 }
 
+export interface GroupInvitationDto {
+  id: string;
+  email: string;
+  status: InvitationStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
 // Meeting DTOs
 export type MeetingStatus = 'PENDING' | 'CONFIRMED' | 'DONE' | 'CANCELLED';
 
@@ -179,6 +187,8 @@ export interface MeetingDto {
   respondedCount: number;
   totalMembers: number;
   discussionId: string | null;
+  /** 발제문 생성 상태 (없으면 null — 확정 직후 큐 대기 중일 수 있음) */
+  discussionStatus: DiscussionStatus | null;
   myAvailability: string[] | null;
   /** 내가 제출한 선호 시간 메모 */
   myTimeNote: string | null;
@@ -251,15 +261,40 @@ export interface LibraryReviewDto {
   updatedByNickname: string | null; // 그룹 리뷰에서만 채워짐
 }
 
+export type LibraryItemSource = 'MEETING' | 'MANUAL';
+
 export interface LibraryItemDto {
+  /** MEETING이면 모임 id, MANUAL이면 수기 항목 id */
   meetingId: string;
-  groupId: string;
-  groupName: string;
+  source: LibraryItemSource;
+  groupId: string | null;
+  groupName: string | null;
   kind: PromptKind;
   title: string;
   creator: string | null;
   finishedAt: string | null;
   review: LibraryReviewDto | null;
+  /** 모임 발제문 (해당 kind의 질문 목록) */
+  discussionPrompts: string[] | null;
+  /** 수기 등록 발제문 (자유 텍스트) */
+  discussionText: string | null;
+}
+
+export interface CreateManualLibraryEntryDto {
+  kind: PromptKind;
+  title: string;
+  creator?: string | null;
+  finishedAt?: string | null; // ISO date
+  discussionText?: string | null;
+}
+
+export interface UpdateManualLibraryEntryDto {
+  title?: string;
+  creator?: string | null;
+  finishedAt?: string | null;
+  discussionText?: string | null;
+  rating?: number | null; // 1~10
+  comment?: string | null;
 }
 
 export interface LibraryDto {
@@ -278,7 +313,9 @@ export interface LibraryShareDto {
 }
 
 export interface SharedLibraryDto {
+  /** PERSONAL이면 사용자 닉네임, GROUP이면 오가니제이션 이름 */
   ownerNickname: string;
+  scope: 'PERSONAL' | 'GROUP';
   library: LibraryDto;
 }
 

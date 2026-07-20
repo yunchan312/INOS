@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import axios from 'axios';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -25,6 +25,11 @@ import {
 } from './desktop-oauth-state';
 
 class RequestOrgDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(80)
+  orgName!: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(500)
@@ -152,7 +157,7 @@ export class AuthController {
     @CurrentUser() user: AuthUser,
     @Body() dto: RequestOrgDto,
   ): Promise<{ success: boolean }> {
-    await this.mailService.sendOrgRequest(user.email, dto.message);
+    await this.mailService.sendOrgRequest(user.email, dto.orgName, dto.message);
     return { success: true };
   }
 

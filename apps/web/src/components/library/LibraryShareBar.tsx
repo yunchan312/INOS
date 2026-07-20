@@ -1,9 +1,26 @@
 import { useState } from 'react';
-import { useLibraryShare } from '@/hooks/useLibraryShare';
+import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query';
+import type { LibraryShareDto } from '@inos/types';
 import { Button } from '@/components/Button';
 
-export function LibraryShareBar() {
-  const { status, enable, disable } = useLibraryShare();
+// 개인 서재(useLibraryShare)·오가니제이션 서가(useGroupLibraryShare) 공용 공유 바.
+interface LibraryShareBarProps {
+  status: UseQueryResult<LibraryShareDto>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  enable: UseMutationResult<any, unknown, void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  disable: UseMutationResult<any, unknown, void>;
+  title?: string;
+  description?: string;
+}
+
+export function LibraryShareBar({
+  status,
+  enable,
+  disable,
+  title = '내 서재를 공유해보세요',
+  description = '링크를 아는 사람은 로그인 없이 내 서가를 볼 수 있어요.',
+}: LibraryShareBarProps) {
   const [copied, setCopied] = useState(false);
 
   const shareId = status.data?.shareId ?? null;
@@ -49,10 +66,8 @@ export function LibraryShareBar() {
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-bold">내 서재를 공유해보세요</p>
-            <p className="mt-1 text-xs text-muted">
-              링크를 아는 사람은 로그인 없이 내 서가를 볼 수 있어요.
-            </p>
+            <p className="text-sm font-bold">{title}</p>
+            <p className="mt-1 text-xs text-muted">{description}</p>
           </div>
           <Button
             variant="primary"

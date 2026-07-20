@@ -279,6 +279,15 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
     isToday(meeting.confirmedDate);
   const showDiscussionLink = meeting.status === 'DONE' && meeting.discussionId;
 
+  // 날짜 확정 → 발제문 자동 생성. 생성 중 표시와, 완료 시 보기 버튼.
+  const discussionGenerating =
+    meeting.status === 'CONFIRMED' &&
+    (!meeting.discussionId || meeting.discussionStatus === 'GENERATING');
+  const discussionReady =
+    meeting.status === 'CONFIRMED' &&
+    (meeting.discussionStatus === 'GENERATED' ||
+      meeting.discussionStatus === 'PUBLISHED');
+
   let statusPill: { text: string; className: string };
   if (meeting.status === 'PENDING') {
     statusPill = needsManualConfirm
@@ -354,6 +363,23 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
             className="font-medium text-muted border-b border-muted hover:text-ink hover:border-ink"
           >
             발제문 다시 보기
+          </Link>
+        )}
+        {discussionGenerating && (
+          <span className="flex items-center gap-1.5 font-medium text-muted">
+            <span
+              aria-hidden="true"
+              className="inline-block h-1.5 w-1.5 bg-point animate-[blink_1.2s_ease_infinite]"
+            />
+            발제문 생성 중…
+          </span>
+        )}
+        {discussionReady && !showMeetingLink && (
+          <Link
+            to={`/orgs/${orgId}/meetings/${meeting.id}`}
+            className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+          >
+            발제문 보기
           </Link>
         )}
 

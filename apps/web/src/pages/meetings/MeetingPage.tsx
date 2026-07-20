@@ -50,12 +50,13 @@ export default function MeetingPage() {
 
   const readOnly = meeting?.status === 'DONE';
 
-  // 노트 작성은 모임 당일부터 (로컬 날짜 기준)
+  // 노트 작성은 모임 당일에만 (로컬 날짜 기준) — 열람은 항상 가능
   const todayStr = new Date().toLocaleDateString('en-CA');
   const meetingDayStr = meeting?.confirmedDate
     ? new Date(meeting.confirmedDate).toLocaleDateString('en-CA')
     : null;
-  const notesLocked = !readOnly && (!meetingDayStr || todayStr < meetingDayStr);
+  const notesLocked =
+    !readOnly && (!meetingDayStr || todayStr !== meetingDayStr);
 
   // 종료 전 모임에서만 노트/종료 실시간 동기화
   useNotesSocket(meetingId, orgId, !!meeting && !readOnly);
@@ -222,7 +223,7 @@ export default function MeetingPage() {
           <div className="mt-6 border-2 border-ink bg-surface px-4 py-3">
             <p className="text-sm">
               발제 질문을 미리 읽어보세요. 노트 작성은{' '}
-              <span className="font-bold">모임 당일부터</span> 가능해요.
+              <span className="font-bold">모임 당일에만</span> 가능해요.
             </p>
           </div>
         )}

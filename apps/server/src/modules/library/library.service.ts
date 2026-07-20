@@ -8,14 +8,26 @@ import { MeetingStatus, Prisma, PromptKind } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GroupService } from '../group/group.service';
 import {
+  CreateManualLibraryEntryDto,
   LibraryItemResponseDto,
   LibraryResponseDto,
+  UpdateManualLibraryEntryDto,
   UpsertLibraryReviewDto,
 } from './dto/library.dto';
 
 type MeetingWithGroup = Prisma.MeetingGetPayload<{
-  include: { group: { select: { id: true; name: true } } };
+  include: {
+    group: { select: { id: true; name: true } };
+    discussion: { select: { bookPrompts: true; moviePrompts: true } };
+  };
 }>;
+
+type ManualEntry = Prisma.ManualLibraryEntryGetPayload<object>;
+
+const MEETING_INCLUDE = {
+  group: { select: { id: true, name: true } },
+  discussion: { select: { bookPrompts: true, moviePrompts: true } },
+} as const;
 
 interface ReviewInfo {
   rating: number;
@@ -35,7 +47,7 @@ export class LibraryService {
     const availabilities = await this.prisma.meetingAvailability.findMany({
       where: { userId, meeting: { status: MeetingStatus.DONE } },
       include: {
-        meeting: { include: { group: { select: { id: true, name: true } } } },
+        meeting: { include: MEETING_INCLUDE },
       },
     });
     const meetings = availabilities.map((a) => a.meeting);
@@ -55,7 +67,69 @@ export class LibraryService {
       ]),
     );
 
-    return this.buildLibrary(meetings, reviewMap);
+    const manualEntries = await this.prisma.manualLibraryEntry.findMany({
+      where: { userId },
+    });
+
+    return this.buildLibrary(meetings, reviewMap, manualEntries);
+  }
+
+  async createManualEntry(
+    userId: string,
+    dto: CreateManualLibraryEntryDto,
+  ): Promise<LibraryItemResponseDto> {
+    const entry = await this.prisma.manualLibraryEntry.create({
+      data: {
+        userId,
+        kind: dto.kind,
+        title: dto.title.trim(),
+        creator: dto.creator?.trim() || null,
+        finishedAt: dto.finishedAt ? new Date(dto.finishedAt) : null,
+        discussionText: dto.discussionText?.trim() || null,
+      },
+    });
+    return this.manualToItem(entry);
+  }
+
+  async updateManualEntry(
+    userId: string,
+    entryId: string,
+    dto: UpdateManualLibraryEntryDto,
+  ): Promise<LibraryItemResponseDto> {
+    const existing = await this.prisma.manualLibraryEntry.findUnique({
+      where: { id: entryId },
+      select: { userId: true },
+    });
+    if (!existing || existing.userId !== userId) {
+      throw new NotFoundException('수기 항목을 찾을 수 없습니다');
+    }
+    const entry = await this.prisma.manualLibraryEntry.update({
+      where: { id: entryId },
+      data: {
+        title: dto.title?.trim(),
+        creator: dto.creator === undefined ? undefined : dto.creator?.trim() || null,
+        finishedAt:
+          dto.finishedAt === undefined
+            ? undefined
+            : dto.finishedAt
+              ? new Date(dto.finishedAt)
+              : null,
+        discussionText:
+          dto.discussionText === undefined
+            ? undefined
+            : dto.discussionText?.trim() || null,
+        rating: dto.rating === undefined ? undefined : dto.rating,
+        comment:
+          dto.comment === undefined ? undefined : dto.comment?.trim() || null,
+      },
+    });
+    return this.manualToItem(entry);
+  }
+
+  async deleteManualEntry(userId: string, entryId: string): Promise<void> {
+    await this.prisma.manualLibraryEntry.deleteMany({
+      where: { id: entryId, userId },
+    });
   }
 
   async getShareStatus(userId: string): Promise<{ shareId: string | null }> {
@@ -89,26 +163,72 @@ export class LibraryService {
     return { shareId: null };
   }
 
-  async getBySharedId(
-    shareId: string,
-  ): Promise<{ ownerNickname: string; library: LibraryResponseDto }> {
+  async getBySharedId(shareId: string): Promise<{
+    ownerNickname: string;
+    scope: 'PERSONAL' | 'GROUP';
+    library: LibraryResponseDto;
+  }> {
     const owner = await this.prisma.user.findUnique({
       where: { libraryShareId: shareId },
       select: { id: true, nickname: true },
     });
-    if (!owner) {
-      throw new NotFoundException('공유된 라이브러리를 찾을 수 없어요');
+    if (owner) {
+      const library = await this.getMine(owner.id);
+      return { ownerNickname: owner.nickname, scope: 'PERSONAL', library };
     }
-    const library = await this.getMine(owner.id);
-    return { ownerNickname: owner.nickname, library };
+
+    const group = await this.prisma.group.findUnique({
+      where: { libraryShareId: shareId },
+      select: { id: true, name: true },
+    });
+    if (group) {
+      const library = await this.loadGroupLibrary(group.id);
+      return { ownerNickname: group.name, scope: 'GROUP', library };
+    }
+
+    throw new NotFoundException('공유된 라이브러리를 찾을 수 없어요');
+  }
+
+  async getGroupShareStatus(groupId: string): Promise<{ shareId: string | null }> {
+    const group = await this.prisma.group.findUnique({
+      where: { id: groupId },
+      select: { libraryShareId: true },
+    });
+    return { shareId: group?.libraryShareId ?? null };
+  }
+
+  async enableGroupShare(groupId: string): Promise<{ shareId: string }> {
+    const existing = await this.prisma.group.findUnique({
+      where: { id: groupId },
+      select: { libraryShareId: true },
+    });
+    if (existing?.libraryShareId) return { shareId: existing.libraryShareId };
+
+    const shareId = randomUUID();
+    await this.prisma.group.update({
+      where: { id: groupId },
+      data: { libraryShareId: shareId },
+    });
+    return { shareId };
+  }
+
+  async disableGroupShare(groupId: string): Promise<{ shareId: null }> {
+    await this.prisma.group.update({
+      where: { id: groupId },
+      data: { libraryShareId: null },
+    });
+    return { shareId: null };
   }
 
   async getForGroup(groupId: string, userId: string): Promise<LibraryResponseDto> {
     await this.groupService.assertMember(groupId, userId);
+    return this.loadGroupLibrary(groupId);
+  }
 
+  private async loadGroupLibrary(groupId: string): Promise<LibraryResponseDto> {
     const meetings = await this.prisma.meeting.findMany({
       where: { groupId, status: MeetingStatus.DONE },
-      include: { group: { select: { id: true, name: true } } },
+      include: MEETING_INCLUDE,
     });
 
     const reviews = await this.prisma.groupLibraryReview.findMany({
@@ -219,7 +339,7 @@ export class LibraryService {
     const availability = await this.prisma.meetingAvailability.findUnique({
       where: { meetingId_userId: { meetingId, userId } },
       include: {
-        meeting: { include: { group: { select: { id: true, name: true } } } },
+        meeting: { include: MEETING_INCLUDE },
       },
     });
     if (!availability) {
@@ -236,7 +356,7 @@ export class LibraryService {
   ): Promise<MeetingWithGroup> {
     const meeting = await this.prisma.meeting.findUnique({
       where: { id: meetingId },
-      include: { group: { select: { id: true, name: true } } },
+      include: MEETING_INCLUDE,
     });
     if (!meeting || meeting.groupId !== groupId) {
       throw new NotFoundException('모임을 찾을 수 없습니다');
@@ -260,9 +380,16 @@ export class LibraryService {
   private buildLibrary(
     meetings: MeetingWithGroup[],
     reviewMap: Map<string, ReviewInfo>,
+    manualEntries: ManualEntry[] = [],
   ): LibraryResponseDto {
     const books: LibraryItemResponseDto[] = [];
     const movies: LibraryItemResponseDto[] = [];
+
+    for (const entry of manualEntries) {
+      const item = this.manualToItem(entry);
+      if (entry.kind === PromptKind.BOOK) books.push(item);
+      else movies.push(item);
+    }
 
     for (const meeting of meetings) {
       if (meeting.bookTitle) {
@@ -291,8 +418,15 @@ export class LibraryService {
     kind: PromptKind,
     review: ReviewInfo | null,
   ): LibraryItemResponseDto {
+    const rawPrompts =
+      kind === PromptKind.BOOK
+        ? meeting.discussion?.bookPrompts
+        : meeting.discussion?.moviePrompts;
+    const prompts = Array.isArray(rawPrompts) ? (rawPrompts as string[]) : null;
+
     return {
       meetingId: meeting.id,
+      source: 'MEETING',
       groupId: meeting.group.id,
       groupName: meeting.group.name,
       kind,
@@ -307,6 +441,32 @@ export class LibraryService {
             updatedByNickname: review.updatedByNickname,
           }
         : null,
+      discussionPrompts: prompts && prompts.length > 0 ? prompts : null,
+      discussionText: null,
+    };
+  }
+
+  private manualToItem(entry: ManualEntry): LibraryItemResponseDto {
+    return {
+      meetingId: entry.id,
+      source: 'MANUAL',
+      groupId: null,
+      groupName: null,
+      kind: entry.kind,
+      title: entry.title,
+      creator: entry.creator,
+      finishedAt: entry.finishedAt,
+      review:
+        entry.rating != null
+          ? {
+              rating: entry.rating,
+              comment: entry.comment,
+              updatedAt: entry.updatedAt,
+              updatedByNickname: null,
+            }
+          : null,
+      discussionPrompts: null,
+      discussionText: entry.discussionText,
     };
   }
 

@@ -4,6 +4,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMyLibrary } from '@/hooks/useMyLibrary';
 import { useUpsertMyReview } from '@/hooks/useUpsertMyReview';
 import { useDeleteMyReview } from '@/hooks/useDeleteMyReview';
+import {
+  useCreateManualEntry,
+  useDeleteManualEntry,
+  useUpdateManualEntry,
+} from '@/hooks/useManualEntries';
+import { useLibraryShare } from '@/hooks/useLibraryShare';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
@@ -16,6 +22,10 @@ export default function MyLibraryPage() {
   const libraryQuery = useMyLibrary();
   const upsertReview = useUpsertMyReview();
   const deleteReview = useDeleteMyReview();
+  const createManual = useCreateManualEntry();
+  const updateManual = useUpdateManualEntry();
+  const removeManual = useDeleteManualEntry();
+  const share = useLibraryShare();
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/', { replace: true });
@@ -33,6 +43,11 @@ export default function MyLibraryPage() {
           isLoading={libraryQuery.isLoading}
           upsertReview={upsertReview}
           deleteReview={deleteReview}
+          manualEntry={{
+            create: createManual,
+            update: updateManual,
+            remove: removeManual,
+          }}
           emptyBooksAction={
             <Link to="/orgs">
               <Button variant="primary" size="md">
@@ -41,7 +56,11 @@ export default function MyLibraryPage() {
             </Link>
           }
         />
-        <LibraryShareBar />
+        <LibraryShareBar
+          status={share.status}
+          enable={share.enable}
+          disable={share.disable}
+        />
         <div className="mt-4">
           <Link to="/library/recap">
             <Button variant="outline" size="md" fullWidth>

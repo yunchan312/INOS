@@ -21,6 +21,7 @@ interface BookshelfProps {
   onClose: () => void;
   onSave: (meetingId: string, dto: UpsertLibraryReviewDto) => void;
   onDelete: (meetingId: string) => void;
+  onDeleteEntry?: (entryId: string) => void;
   isSaving: boolean;
   isDeleting: boolean;
   hasError: boolean;
@@ -34,6 +35,7 @@ export function Bookshelf({
   onClose,
   onSave,
   onDelete,
+  onDeleteEntry,
   isSaving,
   isDeleting,
   hasError,
@@ -102,6 +104,11 @@ export function Bookshelf({
           item={editingItem}
           onSave={(dto) => onSave(editingItem.meetingId, dto)}
           onDelete={() => onDelete(editingItem.meetingId)}
+          onDeleteEntry={
+            editingItem.source === 'MANUAL' && onDeleteEntry
+              ? () => onDeleteEntry(editingItem.meetingId)
+              : undefined
+          }
           onClose={onClose}
           isSaving={isSaving}
           isDeleting={isDeleting}

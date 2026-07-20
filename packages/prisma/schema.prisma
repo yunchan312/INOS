@@ -61,6 +61,7 @@ model User {
   sentInvitations        Invitation[]            @relation("InvitationInvitedBy")
   personalLibraryReviews PersonalLibraryReview[]
   updatedGroupReviews    GroupLibraryReview[]    @relation("GroupReviewUpdatedBy")
+  manualLibraryEntries   ManualLibraryEntry[]
 
   @@unique([oauthProvider, oauthId])
   @@index([email])
@@ -68,13 +69,14 @@ model User {
 }
 
 model Group {
-  id          String   @id @default(uuid()) @db.Uuid
-  ownerId     String   @db.Uuid
-  name        String
-  description String?
-  greeting    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid()) @db.Uuid
+  ownerId        String   @db.Uuid
+  name           String
+  description    String?
+  greeting       String?
+  libraryShareId String?  @unique // 오가니제이션 서가 공개 링크 슬러그 (null이면 비공개)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   owner       User          @relation("GroupOwner", fields: [ownerId], references: [id])
   members     GroupMember[]
@@ -221,6 +223,26 @@ model PersonalLibraryReview {
   @@unique([userId, meetingId, kind])
   @@index([meetingId, kind])
   @@map("personal_library_reviews")
+}
+
+// 개인 서재 수기 등록 — 모임 없이 직접 추가한 책/영화 (내장 별점·한줄평·발제문 포함)
+model ManualLibraryEntry {
+  id             String     @id @default(uuid()) @db.Uuid
+  userId         String     @db.Uuid
+  kind           PromptKind
+  title          String
+  creator        String?
+  finishedAt     DateTime?
+  rating         Int? // 1~10 (0.5개 단위)
+  comment        String?    @db.VarChar(100)
+  discussionText String?    @db.Text
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("manual_library_entries")
 }
 
 // 오가니제이션 단위 리뷰 — 그룹당 작품 하나. 멤버 누구나 작성/수정 가능, 마지막 수정자만 기록.

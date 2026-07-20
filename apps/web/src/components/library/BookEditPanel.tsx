@@ -7,6 +7,8 @@ interface BookEditPanelProps {
   onSave: (dto: UpsertLibraryReviewDto) => void;
   onDelete: () => void;
   onClose: () => void;
+  /** 수기 항목일 때만 — 항목 자체 삭제 */
+  onDeleteEntry?: () => void;
   isSaving: boolean;
   isDeleting: boolean;
   hasError: boolean;
@@ -17,6 +19,7 @@ export function BookEditPanel({
   onSave,
   onDelete,
   onClose,
+  onDeleteEntry,
   isSaving,
   isDeleting,
   hasError,
@@ -24,8 +27,9 @@ export function BookEditPanel({
   const [rating, setRating] = useState(item.review?.rating ?? 0);
   const [comment, setComment] = useState(item.review?.comment ?? '');
 
+  const origin = item.groupName ?? '직접 추가';
   const year = item.finishedAt ? new Date(item.finishedAt).getFullYear() : null;
-  const meta = year ? `${item.groupName} · ${year}` : item.groupName;
+  const meta = year ? `${origin} · ${year}` : origin;
 
   return (
     <div className="mt-4 mb-2 max-w-[720px] box-border border-2 border-ink bg-surface p-5">
@@ -66,6 +70,28 @@ export function BookEditPanel({
         />
       </div>
 
+      {(item.discussionPrompts || item.discussionText) && (
+        <div className="mt-4 border-t border-line pt-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+            발제문
+          </p>
+          {item.discussionPrompts && (
+            <ol className="mt-2 max-h-40 list-decimal overflow-y-auto pl-5 text-[13px] leading-relaxed">
+              {item.discussionPrompts.map((p, i) => (
+                <li key={i} className="mt-1 first:mt-0">
+                  {p}
+                </li>
+              ))}
+            </ol>
+          )}
+          {item.discussionText && (
+            <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-[13px] leading-relaxed">
+              {item.discussionText}
+            </p>
+          )}
+        </div>
+      )}
+
       {item.review?.updatedByNickname && (
         <p className="mt-3 text-[11px] text-muted">
           {item.review.updatedByNickname}님이 마지막으로 수정
@@ -91,16 +117,28 @@ export function BookEditPanel({
         >
           취소
         </button>
-        {item.review && (
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={isDeleting}
-            className="ml-auto cursor-pointer border-b border-danger text-xs font-medium text-danger hover:border-danger-2 hover:text-danger-2 disabled:opacity-50"
-          >
-            리뷰 삭제
-          </button>
-        )}
+        <span className="ml-auto flex items-center gap-3">
+          {item.review && (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={isDeleting}
+              className="cursor-pointer border-b border-danger text-xs font-medium text-danger hover:border-danger-2 hover:text-danger-2 disabled:opacity-50"
+            >
+              리뷰 삭제
+            </button>
+          )}
+          {onDeleteEntry && (
+            <button
+              type="button"
+              onClick={onDeleteEntry}
+              disabled={isDeleting}
+              className="cursor-pointer border-b border-danger text-xs font-medium text-danger hover:border-danger-2 hover:text-danger-2 disabled:opacity-50"
+            >
+              항목 삭제
+            </button>
+          )}
+        </span>
       </div>
     </div>
   );

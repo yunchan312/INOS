@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MeetingStatus } from '@prisma/client';
+import { DiscussionStatus, MeetingStatus } from '@prisma/client';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -170,6 +170,14 @@ export class MeetingResponseDto {
 
   @ApiProperty({ required: false, nullable: true })
   discussionId!: string | null;
+
+  @ApiProperty({
+    enum: ['GENERATING', 'GENERATED', 'PUBLISHED'],
+    required: false,
+    nullable: true,
+    description: '발제문 생성 상태 (없으면 null)',
+  })
+  discussionStatus!: DiscussionStatus | null;
 
   @ApiProperty({ required: false, nullable: true })
   myAvailability!: string[] | null;

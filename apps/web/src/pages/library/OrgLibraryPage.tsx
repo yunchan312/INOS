@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrg } from '@/hooks/useOrg';
 import { useOrgLibrary } from '@/hooks/useOrgLibrary';
+import { useGroupLibraryShare } from '@/hooks/useGroupLibraryShare';
 import { useUpsertGroupReview } from '@/hooks/useUpsertGroupReview';
 import { useDeleteGroupReview } from '@/hooks/useDeleteGroupReview';
 import { Header } from '@/components/Header';
@@ -10,6 +11,7 @@ import { Footer } from '@/components/Footer';
 import { Skeleton } from '@/components/Skeleton';
 import { Button } from '@/components/Button';
 import { LibraryContent } from '@/components/library/LibraryContent';
+import { LibraryShareBar } from '@/components/library/LibraryShareBar';
 
 export default function OrgLibraryPage() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -19,6 +21,8 @@ export default function OrgLibraryPage() {
   const libraryQuery = useOrgLibrary(orgId);
   const upsertReview = useUpsertGroupReview(orgId);
   const deleteReview = useDeleteGroupReview(orgId);
+  const isOwner = orgQuery.data?.myRole === 'OWNER';
+  const share = useGroupLibraryShare(orgId, isOwner);
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/', { replace: true });
@@ -61,6 +65,15 @@ export default function OrgLibraryPage() {
                 ) : undefined
               }
             />
+            {isOwner && (
+              <LibraryShareBar
+                status={share.status}
+                enable={share.enable}
+                disable={share.disable}
+                title="오가니제이션 서가를 공유해보세요"
+                description="링크를 아는 사람은 로그인 없이 우리 서가를 볼 수 있어요."
+              />
+            )}
           </>
         )}
       </main>

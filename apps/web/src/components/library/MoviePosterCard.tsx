@@ -11,6 +11,8 @@ interface MoviePosterCardProps {
   onClose: () => void;
   onSave: (dto: UpsertLibraryReviewDto) => void;
   onDelete: () => void;
+  /** 수기 항목일 때만 — 항목 자체 삭제 */
+  onDeleteEntry?: () => void;
   isSaving: boolean;
   isDeleting: boolean;
   hasError: boolean;
@@ -24,6 +26,7 @@ export function MoviePosterCard({
   onClose,
   onSave,
   onDelete,
+  onDeleteEntry,
   isSaving,
   isDeleting,
   hasError,
@@ -35,6 +38,7 @@ export function MoviePosterCard({
         item={item}
         onSave={onSave}
         onDelete={onDelete}
+        onDeleteEntry={onDeleteEntry}
         onClose={onClose}
         isSaving={isSaving}
         isDeleting={isDeleting}
@@ -104,6 +108,7 @@ interface MoviePosterEditCardProps {
   item: LibraryItemDto;
   onSave: (dto: UpsertLibraryReviewDto) => void;
   onDelete: () => void;
+  onDeleteEntry?: () => void;
   onClose: () => void;
   isSaving: boolean;
   isDeleting: boolean;
@@ -114,6 +119,7 @@ function MoviePosterEditCard({
   item,
   onSave,
   onDelete,
+  onDeleteEntry,
   onClose,
   isSaving,
   isDeleting,
@@ -145,20 +151,43 @@ function MoviePosterEditCard({
         className="mt-3 w-full box-border resize-none border-2 border-ink bg-surface-2 p-2 text-xs leading-[1.5] outline-none focus:border-point-hover"
       />
       <span className="mt-1 flex items-center justify-between text-[10px] text-muted">
-        {item.review ? (
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={isDeleting}
-            className="cursor-pointer border-b border-danger font-medium text-danger hover:border-danger-2 hover:text-danger-2 disabled:opacity-50"
-          >
-            삭제
-          </button>
-        ) : (
-          <span />
-        )}
+        <span className="flex items-center gap-2">
+          {item.review && (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={isDeleting}
+              className="cursor-pointer border-b border-danger font-medium text-danger hover:border-danger-2 hover:text-danger-2 disabled:opacity-50"
+            >
+              리뷰 삭제
+            </button>
+          )}
+          {onDeleteEntry && (
+            <button
+              type="button"
+              onClick={onDeleteEntry}
+              disabled={isDeleting}
+              className="cursor-pointer border-b border-danger font-medium text-danger hover:border-danger-2 hover:text-danger-2 disabled:opacity-50"
+            >
+              항목 삭제
+            </button>
+          )}
+        </span>
         <span>{comment.length}/100</span>
       </span>
+      {(item.discussionPrompts || item.discussionText) && (
+        <span className="mt-2 block max-h-16 overflow-y-auto border-t border-line pt-1.5 text-[10px] leading-[1.6] text-muted-2">
+          <span className="font-bold uppercase tracking-[0.1em] text-muted">발제문</span>
+          {item.discussionPrompts?.map((p, i) => (
+            <span key={i} className="block">
+              {i + 1}. {p}
+            </span>
+          ))}
+          {item.discussionText && (
+            <span className="block whitespace-pre-wrap">{item.discussionText}</span>
+          )}
+        </span>
+      )}
       {hasError && (
         <span className="mt-1 block text-[10px] text-danger">저장 실패. 다시 시도해주세요.</span>
       )}
