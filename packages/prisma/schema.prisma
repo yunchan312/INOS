@@ -69,13 +69,14 @@ model User {
 }
 
 model Group {
-  id          String   @id @default(uuid()) @db.Uuid
-  ownerId     String   @db.Uuid
-  name        String
-  description String?
-  greeting    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid()) @db.Uuid
+  ownerId        String   @db.Uuid
+  name           String
+  description    String?
+  greeting       String?
+  libraryShareId String?  @unique // 오가니제이션 서가 공개 링크 슬러그 (null이면 비공개)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   owner       User          @relation("GroupOwner", fields: [ownerId], references: [id])
   members     GroupMember[]

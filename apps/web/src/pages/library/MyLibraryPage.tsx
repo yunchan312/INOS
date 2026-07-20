@@ -9,6 +9,7 @@ import {
   useDeleteManualEntry,
   useUpdateManualEntry,
 } from '@/hooks/useManualEntries';
+import { useLibraryShare } from '@/hooks/useLibraryShare';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
@@ -24,6 +25,7 @@ export default function MyLibraryPage() {
   const createManual = useCreateManualEntry();
   const updateManual = useUpdateManualEntry();
   const removeManual = useDeleteManualEntry();
+  const share = useLibraryShare();
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/', { replace: true });
@@ -54,7 +56,11 @@ export default function MyLibraryPage() {
             </Link>
           }
         />
-        <LibraryShareBar />
+        <LibraryShareBar
+          status={share.status}
+          enable={share.enable}
+          disable={share.disable}
+        />
         <div className="mt-4">
           <Link to="/library/recap">
             <Button variant="outline" size="md" fullWidth>

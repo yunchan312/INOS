@@ -163,23 +163,69 @@ export class LibraryService {
     return { shareId: null };
   }
 
-  async getBySharedId(
-    shareId: string,
-  ): Promise<{ ownerNickname: string; library: LibraryResponseDto }> {
+  async getBySharedId(shareId: string): Promise<{
+    ownerNickname: string;
+    scope: 'PERSONAL' | 'GROUP';
+    library: LibraryResponseDto;
+  }> {
     const owner = await this.prisma.user.findUnique({
       where: { libraryShareId: shareId },
       select: { id: true, nickname: true },
     });
-    if (!owner) {
-      throw new NotFoundException('공유된 라이브러리를 찾을 수 없어요');
+    if (owner) {
+      const library = await this.getMine(owner.id);
+      return { ownerNickname: owner.nickname, scope: 'PERSONAL', library };
     }
-    const library = await this.getMine(owner.id);
-    return { ownerNickname: owner.nickname, library };
+
+    const group = await this.prisma.group.findUnique({
+      where: { libraryShareId: shareId },
+      select: { id: true, name: true },
+    });
+    if (group) {
+      const library = await this.loadGroupLibrary(group.id);
+      return { ownerNickname: group.name, scope: 'GROUP', library };
+    }
+
+    throw new NotFoundException('공유된 라이브러리를 찾을 수 없어요');
+  }
+
+  async getGroupShareStatus(groupId: string): Promise<{ shareId: string | null }> {
+    const group = await this.prisma.group.findUnique({
+      where: { id: groupId },
+      select: { libraryShareId: true },
+    });
+    return { shareId: group?.libraryShareId ?? null };
+  }
+
+  async enableGroupShare(groupId: string): Promise<{ shareId: string }> {
+    const existing = await this.prisma.group.findUnique({
+      where: { id: groupId },
+      select: { libraryShareId: true },
+    });
+    if (existing?.libraryShareId) return { shareId: existing.libraryShareId };
+
+    const shareId = randomUUID();
+    await this.prisma.group.update({
+      where: { id: groupId },
+      data: { libraryShareId: shareId },
+    });
+    return { shareId };
+  }
+
+  async disableGroupShare(groupId: string): Promise<{ shareId: null }> {
+    await this.prisma.group.update({
+      where: { id: groupId },
+      data: { libraryShareId: null },
+    });
+    return { shareId: null };
   }
 
   async getForGroup(groupId: string, userId: string): Promise<LibraryResponseDto> {
     await this.groupService.assertMember(groupId, userId);
+    return this.loadGroupLibrary(groupId);
+  }
 
+  private async loadGroupLibrary(groupId: string): Promise<LibraryResponseDto> {
     const meetings = await this.prisma.meeting.findMany({
       where: { groupId, status: MeetingStatus.DONE },
       include: MEETING_INCLUDE,

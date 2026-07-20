@@ -13,8 +13,15 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PromptKind } from '@prisma/client';
 import { LibraryService } from './library.service';
-import { LibraryItemResponseDto, LibraryResponseDto, UpsertLibraryReviewDto } from './dto/library.dto';
+import {
+  LibraryItemResponseDto,
+  LibraryResponseDto,
+  LibraryShareResponseDto,
+  UpsertLibraryReviewDto,
+} from './dto/library.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GroupRoleGuard } from '../auth/guards/group-role.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('library')
@@ -30,6 +37,36 @@ export class GroupLibraryController {
     @CurrentUser() user: AuthUser,
   ): Promise<LibraryResponseDto> {
     return this.libraryService.getForGroup(groupId, user.id);
+  }
+
+  @Get('share')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '오가니제이션 서가 공유 상태 (소유자)' })
+  getShareStatus(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+  ): Promise<LibraryShareResponseDto> {
+    return this.libraryService.getGroupShareStatus(groupId);
+  }
+
+  @Put('share')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '오가니제이션 서가 공개 (소유자)' })
+  enableShare(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+  ): Promise<LibraryShareResponseDto> {
+    return this.libraryService.enableGroupShare(groupId);
+  }
+
+  @Delete('share')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '오가니제이션 서가 비공개 전환 (소유자)' })
+  disableShare(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+  ): Promise<LibraryShareResponseDto> {
+    return this.libraryService.disableGroupShare(groupId);
   }
 
   @Put('reviews/:meetingId/:kind')

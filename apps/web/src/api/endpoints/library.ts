@@ -22,6 +22,21 @@ export const libraryApi = {
   disableShare: () =>
     apiClient.delete<LibraryShareDto>('/users/me/library/share').then((r) => r.data),
 
+  getGroupShareStatus: (groupId: string) =>
+    apiClient
+      .get<LibraryShareDto>(`/groups/${groupId}/library/share`)
+      .then((r) => r.data),
+
+  enableGroupShare: (groupId: string) =>
+    apiClient
+      .put<LibraryShareDto>(`/groups/${groupId}/library/share`)
+      .then((r) => r.data),
+
+  disableGroupShare: (groupId: string) =>
+    apiClient
+      .delete<LibraryShareDto>(`/groups/${groupId}/library/share`)
+      .then((r) => r.data),
+
   getShared: (shareId: string) =>
     apiClient
       .get<SharedLibraryDto>(`/library/shared/${shareId}`)

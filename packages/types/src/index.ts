@@ -311,7 +311,9 @@ export interface LibraryShareDto {
 }
 
 export interface SharedLibraryDto {
+  /** PERSONAL이면 사용자 닉네임, GROUP이면 오가니제이션 이름 */
   ownerNickname: string;
+  scope: 'PERSONAL' | 'GROUP';
   library: LibraryDto;
 }
 

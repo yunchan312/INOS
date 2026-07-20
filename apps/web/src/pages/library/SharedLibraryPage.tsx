@@ -60,8 +60,16 @@ export default function SharedLibraryPage() {
         {query.data && (
           <LibraryContent
             kicker="공유된 서가"
-            title={`${query.data.ownerNickname}님의 서재`}
-            subtitle="INOS 모임에서 함께 읽고 본 책과 영화 · 별점과 한줄평"
+            title={
+              query.data.scope === 'GROUP'
+                ? `${query.data.ownerNickname}의 서가`
+                : `${query.data.ownerNickname}님의 서재`
+            }
+            subtitle={
+              query.data.scope === 'GROUP'
+                ? '오가니제이션에서 함께 읽고 본 책과 영화 · 별점과 한줄평'
+                : 'INOS 모임에서 함께 읽고 본 책과 영화 · 별점과 한줄평'
+            }
             library={query.data.library}
             isLoading={false}
             upsertReview={noopMutation}

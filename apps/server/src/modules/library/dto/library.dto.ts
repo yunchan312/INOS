@@ -157,8 +157,11 @@ export class LibraryShareResponseDto {
 }
 
 export class SharedLibraryResponseDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'PERSONAL이면 닉네임, GROUP이면 오가니제이션 이름' })
   ownerNickname!: string;
+
+  @ApiProperty({ enum: ['PERSONAL', 'GROUP'] })
+  scope!: 'PERSONAL' | 'GROUP';
 
   @ApiProperty({ type: LibraryResponseDto })
   library!: LibraryResponseDto;
