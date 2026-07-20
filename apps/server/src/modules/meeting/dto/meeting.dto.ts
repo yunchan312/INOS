@@ -92,6 +92,12 @@ export class SubmitAvailabilityDto {
   @ArrayNotEmpty()
   @IsDateString({}, { each: true })
   availableDates!: string[];
+
+  @ApiProperty({ required: false, nullable: true, maxLength: 80, example: '저녁 7시 이후 가능해요' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  timeNote?: string | null;
 }
 
 export class MeetingResponderDto {
@@ -103,6 +109,9 @@ export class MeetingResponderDto {
 
   @ApiProperty({ type: [String] })
   availableDates!: string[];
+
+  @ApiProperty({ required: false, nullable: true })
+  timeNote!: string | null;
 }
 
 export class MeetingNonResponderDto {
@@ -164,6 +173,9 @@ export class MeetingResponseDto {
 
   @ApiProperty({ required: false, nullable: true })
   myAvailability!: string[] | null;
+
+  @ApiProperty({ required: false, nullable: true, description: '내가 제출한 선호 시간 메모' })
+  myTimeNote!: string | null;
 
   @ApiProperty({
     required: false,
