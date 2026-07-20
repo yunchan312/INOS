@@ -17,6 +17,7 @@ import {
   UpdateGroupSettingsDto,
 } from './dto/group.dto';
 import {
+  GroupInvitationDto,
   InvitationAcceptResponseDto,
   InvitationPreviewDto,
 } from './dto/invitation.dto';
@@ -267,6 +268,38 @@ export class GroupService {
     ]);
 
     return { groupId: invitation.groupId };
+  }
+
+  async listPendingInvitations(groupId: string): Promise<GroupInvitationDto[]> {
+    const invitations = await this.prisma.invitation.findMany({
+      where: { groupId, status: InvitationStatus.PENDING },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+    });
+    return invitations;
+  }
+
+  async revokeInvitation(groupId: string, invitationId: string): Promise<void> {
+    const invitation = await this.prisma.invitation.findUnique({
+      where: { id: invitationId },
+      select: { id: true, groupId: true, status: true },
+    });
+    if (!invitation || invitation.groupId !== groupId) {
+      throw new NotFoundException('초대를 찾을 수 없습니다');
+    }
+    if (invitation.status !== InvitationStatus.PENDING) {
+      throw new BadRequestException('대기 중인 초대만 취소할 수 있어요');
+    }
+    await this.prisma.invitation.update({
+      where: { id: invitation.id },
+      data: { status: InvitationStatus.REVOKED },
+    });
   }
 
   async assertMember(groupId: string, userId: string): Promise<GroupRole> {

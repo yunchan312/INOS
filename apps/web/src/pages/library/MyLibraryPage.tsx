@@ -4,6 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMyLibrary } from '@/hooks/useMyLibrary';
 import { useUpsertMyReview } from '@/hooks/useUpsertMyReview';
 import { useDeleteMyReview } from '@/hooks/useDeleteMyReview';
+import {
+  useCreateManualEntry,
+  useDeleteManualEntry,
+  useUpdateManualEntry,
+} from '@/hooks/useManualEntries';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
@@ -16,6 +21,9 @@ export default function MyLibraryPage() {
   const libraryQuery = useMyLibrary();
   const upsertReview = useUpsertMyReview();
   const deleteReview = useDeleteMyReview();
+  const createManual = useCreateManualEntry();
+  const updateManual = useUpdateManualEntry();
+  const removeManual = useDeleteManualEntry();
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/', { replace: true });
@@ -33,6 +41,11 @@ export default function MyLibraryPage() {
           isLoading={libraryQuery.isLoading}
           upsertReview={upsertReview}
           deleteReview={deleteReview}
+          manualEntry={{
+            create: createManual,
+            update: updateManual,
+            remove: removeManual,
+          }}
           emptyBooksAction={
             <Link to="/orgs">
               <Button variant="primary" size="md">

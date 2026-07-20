@@ -13,15 +13,18 @@ import { apiClient } from "@/api/client";
 
 function OrgRequestForm() {
   const [open, setOpen] = useState(false);
+  const [orgName, setOrgName] = useState("");
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
   );
 
   const handleSend = async () => {
+    if (!orgName.trim()) return;
     setStatus("sending");
     try {
       await apiClient.post("/auth/request-org", {
+        orgName: orgName.trim(),
         message: message.trim() || undefined,
       });
       setStatus("sent");
@@ -55,10 +58,18 @@ function OrgRequestForm() {
       <p className="text-xs text-muted">
         신청 내용이 관리자에게 전달돼요. 확인 후 초대장을 보내드릴게요.
       </p>
+      <input
+        type="text"
+        value={orgName}
+        onChange={(e) => setOrgName(e.target.value.slice(0, 80))}
+        maxLength={80}
+        placeholder="오가니제이션 이름 (필수)"
+        className="input-underline text-sm"
+      />
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="오가니제이션 이름, 목적 등을 간략히 적어주세요 (선택)"
+        placeholder="모임 목적, 인원 등을 간략히 적어주세요 (선택)"
         rows={3}
         className="input-underline text-sm resize-none"
       />
@@ -72,6 +83,7 @@ function OrgRequestForm() {
           variant="primary"
           size="sm"
           loading={status === "sending"}
+          disabled={!orgName.trim()}
           onClick={handleSend}
         >
           신청하기

@@ -1,6 +1,7 @@
 import { apiClient } from '@/api/client';
 import type {
   GroupDetailDto,
+  GroupInvitationDto,
   GroupMemberDto,
   GroupSummaryDto,
   InviteMemberDto,
@@ -29,6 +30,14 @@ export const groupApi = {
     apiClient
       .post<InvitationPreviewDto>(`/groups/${groupId}/members/invite`, dto)
       .then((r) => r.data),
+
+  listInvitations: (groupId: string) =>
+    apiClient
+      .get<GroupInvitationDto[]>(`/groups/${groupId}/invitations`)
+      .then((r) => r.data),
+
+  revokeInvitation: (groupId: string, invitationId: string) =>
+    apiClient.delete<void>(`/groups/${groupId}/invitations/${invitationId}`),
 
   removeMember: (groupId: string, userId: string) =>
     apiClient

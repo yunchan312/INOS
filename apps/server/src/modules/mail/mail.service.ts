@@ -161,10 +161,15 @@ export class MailService {
     await this.send(input.toEmail, subject, html);
   }
 
-  async sendOrgRequest(fromEmail: string, message?: string): Promise<void> {
+  async sendOrgRequest(
+    fromEmail: string,
+    orgName: string,
+    message?: string,
+  ): Promise<void> {
     const adminEmail = this.config.get<string>('ADMIN_EMAIL', 'yunchan0339@gmail.com');
-    const subject = '[INOS] 오가니제이션 생성 신청';
+    const subject = `[INOS] 오가니제이션 생성 신청 — ${orgName}`;
     const html = `
+      <p><strong>오가니제이션 이름:</strong> ${orgName}</p>
       <p><strong>신청자 이메일:</strong> ${fromEmail}</p>
       ${message ? `<p><strong>추가 내용:</strong></p><p>${message.replace(/\n/g, '<br>')}</p>` : ''}
     `;

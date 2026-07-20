@@ -298,9 +298,10 @@ export class DiscussionService {
     }
     if (
       !discussion.meeting.confirmedDate ||
-      toKstDateString(new Date()) < toKstDateString(discussion.meeting.confirmedDate)
+      toKstDateString(new Date()) !==
+        toKstDateString(discussion.meeting.confirmedDate)
     ) {
-      throw new ForbiddenException('발제 노트는 모임 당일부터 작성할 수 있어요');
+      throw new ForbiddenException('발제 노트는 모임 당일에만 작성할 수 있어요');
     }
 
     const note = await this.prisma.discussionNote.upsert({
