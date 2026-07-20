@@ -6,6 +6,7 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+  UnauthorizedException,
   InternalServerErrorException,
   Redirect,
 } from '@nestjs/common';
@@ -23,6 +24,12 @@ import {
   decodeDesktopOauthState,
   encodeDesktopOauthState,
 } from './desktop-oauth-state';
+
+class RefreshDto {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken!: string;
+}
 
 class RequestOrgDto {
   @IsString()
@@ -128,10 +135,15 @@ export class AuthController {
       });
 
       const token = this.authService.issueAccessToken(user.id);
+      const refresh = this.authService.issueRefreshToken(user.id);
 
       const desktopState = decodeDesktopOauthState(state);
       if (desktopState) {
-        const query = new URLSearchParams({ token, nonce: desktopState.nonce });
+        const query = new URLSearchParams({
+          token,
+          refresh,
+          nonce: desktopState.nonce,
+        });
         return {
           url: `http://127.0.0.1:${desktopState.port}/auth/callback?${query.toString()}`,
           statusCode: 302,
@@ -139,7 +151,11 @@ export class AuthController {
       }
 
       const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
-      return { url: `${frontendUrl}/auth/callback?token=${token}`, statusCode: 302 };
+      const webQuery = new URLSearchParams({ token, refresh });
+      return {
+        url: `${frontendUrl}/auth/callback?${webQuery.toString()}`,
+        statusCode: 302,
+      };
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new InternalServerErrorException(
@@ -148,6 +164,22 @@ export class AuthController {
       }
       throw error;
     }
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: '리프레시 토큰으로 토큰 재발급 (리프레시도 회전)' })
+  async refresh(
+    @Body() dto: RefreshDto,
+  ): Promise<{ token: string; refreshToken: string }> {
+    const userId = this.authService.verifyRefreshToken(dto.refreshToken);
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('사용자를 찾을 수 없습니다');
+    }
+    return {
+      token: this.authService.issueAccessToken(user.id),
+      refreshToken: this.authService.issueRefreshToken(user.id),
+    };
   }
 
   @Post('request-org')

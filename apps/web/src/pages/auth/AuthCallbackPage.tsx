@@ -24,7 +24,12 @@ export default function AuthCallbackPage() {
     const returnTo = params.get('returnTo') ?? storedReturnTo ?? '/orgs';
     window.sessionStorage.removeItem(RETURN_TO_KEY);
 
-    useAuthStore.getState().setToken(token);
+    const refresh = params.get('refresh');
+    if (refresh) {
+      useAuthStore.getState().setTokens(token, refresh);
+    } else {
+      useAuthStore.getState().setToken(token);
+    }
 
     authApi
       .getMe()

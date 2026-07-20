@@ -69,6 +69,11 @@ export interface LoginRedirectDto {
   token: string;
 }
 
+export interface AuthTokensDto {
+  token: string;
+  refreshToken: string;
+}
+
 // Group / Organization DTOs
 export type GroupRole = 'OWNER' | 'MEMBER';
 
