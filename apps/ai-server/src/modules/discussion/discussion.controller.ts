@@ -1,7 +1,9 @@
 import {
   Controller,
+  Delete,
   Get,
   Post,
+  Put,
   Param,
   Body,
   Query,
@@ -18,6 +20,7 @@ import { NotesGateway } from './notes.gateway';
 import {
   CreateCustomPromptDto,
   TokenQueryDto,
+  UpsertImpressionDto,
   UpsertNoteDto,
 } from './dto/discussion.dto';
 import { JwtValidatorService } from '../../shared/auth/jwt-validator.service';
@@ -129,15 +132,49 @@ export class DiscussionController {
     return prompt;
   }
 
-  @Post(':meetingId/events/impression')
-  @HttpCode(202)
-  @ApiOperation({ summary: '작품 감상 변경 실시간 브로드캐스트 (서버-투-서버)' })
-  notifyImpression(
+  @Get(':meetingId/impressions')
+  @ApiOperation({ summary: '작품 감상 목록' })
+  async listImpressions(
     @Param('meetingId') meetingId: string,
-    @Body() body: { userId: string; impression: DiscussionImpressionDto | null },
-  ): { accepted: boolean } {
-    this.notesGateway.broadcastImpression(meetingId, body);
-    return { accepted: true };
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionImpressionDto[]> {
+    this.requireAuth(authHeader);
+    return this.discussionService.listImpressions(meetingId);
+  }
+
+  @Put(':meetingId/impression')
+  @ApiOperation({ summary: '내 작품 감상 저장/수정 (본인만)' })
+  async upsertImpression(
+    @Param('meetingId') meetingId: string,
+    @Body() dto: UpsertImpressionDto,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionImpressionDto> {
+    const payload = this.requireAuth(authHeader);
+    const impression = await this.discussionService.upsertImpression(
+      meetingId,
+      payload.sub,
+      dto.content,
+    );
+    this.notesGateway.broadcastImpression(meetingId, {
+      userId: payload.sub,
+      impression,
+    });
+    return impression;
+  }
+
+  @Delete(':meetingId/impression')
+  @HttpCode(204)
+  @ApiOperation({ summary: '내 작품 감상 삭제 (본인만)' })
+  async deleteImpression(
+    @Param('meetingId') meetingId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<void> {
+    const payload = this.requireAuth(authHeader);
+    await this.discussionService.deleteImpression(meetingId, payload.sub);
+    this.notesGateway.broadcastImpression(meetingId, {
+      userId: payload.sub,
+      impression: null,
+    });
   }
 
   private requireAuth(authHeader?: string) {

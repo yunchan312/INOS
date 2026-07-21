@@ -11,6 +11,7 @@ import { ClaudeService } from '../../shared/claude/claude.service';
 import type {
   DiscussionCustomPromptDto,
   DiscussionDto,
+  DiscussionImpressionDto,
   DiscussionNoteDto,
   UpsertDiscussionNoteDto,
 } from '@inos/types';
@@ -412,6 +413,70 @@ export class DiscussionService {
       include: { user: { select: { nickname: true } } },
     });
     return this.mapCustomPrompt(created);
+  }
+
+  async listImpressions(meetingId: string): Promise<DiscussionImpressionDto[]> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+      select: { id: true },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+
+    const impressions = await this.prisma.discussionImpression.findMany({
+      where: { discussionId: discussion.id },
+      include: { user: { select: { nickname: true } } },
+      orderBy: { updatedAt: 'desc' },
+    });
+    return impressions.map((i) => this.mapImpression(i));
+  }
+
+  async upsertImpression(
+    meetingId: string,
+    userId: string,
+    content: string,
+  ): Promise<DiscussionImpressionDto> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+      select: { id: true },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+
+    const impression = await this.prisma.discussionImpression.upsert({
+      where: {
+        discussionId_userId: { discussionId: discussion.id, userId },
+      },
+      update: { content: content.trim() },
+      create: { discussionId: discussion.id, userId, content: content.trim() },
+      include: { user: { select: { nickname: true } } },
+    });
+    return this.mapImpression(impression);
+  }
+
+  /** 본인 감상만 삭제 (userId는 JWT에서 취득) */
+  async deleteImpression(meetingId: string, userId: string): Promise<void> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+      select: { id: true },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+
+    await this.prisma.discussionImpression.deleteMany({
+      where: { discussionId: discussion.id, userId },
+    });
+  }
+
+  private mapImpression(i: {
+    userId: string;
+    content: string;
+    updatedAt: Date;
+    user: { nickname: string };
+  }): DiscussionImpressionDto {
+    return {
+      userId: i.userId,
+      nickname: i.user.nickname,
+      content: i.content,
+      updatedAt: i.updatedAt.toISOString(),
+    };
   }
 
   private mapCustomPrompt(p: {

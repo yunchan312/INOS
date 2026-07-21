@@ -1,7 +1,6 @@
 import { apiClient } from '@/api/client';
 import type {
   CreateMeetingDto,
-  DiscussionImpressionDto,
   MeetingDto,
   SubmitAvailabilityDto,
   SubmitAvailabilityResponseDto,
@@ -47,20 +46,5 @@ export const meetingApi = {
   finish: (groupId: string, meetingId: string) =>
     apiClient
       .post<MeetingDto>(`/groups/${groupId}/meetings/${meetingId}/done`)
-      .then((r) => r.data),
-
-  listImpressions: (groupId: string, meetingId: string) =>
-    apiClient
-      .get<DiscussionImpressionDto[]>(
-        `/groups/${groupId}/meetings/${meetingId}/impressions`,
-      )
-      .then((r) => r.data),
-
-  upsertImpression: (groupId: string, meetingId: string, content: string) =>
-    apiClient
-      .put<DiscussionImpressionDto | null>(
-        `/groups/${groupId}/meetings/${meetingId}/impression`,
-        { content },
-      )
       .then((r) => r.data),
 };

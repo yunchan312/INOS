@@ -8,10 +8,8 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Put,
   UseGuards,
 } from '@nestjs/common';
-import type { DiscussionImpressionDto } from '@inos/types';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MeetingService } from './meeting.service';
 import {
@@ -20,7 +18,6 @@ import {
   SubmitAvailabilityDto,
   SubmitAvailabilityResponseDto,
   UpdateMeetingDto,
-  UpsertImpressionDto,
 } from './dto/meeting.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GroupRoleGuard } from '../auth/guards/group-role.guard';
@@ -98,32 +95,6 @@ export class MeetingController {
     @Body() dto: SubmitAvailabilityDto,
   ): Promise<SubmitAvailabilityResponseDto> {
     return this.meetingService.submitAvailability(groupId, meetingId, user.id, dto);
-  }
-
-  @Get(':meetingId/impressions')
-  @ApiOperation({ summary: '작품 감상 목록 (멤버)' })
-  listImpressions(
-    @Param('groupId', new ParseUUIDPipe()) groupId: string,
-    @Param('meetingId', new ParseUUIDPipe()) meetingId: string,
-    @CurrentUser() user: AuthUser,
-  ): Promise<DiscussionImpressionDto[]> {
-    return this.meetingService.listImpressions(groupId, meetingId, user.id);
-  }
-
-  @Put(':meetingId/impression')
-  @ApiOperation({ summary: '내 작품 감상 저장 (빈 값이면 삭제, 멤버)' })
-  upsertImpression(
-    @Param('groupId', new ParseUUIDPipe()) groupId: string,
-    @Param('meetingId', new ParseUUIDPipe()) meetingId: string,
-    @CurrentUser() user: AuthUser,
-    @Body() dto: UpsertImpressionDto,
-  ): Promise<DiscussionImpressionDto | null> {
-    return this.meetingService.upsertImpression(
-      groupId,
-      meetingId,
-      user.id,
-      dto.content,
-    );
   }
 
   @Post(':meetingId/done')

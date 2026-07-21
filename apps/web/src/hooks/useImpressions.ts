@@ -1,29 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { meetingApi } from '@/api/endpoints/meeting';
+import { discussionApi } from '@/api/endpoints/discussion';
 import { useAuthStore } from '@/stores/auth-store';
 
-export function useImpressions(
-  orgId: string | undefined,
-  meetingId: string | undefined,
-  enabled = true,
-) {
+export function useImpressions(meetingId: string | undefined, enabled = true) {
   const token = useAuthStore((s) => s.token);
   return useQuery({
     queryKey: ['impressions', meetingId],
-    queryFn: () => meetingApi.listImpressions(orgId as string, meetingId as string),
-    enabled: !!token && !!orgId && !!meetingId && enabled,
+    queryFn: () => discussionApi.listImpressions(meetingId as string),
+    enabled: !!token && !!meetingId && enabled,
     retry: false,
   });
 }
 
-export function useUpsertImpression(
-  orgId: string | undefined,
-  meetingId: string | undefined,
-) {
+export function useUpsertImpression(meetingId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (content: string) =>
-      meetingApi.upsertImpression(orgId as string, meetingId as string, content),
+      discussionApi.upsertImpression(meetingId as string, content),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['impressions', meetingId] });
+    },
+  });
+}
+
+export function useDeleteImpression(meetingId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => discussionApi.deleteImpression(meetingId as string),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['impressions', meetingId] });
     },

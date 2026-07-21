@@ -7,7 +7,6 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { MeetingStatus, Prisma } from '@prisma/client';
-import type { DiscussionImpressionDto } from '@inos/types';
 import axios from 'axios';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -199,86 +198,6 @@ export class MeetingService {
     }
 
     return this.load(groupId, meetingId, callerId);
-  }
-
-  async listImpressions(
-    groupId: string,
-    meetingId: string,
-    userId: string,
-  ): Promise<DiscussionImpressionDto[]> {
-    await this.groupService.assertMember(groupId, userId);
-    const discussion = await this.findDiscussionInGroup(groupId, meetingId);
-
-    const impressions = await this.prisma.discussionImpression.findMany({
-      where: { discussionId: discussion.id },
-      include: { user: { select: { nickname: true } } },
-      orderBy: { updatedAt: 'desc' },
-    });
-    return impressions.map((i) => ({
-      userId: i.userId,
-      nickname: i.user.nickname,
-      content: i.content,
-      updatedAt: i.updatedAt.toISOString(),
-    }));
-  }
-
-  /** 빈 content면 감상 삭제 (null 반환). 변경은 ai-server 게이트웨이로 실시간 브로드캐스트 */
-  async upsertImpression(
-    groupId: string,
-    meetingId: string,
-    userId: string,
-    content: string,
-  ): Promise<DiscussionImpressionDto | null> {
-    await this.groupService.assertMember(groupId, userId);
-    const discussion = await this.findDiscussionInGroup(groupId, meetingId);
-
-    const trimmed = content.trim();
-    let result: DiscussionImpressionDto | null = null;
-
-    if (!trimmed) {
-      await this.prisma.discussionImpression.deleteMany({
-        where: { discussionId: discussion.id, userId },
-      });
-    } else {
-      const impression = await this.prisma.discussionImpression.upsert({
-        where: {
-          discussionId_userId: { discussionId: discussion.id, userId },
-        },
-        update: { content: trimmed },
-        create: { discussionId: discussion.id, userId, content: trimmed },
-        include: { user: { select: { nickname: true } } },
-      });
-      result = {
-        userId: impression.userId,
-        nickname: impression.user.nickname,
-        content: impression.content,
-        updatedAt: impression.updatedAt.toISOString(),
-      };
-    }
-
-    // 접속 중인 멤버 화면에 실시간 반영 (실패해도 저장은 유지)
-    const aiUrl = this.config.get<string>('AI_SERVER_URL', 'http://localhost:3001');
-    axios
-      .post(`${aiUrl}/ai/discussions/${meetingId}/events/impression`, {
-        userId,
-        impression: result,
-      })
-      .catch((error: Error) => {
-        this.logger.warn(`감상 브로드캐스트 실패: ${error.message}`);
-      });
-
-    return result;
-  }
-
-  private async findDiscussionInGroup(groupId: string, meetingId: string) {
-    const discussion = await this.prisma.discussion.findUnique({
-      where: { meetingId },
-      select: { id: true, meeting: { select: { groupId: true } } },
-    });
-    if (!discussion || discussion.meeting.groupId !== groupId) {
-      throw new NotFoundException('발제문을 찾을 수 없습니다');
-    }
-    return discussion;
   }
 
   async submitAvailability(

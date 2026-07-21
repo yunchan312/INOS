@@ -16,7 +16,11 @@ import { useUpsertNote } from '@/hooks/useUpsertNote';
 import { useFinishMeeting } from '@/hooks/useFinishMeeting';
 import { useNotesSocket } from '@/hooks/useNotesSocket';
 import { useAddCustomPrompt, useCustomPrompts } from '@/hooks/useCustomPrompts';
-import { useImpressions, useUpsertImpression } from '@/hooks/useImpressions';
+import {
+  useDeleteImpression,
+  useImpressions,
+  useUpsertImpression,
+} from '@/hooks/useImpressions';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
@@ -123,13 +127,17 @@ function ImpressionSection({
   impressions,
   myUserId,
   onSave,
+  onDelete,
   isPending,
+  isDeleting,
   isError,
 }: {
   impressions: DiscussionImpressionDto[];
   myUserId: string | undefined;
   onSave: (content: string) => void;
+  onDelete: () => void;
   isPending: boolean;
+  isDeleting: boolean;
   isError: boolean;
 }) {
   const mine = impressions.find((i) => i.userId === myUserId);
@@ -160,11 +168,21 @@ function ImpressionSection({
           variant="primary"
           size="sm"
           loading={isPending}
-          disabled={unchanged}
+          disabled={!content.trim() || unchanged}
           onClick={() => onSave(content)}
         >
-          {mine && !content.trim() ? '감상 삭제' : '감상 저장'}
+          {mine ? '감상 수정' : '감상 저장'}
         </Button>
+        {mine && (
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={isDeleting}
+            className="text-xs font-medium text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2 disabled:opacity-50"
+          >
+            {isDeleting ? '삭제 중…' : '삭제'}
+          </button>
+        )}
         {mine && unchanged && <span className="text-xs text-muted">저장됨</span>}
         {isError && (
           <span className="text-xs text-danger">저장에 실패했어요.</span>
@@ -201,8 +219,9 @@ export default function MeetingPage() {
   const finishMeeting = useFinishMeeting(orgId, meetingId);
   const customPromptsQuery = useCustomPrompts(meetingId, !!discussionQuery.data);
   const addCustomPrompt = useAddCustomPrompt(meetingId);
-  const impressionsQuery = useImpressions(orgId, meetingId, !!discussionQuery.data);
-  const upsertImpression = useUpsertImpression(orgId, meetingId);
+  const impressionsQuery = useImpressions(meetingId, !!discussionQuery.data);
+  const upsertImpression = useUpsertImpression(meetingId);
+  const deleteImpression = useDeleteImpression(meetingId);
 
   const [streamedPrompts, setStreamedPrompts] = useState<Prompts>({ book: [], movie: [] });
   const [isStreaming, setIsStreaming] = useState(false);
@@ -529,8 +548,10 @@ export default function MeetingPage() {
             impressions={impressionsQuery.data ?? []}
             myUserId={user?.id}
             isPending={upsertImpression.isPending}
-            isError={upsertImpression.isError}
+            isDeleting={deleteImpression.isPending}
+            isError={upsertImpression.isError || deleteImpression.isError}
             onSave={(content) => upsertImpression.mutate(content)}
+            onDelete={() => deleteImpression.mutate()}
           />
         )}
       </main>

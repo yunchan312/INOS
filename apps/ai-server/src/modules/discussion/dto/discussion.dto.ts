@@ -32,6 +32,13 @@ export class TokenQueryDto {
   token!: string;
 }
 
+export class UpsertImpressionDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
+  content!: string;
+}
+
 export class CreateCustomPromptDto {
   @IsString()
   @IsIn(['BOOK', 'MOVIE'])
