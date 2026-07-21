@@ -66,11 +66,14 @@ function CustomPromptForm({
         나누고 싶은 질문을 직접 추가해보세요. 작품 아래에 내 이름과 함께 실려요.
       </p>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-4">
+        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+          작품 선택
+        </label>
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as PromptKind)}
-          className="input-underline w-full sm:w-56 shrink-0 text-sm"
+          className="input-underline w-full sm:w-64 text-sm"
           aria-label="작품 선택"
         >
           {kinds.map((k) => (
@@ -79,17 +82,21 @@ function CustomPromptForm({
             </option>
           ))}
         </select>
-        <input
-          type="text"
+      </div>
+
+      <div className="mt-4">
+        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+          발제문
+        </label>
+        <textarea
           value={content}
           onChange={(e) => setContent(e.target.value.slice(0, 500))}
           maxLength={500}
-          placeholder="발제 질문을 입력하세요"
-          className="input-underline flex-1 text-sm"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSubmit();
-          }}
+          rows={3}
+          placeholder="나누고 싶은 발제 질문을 적어보세요"
+          className="w-full box-border resize-y border-2 border-ink bg-surface-2 px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
         />
+        <p className="mt-1 text-right text-[11px] text-muted">{content.length}/500</p>
       </div>
 
       {isError && (
@@ -194,8 +201,8 @@ export default function MeetingPage() {
   const finishMeeting = useFinishMeeting(orgId, meetingId);
   const customPromptsQuery = useCustomPrompts(meetingId, !!discussionQuery.data);
   const addCustomPrompt = useAddCustomPrompt(meetingId);
-  const impressionsQuery = useImpressions(meetingId, !!discussionQuery.data);
-  const upsertImpression = useUpsertImpression(meetingId);
+  const impressionsQuery = useImpressions(orgId, meetingId, !!discussionQuery.data);
+  const upsertImpression = useUpsertImpression(orgId, meetingId);
 
   const [streamedPrompts, setStreamedPrompts] = useState<Prompts>({ book: [], movie: [] });
   const [isStreaming, setIsStreaming] = useState(false);

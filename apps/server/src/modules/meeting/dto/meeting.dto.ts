@@ -100,6 +100,13 @@ export class SubmitAvailabilityDto {
   timeNote?: string | null;
 }
 
+export class UpsertImpressionDto {
+  @ApiProperty({ maxLength: 2000, description: '빈 문자열이면 감상 삭제' })
+  @IsString()
+  @MaxLength(2000)
+  content!: string;
+}
+
 export class MeetingResponderDto {
   @ApiProperty()
   userId!: string;

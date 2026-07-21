@@ -3,7 +3,6 @@ import type {
   CreateCustomPromptDto,
   DiscussionCustomPromptDto,
   DiscussionDto,
-  DiscussionImpressionDto,
   DiscussionNoteDto,
   UpsertDiscussionNoteDto,
 } from '@inos/types';
@@ -32,15 +31,4 @@ export const discussionApi = {
       .post<DiscussionCustomPromptDto>(`/discussions/${meetingId}/custom-prompts`, dto)
       .then((r) => r.data),
 
-  listImpressions: (meetingId: string) =>
-    aiClient
-      .get<DiscussionImpressionDto[]>(`/discussions/${meetingId}/impressions`)
-      .then((r) => r.data),
-
-  upsertImpression: (meetingId: string, content: string) =>
-    aiClient
-      .put<DiscussionImpressionDto | null>(`/discussions/${meetingId}/impression`, {
-        content,
-      })
-      .then((r) => r.data),
 };

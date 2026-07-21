@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Param,
   Body,
   Query,
@@ -19,7 +18,6 @@ import { NotesGateway } from './notes.gateway';
 import {
   CreateCustomPromptDto,
   TokenQueryDto,
-  UpsertImpressionDto,
   UpsertNoteDto,
 } from './dto/discussion.dto';
 import { JwtValidatorService } from '../../shared/auth/jwt-validator.service';
@@ -122,32 +120,24 @@ export class DiscussionController {
     @Headers('authorization') authHeader?: string,
   ): Promise<DiscussionCustomPromptDto> {
     const payload = this.requireAuth(authHeader);
-    return this.discussionService.addCustomPrompt(meetingId, payload.sub, dto);
-  }
-
-  @Get(':meetingId/impressions')
-  @ApiOperation({ summary: '작품 감상 목록' })
-  async listImpressions(
-    @Param('meetingId') meetingId: string,
-    @Headers('authorization') authHeader?: string,
-  ): Promise<DiscussionImpressionDto[]> {
-    this.requireAuth(authHeader);
-    return this.discussionService.listImpressions(meetingId);
-  }
-
-  @Put(':meetingId/impression')
-  @ApiOperation({ summary: '내 작품 감상 저장 (빈 값이면 삭제)' })
-  async upsertImpression(
-    @Param('meetingId') meetingId: string,
-    @Body() dto: UpsertImpressionDto,
-    @Headers('authorization') authHeader?: string,
-  ): Promise<DiscussionImpressionDto | null> {
-    const payload = this.requireAuth(authHeader);
-    return this.discussionService.upsertImpression(
+    const prompt = await this.discussionService.addCustomPrompt(
       meetingId,
       payload.sub,
-      dto.content,
+      dto,
     );
+    this.notesGateway.broadcastCustomPrompt(meetingId, prompt);
+    return prompt;
+  }
+
+  @Post(':meetingId/events/impression')
+  @HttpCode(202)
+  @ApiOperation({ summary: '작품 감상 변경 실시간 브로드캐스트 (서버-투-서버)' })
+  notifyImpression(
+    @Param('meetingId') meetingId: string,
+    @Body() body: { userId: string; impression: DiscussionImpressionDto | null },
+  ): { accepted: boolean } {
+    this.notesGateway.broadcastImpression(meetingId, body);
+    return { accepted: true };
   }
 
   private requireAuth(authHeader?: string) {

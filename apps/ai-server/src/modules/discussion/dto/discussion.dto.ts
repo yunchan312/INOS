@@ -43,9 +43,3 @@ export class CreateCustomPromptDto {
   content!: string;
 }
 
-export class UpsertImpressionDto {
-  /** 빈 문자열이면 감상 삭제 */
-  @IsString()
-  @MaxLength(2000)
-  content!: string;
-}
