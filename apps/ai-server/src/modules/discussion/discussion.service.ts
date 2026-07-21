@@ -1,10 +1,24 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import type { MessageEvent } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ClaudeService } from '../../shared/claude/claude.service';
-import type { DiscussionDto, DiscussionNoteDto, UpsertDiscussionNoteDto } from '@inos/types';
-import { UpsertNoteDto } from './dto/discussion.dto';
+import type {
+  DiscussionCustomPromptDto,
+  DiscussionDto,
+  DiscussionImpressionDto,
+  DiscussionNoteDto,
+  UpsertDiscussionNoteDto,
+} from '@inos/types';
+import {
+  CreateCustomPromptDto,
+  UpsertNoteDto,
+} from './dto/discussion.dto';
 
 const SYSTEM_PROMPT = `당신은 인문학 모임 전문 사회자이자 발제문 작성 전문가입니다.
 웹 검색을 활용하여 책이나 영화의 실제 내용, 맥락, 비평적 관점을 정확히 파악하세요.
@@ -349,6 +363,130 @@ export class DiscussionService {
     });
 
     return notes.map((n) => this.mapNote(n));
+  }
+
+  async listCustomPrompts(meetingId: string): Promise<DiscussionCustomPromptDto[]> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+      select: { id: true },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+
+    const prompts = await this.prisma.discussionCustomPrompt.findMany({
+      where: { discussionId: discussion.id },
+      include: { user: { select: { nickname: true } } },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+    return prompts.map((p) => this.mapCustomPrompt(p));
+  }
+
+  async addCustomPrompt(
+    meetingId: string,
+    userId: string,
+    dto: CreateCustomPromptDto,
+  ): Promise<DiscussionCustomPromptDto> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+      include: {
+        meeting: { select: { status: true, bookTitle: true, movieTitle: true } },
+      },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+    if (discussion.meeting.status === 'DONE') {
+      throw new ForbiddenException('종료된 모임에는 발제를 추가할 수 없어요');
+    }
+    const hasWork =
+      dto.promptKind === 'BOOK'
+        ? !!discussion.meeting.bookTitle
+        : !!discussion.meeting.movieTitle;
+    if (!hasWork) {
+      throw new BadRequestException('이 모임에서 다루지 않는 작품이에요');
+    }
+
+    const created = await this.prisma.discussionCustomPrompt.create({
+      data: {
+        discussionId: discussion.id,
+        userId,
+        promptKind: dto.promptKind as 'BOOK' | 'MOVIE',
+        content: dto.content.trim(),
+      },
+      include: { user: { select: { nickname: true } } },
+    });
+    return this.mapCustomPrompt(created);
+  }
+
+  async listImpressions(meetingId: string): Promise<DiscussionImpressionDto[]> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+      select: { id: true },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+
+    const impressions = await this.prisma.discussionImpression.findMany({
+      where: { discussionId: discussion.id },
+      include: { user: { select: { nickname: true } } },
+      orderBy: { updatedAt: 'desc' },
+    });
+    return impressions.map((i) => ({
+      userId: i.userId,
+      nickname: i.user.nickname,
+      content: i.content,
+      updatedAt: i.updatedAt.toISOString(),
+    }));
+  }
+
+  /** 빈 content면 감상 삭제 (null 반환) */
+  async upsertImpression(
+    meetingId: string,
+    userId: string,
+    content: string,
+  ): Promise<DiscussionImpressionDto | null> {
+    const discussion = await this.prisma.discussion.findUnique({
+      where: { meetingId },
+      select: { id: true },
+    });
+    if (!discussion) throw new NotFoundException('발제문을 찾을 수 없습니다');
+
+    const trimmed = content.trim();
+    if (!trimmed) {
+      await this.prisma.discussionImpression.deleteMany({
+        where: { discussionId: discussion.id, userId },
+      });
+      return null;
+    }
+
+    const impression = await this.prisma.discussionImpression.upsert({
+      where: {
+        discussionId_userId: { discussionId: discussion.id, userId },
+      },
+      update: { content: trimmed },
+      create: { discussionId: discussion.id, userId, content: trimmed },
+      include: { user: { select: { nickname: true } } },
+    });
+    return {
+      userId: impression.userId,
+      nickname: impression.user.nickname,
+      content: impression.content,
+      updatedAt: impression.updatedAt.toISOString(),
+    };
+  }
+
+  private mapCustomPrompt(p: {
+    id: string;
+    promptKind: 'BOOK' | 'MOVIE';
+    content: string;
+    userId: string;
+    createdAt: Date;
+    user: { nickname: string };
+  }): DiscussionCustomPromptDto {
+    return {
+      id: p.id,
+      promptKind: p.promptKind,
+      content: p.content,
+      authorId: p.userId,
+      authorNickname: p.user.nickname,
+      createdAt: p.createdAt.toISOString(),
+    };
   }
 
   private mapNote(note: {

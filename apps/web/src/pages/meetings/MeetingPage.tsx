@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { DiscussionNoteDto, DiscussionStreamEvent, PromptKind } from '@inos/types';
+import type {
+  CreateCustomPromptDto,
+  DiscussionImpressionDto,
+  DiscussionNoteDto,
+  DiscussionStreamEvent,
+  MeetingDto,
+  PromptKind,
+} from '@inos/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useMeeting } from '@/hooks/useMeeting';
 import { useDiscussion } from '@/hooks/useDiscussion';
@@ -8,6 +15,8 @@ import { useDiscussionNotes } from '@/hooks/useDiscussionNotes';
 import { useUpsertNote } from '@/hooks/useUpsertNote';
 import { useFinishMeeting } from '@/hooks/useFinishMeeting';
 import { useNotesSocket } from '@/hooks/useNotesSocket';
+import { useAddCustomPrompt, useCustomPrompts } from '@/hooks/useCustomPrompts';
+import { useImpressions, useUpsertImpression } from '@/hooks/useImpressions';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
@@ -22,6 +31,156 @@ interface Prompts {
   movie: string[];
 }
 
+// 자체 발제하기 폼 — 작품 선택(드롭다운) + 질문 입력
+function CustomPromptForm({
+  meeting,
+  onSubmit,
+  isPending,
+  isError,
+}: {
+  meeting: MeetingDto;
+  onSubmit: (dto: CreateCustomPromptDto, reset: () => void) => void;
+  isPending: boolean;
+  isError: boolean;
+}) {
+  const kinds: { kind: PromptKind; label: string }[] = [
+    ...(meeting.bookTitle
+      ? [{ kind: 'BOOK' as const, label: `📖 ${meeting.bookTitle}` }]
+      : []),
+    ...(meeting.movieTitle
+      ? [{ kind: 'MOVIE' as const, label: `🎬 ${meeting.movieTitle}` }]
+      : []),
+  ];
+  const [kind, setKind] = useState<PromptKind>(kinds[0]?.kind ?? 'BOOK');
+  const [content, setContent] = useState('');
+
+  const handleSubmit = () => {
+    if (!content.trim()) return;
+    onSubmit({ promptKind: kind, content: content.trim() }, () => setContent(''));
+  };
+
+  return (
+    <section className="mt-10 border-2 border-ink bg-surface p-5">
+      <p className="text-sm font-extrabold">자체 발제하기</p>
+      <p className="mt-1 text-xs text-muted">
+        나누고 싶은 질문을 직접 추가해보세요. 작품 아래에 내 이름과 함께 실려요.
+      </p>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as PromptKind)}
+          className="input-underline w-full sm:w-56 shrink-0 text-sm"
+          aria-label="작품 선택"
+        >
+          {kinds.map((k) => (
+            <option key={k.kind} value={k.kind}>
+              {k.label}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={content}
+          onChange={(e) => setContent(e.target.value.slice(0, 500))}
+          maxLength={500}
+          placeholder="발제 질문을 입력하세요"
+          className="input-underline flex-1 text-sm"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSubmit();
+          }}
+        />
+      </div>
+
+      {isError && (
+        <p className="mt-2 text-xs text-danger">추가에 실패했어요. 다시 시도해주세요.</p>
+      )}
+
+      <div className="mt-4">
+        <Button
+          variant="primary"
+          size="sm"
+          loading={isPending}
+          disabled={!content.trim() || kinds.length === 0}
+          onClick={handleSubmit}
+        >
+          발제 추가
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+// 페이지 최하단 — 사용자별 작품 감상 (선택 사항)
+function ImpressionSection({
+  impressions,
+  myUserId,
+  onSave,
+  isPending,
+  isError,
+}: {
+  impressions: DiscussionImpressionDto[];
+  myUserId: string | undefined;
+  onSave: (content: string) => void;
+  isPending: boolean;
+  isError: boolean;
+}) {
+  const mine = impressions.find((i) => i.userId === myUserId);
+  const [content, setContent] = useState(mine?.content ?? '');
+
+  useEffect(() => {
+    setContent(mine?.content ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mine?.updatedAt]);
+
+  const others = impressions.filter((i) => i.userId !== myUserId);
+  const unchanged = content.trim() === (mine?.content ?? '');
+
+  return (
+    <section className="mt-12 border-t-2 border-ink pt-8 pb-10">
+      <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted">
+        작품 감상 <span className="normal-case tracking-normal">· 선택</span>
+      </h2>
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value.slice(0, 2000))}
+        placeholder="모임을 마친 소감이나 작품에 대한 감상을 자유롭게 남겨보세요."
+        rows={3}
+        className="mt-3 w-full box-border resize-y border-2 border-ink bg-surface px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
+      />
+      <div className="mt-2 flex items-center gap-3">
+        <Button
+          variant="primary"
+          size="sm"
+          loading={isPending}
+          disabled={unchanged}
+          onClick={() => onSave(content)}
+        >
+          {mine && !content.trim() ? '감상 삭제' : '감상 저장'}
+        </Button>
+        {mine && unchanged && <span className="text-xs text-muted">저장됨</span>}
+        {isError && (
+          <span className="text-xs text-danger">저장에 실패했어요.</span>
+        )}
+      </div>
+
+      {others.length > 0 && (
+        <div className="mt-6 flex flex-col gap-2.5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+            멤버 감상
+          </p>
+          {others.map((i) => (
+            <div key={i.userId} className="border-l-4 border-point bg-point/15 px-4 py-3">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{i.content}</p>
+              <p className="mt-2 text-xs font-semibold text-muted-2">{i.nickname}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function MeetingPage() {
   const { orgId, meetingId } = useParams<{ orgId: string; meetingId: string }>();
   const { isAuthenticated, user } = useAuth();
@@ -33,6 +192,10 @@ export default function MeetingPage() {
   const notesQuery = useDiscussionNotes(meetingId);
   const upsertNote = useUpsertNote(meetingId);
   const finishMeeting = useFinishMeeting(orgId, meetingId);
+  const customPromptsQuery = useCustomPrompts(meetingId, !!discussionQuery.data);
+  const addCustomPrompt = useAddCustomPrompt(meetingId);
+  const impressionsQuery = useImpressions(meetingId, !!discussionQuery.data);
+  const upsertImpression = useUpsertImpression(meetingId);
 
   const [streamedPrompts, setStreamedPrompts] = useState<Prompts>({ book: [], movie: [] });
   const [isStreaming, setIsStreaming] = useState(false);
@@ -179,6 +342,20 @@ export default function MeetingPage() {
       ? `${meeting.bookTitle} · ${meeting.movieTitle}`
       : meeting.bookTitle ?? meeting.movieTitle ?? '모임';
 
+  const customPrompts = customPromptsQuery.data ?? [];
+  const customBook = customPrompts.filter((p) => p.promptKind === 'BOOK');
+  const customMovie = customPrompts.filter((p) => p.promptKind === 'MOVIE');
+
+  // 자체 발제 노트는 AI 문항과 충돌하지 않도록 questionIndex 100번대 사용 (작품별 등록순)
+  const customBadge = (nickname: string) => (
+    <span className="mb-2 flex items-center gap-2">
+      <span className="border-2 border-ink bg-point px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-on-accent">
+        자체 발제문
+      </span>
+      <span className="text-xs font-semibold text-muted">{nickname}</span>
+    </span>
+  );
+
   return (
     <div className="min-h-dvh bg-paper flex flex-col">
       <Header />
@@ -228,7 +405,7 @@ export default function MeetingPage() {
           </div>
         )}
 
-        {prompts.book.length > 0 && (
+        {(prompts.book.length > 0 || customBook.length > 0) && (
           <section className="mt-8">
             <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted mb-1">
               📖 {meeting.bookTitle}
@@ -249,11 +426,29 @@ export default function MeetingPage() {
                   />
                 );
               })}
+              {customBook.map((cp, i) => {
+                const idx = 100 + i;
+                const { myNote, publicNotes } = notesByKey('BOOK', idx);
+                return (
+                  <PromptCard
+                    key={cp.id}
+                    prompt={cp.content}
+                    promptKind="BOOK"
+                    questionIndex={idx}
+                    displayNumber={prompts.book.length + i + 1}
+                    meta={customBadge(cp.authorNickname)}
+                    myNote={myNote}
+                    publicNotes={publicNotes}
+                    readOnly={readOnly || notesLocked}
+                    onSave={handleSave}
+                  />
+                );
+              })}
             </div>
           </section>
         )}
 
-        {prompts.movie.length > 0 && (
+        {(prompts.movie.length > 0 || customMovie.length > 0) && (
           <section className="mt-8">
             <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted mb-1">
               🎬 {meeting.movieTitle}
@@ -274,9 +469,40 @@ export default function MeetingPage() {
                   />
                 );
               })}
+              {customMovie.map((cp, i) => {
+                const idx = 100 + i;
+                const { myNote, publicNotes } = notesByKey('MOVIE', idx);
+                return (
+                  <PromptCard
+                    key={cp.id}
+                    prompt={cp.content}
+                    promptKind="MOVIE"
+                    questionIndex={idx}
+                    displayNumber={prompts.movie.length + i + 1}
+                    meta={customBadge(cp.authorNickname)}
+                    myNote={myNote}
+                    publicNotes={publicNotes}
+                    readOnly={readOnly || notesLocked}
+                    onSave={handleSave}
+                  />
+                );
+              })}
             </div>
           </section>
         )}
+
+        {!readOnly &&
+          !!discussionQuery.data &&
+          (prompts.book.length > 0 || prompts.movie.length > 0) && (
+            <CustomPromptForm
+              meeting={meeting}
+              isPending={addCustomPrompt.isPending}
+              isError={addCustomPrompt.isError}
+              onSubmit={(dto, reset) =>
+                addCustomPrompt.mutate(dto, { onSuccess: reset })
+              }
+            />
+          )}
 
         {!readOnly && !notesLocked && (prompts.book.length > 0 || prompts.movie.length > 0) && (
           <div className="mt-10 flex justify-start">
@@ -289,6 +515,16 @@ export default function MeetingPage() {
               모임 종료
             </Button>
           </div>
+        )}
+
+        {!!discussionQuery.data && (
+          <ImpressionSection
+            impressions={impressionsQuery.data ?? []}
+            myUserId={user?.id}
+            isPending={upsertImpression.isPending}
+            isError={upsertImpression.isError}
+            onSave={(content) => upsertImpression.mutate(content)}
+          />
         )}
       </main>
       <Footer />

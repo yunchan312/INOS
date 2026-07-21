@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Param,
   Body,
   Query,
@@ -15,9 +16,19 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { DiscussionService } from './discussion.service';
 import { NotesGateway } from './notes.gateway';
-import { UpsertNoteDto, TokenQueryDto } from './dto/discussion.dto';
+import {
+  CreateCustomPromptDto,
+  TokenQueryDto,
+  UpsertImpressionDto,
+  UpsertNoteDto,
+} from './dto/discussion.dto';
 import { JwtValidatorService } from '../../shared/auth/jwt-validator.service';
-import type { DiscussionDto, DiscussionNoteDto } from '@inos/types';
+import type {
+  DiscussionCustomPromptDto,
+  DiscussionDto,
+  DiscussionImpressionDto,
+  DiscussionNoteDto,
+} from '@inos/types';
 
 @ApiTags('discussions')
 @Controller('discussions')
@@ -91,6 +102,52 @@ export class DiscussionController {
   ): Promise<DiscussionNoteDto[]> {
     const payload = this.requireAuth(authHeader);
     return this.discussionService.listNotes(meetingId, payload.sub);
+  }
+
+  @Get(':meetingId/custom-prompts')
+  @ApiOperation({ summary: '자체 발제 질문 목록' })
+  async listCustomPrompts(
+    @Param('meetingId') meetingId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionCustomPromptDto[]> {
+    this.requireAuth(authHeader);
+    return this.discussionService.listCustomPrompts(meetingId);
+  }
+
+  @Post(':meetingId/custom-prompts')
+  @ApiOperation({ summary: '자체 발제 질문 추가' })
+  async addCustomPrompt(
+    @Param('meetingId') meetingId: string,
+    @Body() dto: CreateCustomPromptDto,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionCustomPromptDto> {
+    const payload = this.requireAuth(authHeader);
+    return this.discussionService.addCustomPrompt(meetingId, payload.sub, dto);
+  }
+
+  @Get(':meetingId/impressions')
+  @ApiOperation({ summary: '작품 감상 목록' })
+  async listImpressions(
+    @Param('meetingId') meetingId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionImpressionDto[]> {
+    this.requireAuth(authHeader);
+    return this.discussionService.listImpressions(meetingId);
+  }
+
+  @Put(':meetingId/impression')
+  @ApiOperation({ summary: '내 작품 감상 저장 (빈 값이면 삭제)' })
+  async upsertImpression(
+    @Param('meetingId') meetingId: string,
+    @Body() dto: UpsertImpressionDto,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionImpressionDto | null> {
+    const payload = this.requireAuth(authHeader);
+    return this.discussionService.upsertImpression(
+      meetingId,
+      payload.sub,
+      dto.content,
+    );
   }
 
   private requireAuth(authHeader?: string) {

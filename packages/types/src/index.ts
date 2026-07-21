@@ -324,6 +324,32 @@ export interface SharedLibraryDto {
   library: LibraryDto;
 }
 
+export interface DiscussionCustomPromptDto {
+  id: string;
+  promptKind: PromptKind;
+  content: string;
+  authorId: string;
+  authorNickname: string;
+  createdAt: string;
+}
+
+export interface CreateCustomPromptDto {
+  promptKind: PromptKind;
+  content: string;
+}
+
+export interface DiscussionImpressionDto {
+  userId: string;
+  nickname: string;
+  content: string;
+  updatedAt: string;
+}
+
+export interface UpsertImpressionDto {
+  /** 빈 문자열이면 감상 삭제 */
+  content: string;
+}
+
 // SSE stream envelope
 export type DiscussionStreamEvent =
   | { type: 'section-start'; section: PromptKind }
