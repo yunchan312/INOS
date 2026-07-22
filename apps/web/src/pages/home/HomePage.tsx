@@ -6,14 +6,11 @@ import mascotFace from "@/assets/character-mascot.png";
 import inoHero from "@/assets/ino-hero.webp";
 
 const MARQUEE_WORDS = [
-  "독서 모임",
-  "영화 모임",
-  "자동 일정 조율",
-  "AI 발제 질문",
-  "초대제",
-  "광고 없음",
-  "조용한 아카이브",
-  "있어빌리티",
+  "성찰하지 않는 삶은 살 가치가 없다 — 소크라테스",
+  "인간은 생각하는 갈대다 — 파스칼",
+  "책 없는 방은 영혼 없는 육체와 같다 — 키케로",
+  "내 언어의 한계는 내 세계의 한계다 — 비트겐슈타인",
+  "아는 것을 안다 하고 모르는 것을 모른다 하는 것, 그것이 앎이다 — 공자",
 ];
 
 const PAINS = [
@@ -61,7 +58,7 @@ const FEATURES = [
   {
     tag: "Schedule",
     title: "일정 자동 조율",
-    body: "when2meet식 선택, 전원 응답 시 자동 확정. 단톡방 투표는 이제 그만.",
+    body: "각자 시간 선택, 전원 응답 시 자동 확정. 단톡방 투표는 이제 그만.",
   },
   {
     tag: "AI Discussion",
@@ -71,7 +68,7 @@ const FEATURES = [
   {
     tag: "Private",
     title: "초대제 · 폐쇄형",
-    body: "검색도 광고도 없어요. 초대장을 받은 사람만 조용히 들어와요.",
+    body: "편한 사람들과 깊은 대화. 초대장을 받은 사람만 조용히 들어와요.",
   },
   {
     tag: "Archive",
@@ -81,14 +78,20 @@ const FEATURES = [
 ];
 
 const DEMO_PEOPLE = [
-  { name: "김서연", width: 100 },
+  { name: "김서연", width: 95 },
   { name: "박지훈", width: 80 },
   { name: "이수민", width: 90 },
   { name: "정도윤", width: 70 },
 ];
 
 // 스크롤 진입 시 살짝 떠오르는 리빌 래퍼
-function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
+function Reveal({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [on, setOn] = useState(false);
 
@@ -120,12 +123,12 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
   );
 }
 
-// when2meet식 조율 데모 — 1.4초마다 한 명씩 응답, 전원 응답 시 확정
+// 시간 조율 데모 — 1.4초마다 한 명씩 응답, 전원 응답 시 확정
 function LiveDemo() {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => (t + 1) % 6), 1400);
+    const id = setInterval(() => setTick((t) => (t + 1) % 6), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -146,7 +149,9 @@ function LiveDemo() {
                   className="absolute inset-y-0 left-0 bg-point transition-[width] duration-500"
                   style={{
                     width: done ? `${p.width}%` : "0%",
-                    borderRight: done ? "2px solid var(--color-ink)" : undefined,
+                    borderRight: done
+                      ? "2px solid var(--color-ink)"
+                      : undefined,
                   }}
                 />
               </div>
@@ -164,7 +169,9 @@ function LiveDemo() {
         })}
       </div>
       <p className="mt-3 text-right text-xs font-bold">
-        {allDone ? "✓ 2026.07.29 수요일로 확정!" : `${Math.min(tick, 4)}/4명 응답 중…`}
+        {allDone
+          ? "✓ 2026.07.29 수요일로 확정!"
+          : `${Math.min(tick, 4)}/4명 응답 중…`}
       </p>
     </div>
   );
@@ -222,7 +229,8 @@ export default function HomePage() {
                 </span>
               </h1>
               <p className="mt-5 max-w-[42ch] text-base leading-[1.7] text-muted-2 break-keep">
-                일정 조율과 발제문 준비는 자동으로. 모임에서는 대화에만 집중하도록.
+                일정 조율과 발제문 준비는 자동으로. 모임에서는 대화에만
+                집중하도록.
               </p>
               <div className="mt-8 flex flex-wrap gap-2.5">
                 <button
@@ -244,17 +252,14 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* 마스코트 이노 */}
+            {/* 마스코트 INOS */}
             <div className="flex items-end justify-center pt-6">
               <div className="relative w-[min(420px,96%)]">
                 <img
                   src={inoHero}
-                  alt="빨간 안경을 쓰고 쇼파에서 TV를 틀어놓고 책을 읽는 이노"
+                  alt="빨간 안경을 쓰고 쇼파에서 TV를 틀어놓고 책을 읽는 INOS"
                   className="block w-full"
                 />
-                <span className="absolute -left-2 top-0 inline-block -rotate-4 border-2 border-ink bg-surface px-3 py-2 text-xs font-bold whitespace-nowrap">
-                  안녕! 나는 이노 <span aria-hidden="true">✱</span>
-                </span>
               </div>
             </div>
           </div>
@@ -277,7 +282,9 @@ export default function HomePage() {
         {/* 01 · 왜 만들었나 */}
         <section className="border-b-2 border-ink">
           <Reveal className="mx-auto max-w-[1080px] px-6 py-[72px]">
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">01 · 왜 만들었나</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em]">
+              01 · 왜 만들었나
+            </p>
             <h2 className="mt-4 max-w-[24ch] text-[clamp(26px,4vw,40px)] font-extrabold leading-[1.2] tracking-tight break-keep">
               모임은 좋은데, 모임{" "}
               <span className="border-b-6 border-point">준비</span>가 싫었어요
@@ -286,8 +293,12 @@ export default function HomePage() {
               {PAINS.map((p) => (
                 <div key={p.num} className="bg-paper px-6 py-7">
                   <p className="text-[28px] font-black text-muted">{p.num}</p>
-                  <p className="mt-3 text-[17px] font-bold break-keep">{p.title}</p>
-                  <p className="mt-2 text-sm leading-[1.7] text-muted break-keep">{p.body}</p>
+                  <p className="mt-3 text-[17px] font-bold break-keep">
+                    {p.title}
+                  </p>
+                  <p className="mt-2 text-sm leading-[1.7] text-muted break-keep">
+                    {p.body}
+                  </p>
                 </div>
               ))}
             </div>
@@ -301,7 +312,7 @@ export default function HomePage() {
               02 · 어떻게 동작하나
             </p>
             <h2 className="mt-4 text-[clamp(26px,4vw,40px)] font-extrabold leading-[1.2] tracking-tight break-keep">
-              작품만 정하면, 나머지는 이노가
+              작품만 정하면, 나머지는 INOS가
             </h2>
             <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((st) => (
@@ -312,8 +323,12 @@ export default function HomePage() {
                     </span>
                     <div className="h-0.5 flex-1 bg-ink" />
                   </div>
-                  <p className="mt-4 text-[17px] font-bold break-keep">{st.title}</p>
-                  <p className="mt-2 text-sm leading-[1.7] text-muted break-keep">{st.body}</p>
+                  <p className="mt-4 text-[17px] font-bold break-keep">
+                    {st.title}
+                  </p>
+                  <p className="mt-2 text-sm leading-[1.7] text-muted break-keep">
+                    {st.body}
+                  </p>
                 </div>
               ))}
             </div>
@@ -328,7 +343,8 @@ export default function HomePage() {
                   전원이 응답하면 날짜가 저절로 확정돼요
                 </p>
                 <p className="mt-2 text-sm leading-[1.7] text-muted break-keep">
-                  when2meet 스타일 조율. 겹치는 날이 없으면 소유자에게 알려드려요.
+                  when2meet 스타일 조율. 겹치는 날이 없으면 소유자에게
+                  알려드려요.
                 </p>
               </div>
               <LiveDemo />
@@ -339,7 +355,9 @@ export default function HomePage() {
         {/* 03 · 안에 있는 것 */}
         <section className="border-b-2 border-ink">
           <Reveal className="mx-auto max-w-[1080px] px-6 py-[72px]">
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">03 · 안에 있는 것</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em]">
+              03 · 안에 있는 것
+            </p>
             <div className="mt-8 grid grid-cols-1 gap-[2px] border-2 border-ink bg-ink md:grid-cols-2">
               {FEATURES.map((f) => (
                 <div
@@ -349,8 +367,12 @@ export default function HomePage() {
                   <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted whitespace-nowrap">
                     {f.tag}
                   </p>
-                  <p className="mt-3 text-[19px] font-extrabold break-keep">{f.title}</p>
-                  <p className="mt-2 text-sm leading-[1.7] text-muted-2 break-keep">{f.body}</p>
+                  <p className="mt-3 text-[19px] font-extrabold break-keep">
+                    {f.title}
+                  </p>
+                  <p className="mt-2 text-sm leading-[1.7] text-muted-2 break-keep">
+                    {f.body}
+                  </p>
                 </div>
               ))}
             </div>
@@ -365,7 +387,7 @@ export default function HomePage() {
                 04 · 시작하기
               </p>
               <h2 className="mt-4 text-[clamp(30px,5vw,52px)] font-black leading-[1.1] tracking-tight break-keep">
-                준비는 이노에게,
+                준비는 INOS에게,
                 <br />
                 당신은 <span className="text-point">대화</span>에
               </h2>
@@ -379,13 +401,17 @@ export default function HomePage() {
                 </button>
               </div>
               <p className="mt-4 text-xs text-muted break-keep">
-                초대장이 없다면 — 모임을 직접 만들고 싶은 분은 로그인 후 생성 신청을
-                남겨주세요.
+                초대장이 없다면 — 모임을 직접 만들고 싶은 분은 로그인 후 생성
+                신청을 남겨주세요.
               </p>
             </div>
             <div className="flex justify-center">
               <div className="flex aspect-square w-[min(260px,70%)] items-center justify-center border-2 border-paper bg-point">
-                <img src={mascotFace} alt="이노 얼굴" className="block w-[78%]" />
+                <img
+                  src={mascotFace}
+                  alt="INOS 얼굴"
+                  className="block w-[78%]"
+                />
               </div>
             </div>
           </Reveal>
