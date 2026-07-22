@@ -134,6 +134,7 @@ function CustomPromptForm({
 function ImpressionSection({
   impressions,
   myUserId,
+  myNickname,
   onSave,
   onDelete,
   isPending,
@@ -142,6 +143,7 @@ function ImpressionSection({
 }: {
   impressions: DiscussionImpressionDto[];
   myUserId: string | undefined;
+  myNickname: string | undefined;
   onSave: (content: string) => void;
   onDelete: () => void;
   isPending: boolean;
@@ -213,7 +215,7 @@ function ImpressionSection({
 
         {showEditor && (
           <article className={rowClass}>
-            <span className={nameClass}>나</span>
+            <span className={nameClass}>{myNickname ?? '나'}</span>
             <div className="min-w-0">
               <textarea
                 value={content}
@@ -669,6 +671,7 @@ export default function MeetingPage() {
           <ImpressionSection
             impressions={impressionsQuery.data ?? []}
             myUserId={user?.id}
+            myNickname={user?.nickname}
             isPending={upsertImpression.isPending}
             isDeleting={deleteImpression.isPending}
             isError={upsertImpression.isError || deleteImpression.isError}
