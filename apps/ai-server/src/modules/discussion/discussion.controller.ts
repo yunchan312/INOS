@@ -1,7 +1,10 @@
 import {
   Controller,
+  Delete,
   Get,
+  Patch,
   Post,
+  Put,
   Param,
   Body,
   Query,
@@ -15,9 +18,20 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { DiscussionService } from './discussion.service';
 import { NotesGateway } from './notes.gateway';
-import { UpsertNoteDto, TokenQueryDto } from './dto/discussion.dto';
+import {
+  CreateCustomPromptDto,
+  TokenQueryDto,
+  UpdateCustomPromptDto,
+  UpsertImpressionDto,
+  UpsertNoteDto,
+} from './dto/discussion.dto';
 import { JwtValidatorService } from '../../shared/auth/jwt-validator.service';
-import type { DiscussionDto, DiscussionNoteDto } from '@inos/types';
+import type {
+  DiscussionCustomPromptDto,
+  DiscussionDto,
+  DiscussionImpressionDto,
+  DiscussionNoteDto,
+} from '@inos/types';
 
 @ApiTags('discussions')
 @Controller('discussions')
@@ -91,6 +105,114 @@ export class DiscussionController {
   ): Promise<DiscussionNoteDto[]> {
     const payload = this.requireAuth(authHeader);
     return this.discussionService.listNotes(meetingId, payload.sub);
+  }
+
+  @Get(':meetingId/custom-prompts')
+  @ApiOperation({ summary: '자체 발제 질문 목록' })
+  async listCustomPrompts(
+    @Param('meetingId') meetingId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionCustomPromptDto[]> {
+    this.requireAuth(authHeader);
+    return this.discussionService.listCustomPrompts(meetingId);
+  }
+
+  @Post(':meetingId/custom-prompts')
+  @ApiOperation({ summary: '자체 발제 질문 추가' })
+  async addCustomPrompt(
+    @Param('meetingId') meetingId: string,
+    @Body() dto: CreateCustomPromptDto,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionCustomPromptDto> {
+    const payload = this.requireAuth(authHeader);
+    const prompt = await this.discussionService.addCustomPrompt(
+      meetingId,
+      payload.sub,
+      dto,
+    );
+    this.notesGateway.broadcastCustomPrompt(meetingId, prompt);
+    return prompt;
+  }
+
+  @Patch(':meetingId/custom-prompts/:promptId')
+  @ApiOperation({ summary: '자체 발제 질문 수정 (발제자·리더)' })
+  async updateCustomPrompt(
+    @Param('meetingId') meetingId: string,
+    @Param('promptId') promptId: string,
+    @Body() dto: UpdateCustomPromptDto,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionCustomPromptDto> {
+    const payload = this.requireAuth(authHeader);
+    const prompt = await this.discussionService.updateCustomPrompt(
+      meetingId,
+      promptId,
+      payload.sub,
+      dto.content,
+    );
+    this.notesGateway.broadcastCustomPromptUpdated(meetingId, prompt);
+    return prompt;
+  }
+
+  @Delete(':meetingId/custom-prompts/:promptId')
+  @HttpCode(204)
+  @ApiOperation({ summary: '자체 발제 질문 삭제 (발제자·리더)' })
+  async deleteCustomPrompt(
+    @Param('meetingId') meetingId: string,
+    @Param('promptId') promptId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<void> {
+    const payload = this.requireAuth(authHeader);
+    await this.discussionService.deleteCustomPrompt(
+      meetingId,
+      promptId,
+      payload.sub,
+    );
+    this.notesGateway.broadcastCustomPromptRemoved(meetingId, promptId);
+  }
+
+  @Get(':meetingId/impressions')
+  @ApiOperation({ summary: '작품 감상 목록' })
+  async listImpressions(
+    @Param('meetingId') meetingId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionImpressionDto[]> {
+    this.requireAuth(authHeader);
+    return this.discussionService.listImpressions(meetingId);
+  }
+
+  @Put(':meetingId/impression')
+  @ApiOperation({ summary: '내 작품 감상 저장/수정 (본인만)' })
+  async upsertImpression(
+    @Param('meetingId') meetingId: string,
+    @Body() dto: UpsertImpressionDto,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionImpressionDto> {
+    const payload = this.requireAuth(authHeader);
+    const impression = await this.discussionService.upsertImpression(
+      meetingId,
+      payload.sub,
+      dto.content,
+    );
+    this.notesGateway.broadcastImpression(meetingId, {
+      userId: payload.sub,
+      impression,
+    });
+    return impression;
+  }
+
+  @Delete(':meetingId/impression')
+  @HttpCode(204)
+  @ApiOperation({ summary: '내 작품 감상 삭제 (본인만)' })
+  async deleteImpression(
+    @Param('meetingId') meetingId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<void> {
+    const payload = this.requireAuth(authHeader);
+    await this.discussionService.deleteImpression(meetingId, payload.sub);
+    this.notesGateway.broadcastImpression(meetingId, {
+      userId: payload.sub,
+      impression: null,
+    });
   }
 
   private requireAuth(authHeader?: string) {

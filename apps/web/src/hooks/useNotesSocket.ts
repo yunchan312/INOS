@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
-import type { DiscussionNoteDto } from '@inos/types';
+import type {
+  DiscussionCustomPromptDto,
+  DiscussionImpressionDto,
+  DiscussionNoteDto,
+} from '@inos/types';
 import { getAuthToken, useAuthStore } from '@/stores/auth-store';
 
 const AI_ORIGIN = new URL(
@@ -80,6 +84,47 @@ export function useNotesSocket(
         queryKey: ['org', orgId, 'meetings'],
       });
     });
+
+    // 자체 발제 질문 실시간 추가
+    socket.on('custom-prompt-added', (prompt: DiscussionCustomPromptDto) => {
+      queryClient.setQueryData<DiscussionCustomPromptDto[]>(
+        ['custom-prompts', meetingId],
+        (prev) => {
+          const list = prev ?? [];
+          if (list.some((p) => p.id === prompt.id)) return list;
+          return [...list, prompt];
+        },
+      );
+    });
+
+    // 자체 발제 질문 수정/삭제 실시간 반영
+    socket.on('custom-prompt-updated', (prompt: DiscussionCustomPromptDto) => {
+      queryClient.setQueryData<DiscussionCustomPromptDto[]>(
+        ['custom-prompts', meetingId],
+        (prev) => (prev ?? []).map((p) => (p.id === prompt.id ? prompt : p)),
+      );
+    });
+
+    socket.on('custom-prompt-removed', (payload: { id: string }) => {
+      queryClient.setQueryData<DiscussionCustomPromptDto[]>(
+        ['custom-prompts', meetingId],
+        (prev) => (prev ?? []).filter((p) => p.id !== payload.id),
+      );
+    });
+
+    // 작품 감상 저장/삭제 실시간 반영 (impression=null이면 삭제)
+    socket.on(
+      'impression-updated',
+      (payload: { userId: string; impression: DiscussionImpressionDto | null }) => {
+        queryClient.setQueryData<DiscussionImpressionDto[]>(
+          ['impressions', meetingId],
+          (prev) => {
+            const list = (prev ?? []).filter((i) => i.userId !== payload.userId);
+            return payload.impression ? [payload.impression, ...list] : list;
+          },
+        );
+      },
+    );
 
     return () => {
       socket.emit('leave', meetingId);

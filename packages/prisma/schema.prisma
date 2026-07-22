@@ -62,6 +62,8 @@ model User {
   personalLibraryReviews PersonalLibraryReview[]
   updatedGroupReviews    GroupLibraryReview[]    @relation("GroupReviewUpdatedBy")
   manualLibraryEntries   ManualLibraryEntry[]
+  customPrompts          DiscussionCustomPrompt[]
+  impressions            DiscussionImpression[]
 
   @@unique([oauthProvider, oauthId])
   @@index([email])
@@ -158,12 +160,47 @@ model Discussion {
   generatedAt  DateTime?
   publishedAt  DateTime?
 
-  meeting Meeting          @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  group   Group            @relation(fields: [groupId], references: [id])
-  notes   DiscussionNote[]
+  meeting       Meeting                  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  group         Group                    @relation(fields: [groupId], references: [id])
+  notes         DiscussionNote[]
+  customPrompts DiscussionCustomPrompt[]
+  impressions   DiscussionImpression[]
 
   @@index([groupId])
   @@map("discussions")
+}
+
+// 멤버가 직접 추가하는 자체 발제 질문
+model DiscussionCustomPrompt {
+  id           String     @id @default(uuid()) @db.Uuid
+  discussionId String     @db.Uuid
+  userId       String     @db.Uuid
+  promptKind   PromptKind
+  content      String     @db.VarChar(500)
+  noteIndex    Int // 노트 키(100번대, 삭제돼도 재사용 안 함 — 위치가 아닌 고정값)
+  createdAt    DateTime   @default(now())
+
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([discussionId, promptKind, createdAt])
+  @@map("discussion_custom_prompts")
+}
+
+// 모임 페이지 최하단의 사용자별 작품 감상 (선택)
+model DiscussionImpression {
+  id           String   @id @default(uuid()) @db.Uuid
+  discussionId String   @db.Uuid
+  userId       String   @db.Uuid
+  content      String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([discussionId, userId])
+  @@map("discussion_impressions")
 }
 
 model DiscussionNote {

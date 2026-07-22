@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
 import type { DiscussionNoteDto, PromptKind } from '@inos/types';
 
 interface PromptCardProps {
   prompt: string;
   promptKind: PromptKind;
   questionIndex: number;
+  /** 표시용 번호 (기본: questionIndex + 1) — 자체 발제는 노트 키와 번호가 다름 */
+  displayNumber?: number;
+  /** 질문 위에 표시할 배지 영역 (자체 발제문 배지 등) */
+  meta?: ReactNode;
   myNote: DiscussionNoteDto | undefined;
   publicNotes: DiscussionNoteDto[];
   readOnly: boolean;
@@ -15,6 +19,8 @@ export function PromptCard({
   prompt,
   promptKind,
   questionIndex,
+  displayNumber,
+  meta,
   myNote,
   publicNotes,
   readOnly,
@@ -62,9 +68,10 @@ export function PromptCard({
   return (
     <article className="py-9 border-b border-line grid grid-cols-[56px_minmax(0,1fr)] sm:grid-cols-[72px_minmax(0,1fr)] gap-4">
       <span className="text-3xl sm:text-[40px] font-extrabold leading-none">
-        {String(questionIndex + 1).padStart(2, '0')}
+        {String(displayNumber ?? questionIndex + 1).padStart(2, '0')}
       </span>
       <div>
+        {meta}
         <p className="text-lg font-semibold leading-relaxed max-w-[62ch]">
           {prompt}
         </p>

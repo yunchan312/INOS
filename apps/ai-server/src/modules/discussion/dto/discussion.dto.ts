@@ -31,3 +31,29 @@ export class TokenQueryDto {
   @IsNotEmpty()
   token!: string;
 }
+
+export class UpsertImpressionDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
+  content!: string;
+}
+
+export class CreateCustomPromptDto {
+  @IsString()
+  @IsIn(['BOOK', 'MOVIE'])
+  promptKind!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  content!: string;
+}
+
+export class UpdateCustomPromptDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  content!: string;
+}
+

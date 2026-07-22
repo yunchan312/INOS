@@ -5,7 +5,11 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import type { DiscussionNoteDto } from '@inos/types';
+import type {
+  DiscussionCustomPromptDto,
+  DiscussionImpressionDto,
+  DiscussionNoteDto,
+} from '@inos/types';
 import { JwtValidatorService } from '../../shared/auth/jwt-validator.service';
 
 @WebSocketGateway({
@@ -68,6 +72,35 @@ export class NotesGateway implements OnGatewayConnection {
   // 모임 종료 → 접속 중인 모든 멤버 UI를 즉시 read-only로 전환
   broadcastMeetingFinished(meetingId: string): void {
     this.server.to(`meeting:${meetingId}`).emit('meeting-finished', { meetingId });
+  }
+
+  // 자체 발제 질문 추가 실시간 반영
+  broadcastCustomPrompt(
+    meetingId: string,
+    prompt: DiscussionCustomPromptDto,
+  ): void {
+    this.server.to(`meeting:${meetingId}`).emit('custom-prompt-added', prompt);
+  }
+
+  broadcastCustomPromptUpdated(
+    meetingId: string,
+    prompt: DiscussionCustomPromptDto,
+  ): void {
+    this.server.to(`meeting:${meetingId}`).emit('custom-prompt-updated', prompt);
+  }
+
+  broadcastCustomPromptRemoved(meetingId: string, promptId: string): void {
+    this.server
+      .to(`meeting:${meetingId}`)
+      .emit('custom-prompt-removed', { id: promptId });
+  }
+
+  // 작품 감상 저장/삭제 실시간 반영 (impression=null이면 삭제)
+  broadcastImpression(
+    meetingId: string,
+    payload: { userId: string; impression: DiscussionImpressionDto | null },
+  ): void {
+    this.server.to(`meeting:${meetingId}`).emit('impression-updated', payload);
   }
 
   // 공개 노트는 전체 브로드캐스트, 비공개 전환은 숨김 이벤트로 알림
