@@ -177,6 +177,7 @@ model DiscussionCustomPrompt {
   userId       String     @db.Uuid
   promptKind   PromptKind
   content      String     @db.VarChar(500)
+  noteIndex    Int // 노트 키(100번대, 삭제돼도 재사용 안 함 — 위치가 아닌 고정값)
   createdAt    DateTime   @default(now())
 
   discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)

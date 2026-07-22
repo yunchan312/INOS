@@ -328,6 +328,8 @@ export interface DiscussionCustomPromptDto {
   id: string;
   promptKind: PromptKind;
   content: string;
+  /** 노트 키 (100번대 고정값 — 삭제돼도 재사용하지 않음) */
+  noteIndex: number;
   authorId: string;
   authorNickname: string;
   createdAt: string;

@@ -50,3 +50,10 @@ export class CreateCustomPromptDto {
   content!: string;
 }
 
+export class UpdateCustomPromptDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  content!: string;
+}
+

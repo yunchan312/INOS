@@ -82,6 +82,19 @@ export class NotesGateway implements OnGatewayConnection {
     this.server.to(`meeting:${meetingId}`).emit('custom-prompt-added', prompt);
   }
 
+  broadcastCustomPromptUpdated(
+    meetingId: string,
+    prompt: DiscussionCustomPromptDto,
+  ): void {
+    this.server.to(`meeting:${meetingId}`).emit('custom-prompt-updated', prompt);
+  }
+
+  broadcastCustomPromptRemoved(meetingId: string, promptId: string): void {
+    this.server
+      .to(`meeting:${meetingId}`)
+      .emit('custom-prompt-removed', { id: promptId });
+  }
+
   // 작품 감상 저장/삭제 실시간 반영 (impression=null이면 삭제)
   broadcastImpression(
     meetingId: string,

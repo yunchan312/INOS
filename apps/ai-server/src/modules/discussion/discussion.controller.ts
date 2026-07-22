@@ -2,6 +2,7 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   Post,
   Put,
   Param,
@@ -20,6 +21,7 @@ import { NotesGateway } from './notes.gateway';
 import {
   CreateCustomPromptDto,
   TokenQueryDto,
+  UpdateCustomPromptDto,
   UpsertImpressionDto,
   UpsertNoteDto,
 } from './dto/discussion.dto';
@@ -130,6 +132,42 @@ export class DiscussionController {
     );
     this.notesGateway.broadcastCustomPrompt(meetingId, prompt);
     return prompt;
+  }
+
+  @Patch(':meetingId/custom-prompts/:promptId')
+  @ApiOperation({ summary: '자체 발제 질문 수정 (발제자·리더)' })
+  async updateCustomPrompt(
+    @Param('meetingId') meetingId: string,
+    @Param('promptId') promptId: string,
+    @Body() dto: UpdateCustomPromptDto,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<DiscussionCustomPromptDto> {
+    const payload = this.requireAuth(authHeader);
+    const prompt = await this.discussionService.updateCustomPrompt(
+      meetingId,
+      promptId,
+      payload.sub,
+      dto.content,
+    );
+    this.notesGateway.broadcastCustomPromptUpdated(meetingId, prompt);
+    return prompt;
+  }
+
+  @Delete(':meetingId/custom-prompts/:promptId')
+  @HttpCode(204)
+  @ApiOperation({ summary: '자체 발제 질문 삭제 (발제자·리더)' })
+  async deleteCustomPrompt(
+    @Param('meetingId') meetingId: string,
+    @Param('promptId') promptId: string,
+    @Headers('authorization') authHeader?: string,
+  ): Promise<void> {
+    const payload = this.requireAuth(authHeader);
+    await this.discussionService.deleteCustomPrompt(
+      meetingId,
+      promptId,
+      payload.sub,
+    );
+    this.notesGateway.broadcastCustomPromptRemoved(meetingId, promptId);
   }
 
   @Get(':meetingId/impressions')

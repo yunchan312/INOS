@@ -403,16 +403,101 @@ export class DiscussionService {
       throw new BadRequestException('이 모임에서 다루지 않는 작품이에요');
     }
 
+    // 노트 키는 100번대 고정값 — 삭제된 번호는 재사용하지 않아 노트가 밀리지 않는다
+    const last = await this.prisma.discussionCustomPrompt.aggregate({
+      where: {
+        discussionId: discussion.id,
+        promptKind: dto.promptKind as 'BOOK' | 'MOVIE',
+      },
+      _max: { noteIndex: true },
+    });
+    const noteIndex = Math.max(99, last._max.noteIndex ?? 99) + 1;
+
     const created = await this.prisma.discussionCustomPrompt.create({
       data: {
         discussionId: discussion.id,
         userId,
         promptKind: dto.promptKind as 'BOOK' | 'MOVIE',
         content: dto.content.trim(),
+        noteIndex,
       },
       include: { user: { select: { nickname: true } } },
     });
     return this.mapCustomPrompt(created);
+  }
+
+  async updateCustomPrompt(
+    meetingId: string,
+    promptId: string,
+    userId: string,
+    content: string,
+  ): Promise<DiscussionCustomPromptDto> {
+    await this.assertCanManagePrompt(meetingId, promptId, userId);
+    const updated = await this.prisma.discussionCustomPrompt.update({
+      where: { id: promptId },
+      data: { content: content.trim() },
+      include: { user: { select: { nickname: true } } },
+    });
+    return this.mapCustomPrompt(updated);
+  }
+
+  async deleteCustomPrompt(
+    meetingId: string,
+    promptId: string,
+    userId: string,
+  ): Promise<void> {
+    const prompt = await this.assertCanManagePrompt(meetingId, promptId, userId);
+    // 발제와 함께 그 발제에 달린 노트도 정리
+    await this.prisma.$transaction([
+      this.prisma.discussionNote.deleteMany({
+        where: {
+          discussionId: prompt.discussionId,
+          promptKind: prompt.promptKind,
+          questionIndex: prompt.noteIndex,
+        },
+      }),
+      this.prisma.discussionCustomPrompt.delete({ where: { id: promptId } }),
+    ]);
+  }
+
+  /** 발제자 본인 또는 그룹 리더(OWNER)만 수정/삭제 가능. 종료된 모임은 금지 */
+  private async assertCanManagePrompt(
+    meetingId: string,
+    promptId: string,
+    userId: string,
+  ) {
+    const prompt = await this.prisma.discussionCustomPrompt.findUnique({
+      where: { id: promptId },
+      include: {
+        discussion: {
+          select: {
+            meetingId: true,
+            meeting: { select: { status: true, groupId: true } },
+          },
+        },
+      },
+    });
+    if (!prompt || prompt.discussion.meetingId !== meetingId) {
+      throw new NotFoundException('발제를 찾을 수 없습니다');
+    }
+    if (prompt.discussion.meeting.status === 'DONE') {
+      throw new ForbiddenException('종료된 모임의 발제는 수정할 수 없어요');
+    }
+    if (prompt.userId !== userId) {
+      const membership = await this.prisma.groupMember.findUnique({
+        where: {
+          groupId_userId: {
+            groupId: prompt.discussion.meeting.groupId,
+            userId,
+          },
+        },
+        select: { role: true },
+      });
+      if (membership?.role !== 'OWNER') {
+        throw new ForbiddenException('발제자 또는 리더만 수정/삭제할 수 있어요');
+      }
+    }
+    return prompt;
   }
 
   async listImpressions(meetingId: string): Promise<DiscussionImpressionDto[]> {
@@ -483,6 +568,7 @@ export class DiscussionService {
     id: string;
     promptKind: 'BOOK' | 'MOVIE';
     content: string;
+    noteIndex: number;
     userId: string;
     createdAt: Date;
     user: { nickname: string };
@@ -491,6 +577,7 @@ export class DiscussionService {
       id: p.id,
       promptKind: p.promptKind,
       content: p.content,
+      noteIndex: p.noteIndex,
       authorId: p.userId,
       authorNickname: p.user.nickname,
       createdAt: p.createdAt.toISOString(),

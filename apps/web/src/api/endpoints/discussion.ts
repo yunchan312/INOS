@@ -47,4 +47,15 @@ export const discussionApi = {
       .post<DiscussionCustomPromptDto>(`/discussions/${meetingId}/custom-prompts`, dto)
       .then((r) => r.data),
 
+  updateCustomPrompt: (meetingId: string, promptId: string, content: string) =>
+    aiClient
+      .patch<DiscussionCustomPromptDto>(
+        `/discussions/${meetingId}/custom-prompts/${promptId}`,
+        { content },
+      )
+      .then((r) => r.data),
+
+  deleteCustomPrompt: (meetingId: string, promptId: string) =>
+    aiClient.delete<void>(`/discussions/${meetingId}/custom-prompts/${promptId}`),
+
 };

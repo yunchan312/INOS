@@ -97,6 +97,21 @@ export function useNotesSocket(
       );
     });
 
+    // 자체 발제 질문 수정/삭제 실시간 반영
+    socket.on('custom-prompt-updated', (prompt: DiscussionCustomPromptDto) => {
+      queryClient.setQueryData<DiscussionCustomPromptDto[]>(
+        ['custom-prompts', meetingId],
+        (prev) => (prev ?? []).map((p) => (p.id === prompt.id ? prompt : p)),
+      );
+    });
+
+    socket.on('custom-prompt-removed', (payload: { id: string }) => {
+      queryClient.setQueryData<DiscussionCustomPromptDto[]>(
+        ['custom-prompts', meetingId],
+        (prev) => (prev ?? []).filter((p) => p.id !== payload.id),
+      );
+    });
+
     // 작품 감상 저장/삭제 실시간 반영 (impression=null이면 삭제)
     socket.on(
       'impression-updated',
