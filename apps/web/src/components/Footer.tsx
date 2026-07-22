@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const CONTACT_EMAIL = 'yunchan0339@gmail.com';
 const VERSION = 'v0.0.1';
@@ -52,10 +53,11 @@ export function Footer({ wide }: FooterProps) {
             </Link>
           </nav>
         </div>
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-[11px] text-muted">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 text-[11px] text-muted">
           <span className="uppercase tracking-[0.14em]">
             © 2026 INOS · {VERSION}
           </span>
+          <ThemeToggle />
           <span>함께 읽고, 보고, 생각합니다.</span>
         </div>
       </div>
