@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Footer } from "@/components/Footer";
 import mascotFace from "@/assets/character-mascot.png";
+import inoHero from "@/assets/ino-hero.webp";
 
 const MARQUEE_WORDS = [
   "독서 모임",
@@ -245,10 +246,10 @@ export default function HomePage() {
 
             {/* 마스코트 이노 */}
             <div className="flex items-end justify-center pt-6">
-              <div className="relative w-[min(320px,80%)]">
+              <div className="relative w-[min(420px,96%)]">
                 <img
-                  src={mascotFace}
-                  alt="빨간 안경에 노란 베레모를 쓴 이노"
+                  src={inoHero}
+                  alt="빨간 안경을 쓰고 쇼파에서 TV를 틀어놓고 책을 읽는 이노"
                   className="block w-full"
                 />
                 <span className="absolute -left-2 top-0 inline-block -rotate-4 border-2 border-ink bg-surface px-3 py-2 text-xs font-bold whitespace-nowrap">
