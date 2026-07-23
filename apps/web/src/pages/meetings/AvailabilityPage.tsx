@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import type { MeetingDto } from '@inos/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useMeeting } from '@/hooks/useMeeting';
+import { useOrg } from '@/hooks/useOrg';
 import { useSubmitAvailability } from '@/hooks/useSubmitAvailability';
+import { useUpdateMeeting } from '@/hooks/useUpdateMeeting';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
@@ -10,6 +13,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionLabel } from '@/components/SectionLabel';
 import { AvailabilityCalendar } from '@/components/AvailabilityCalendar';
+import { TimePicker } from '@/components/TimePicker';
 
 const RETURN_TO_KEY = 'inos.auth.returnTo';
 
@@ -34,12 +38,74 @@ function formatWithWeekday(iso: string): string {
   return `${m}월 ${d}일 (${day})`;
 }
 
+// 확정된 모임의 날짜/시간 변경 — 리더 전용 (변경 시 서버가 리마인더를 새 시각으로 재예약)
+function OwnerReschedule({ orgId, meeting }: { orgId: string; meeting: MeetingDto }) {
+  const originalDate = meeting.confirmedDate ? isoDate(meeting.confirmedDate) : '';
+  const [date, setDate] = useState(originalDate);
+  const [time, setTime] = useState<string | null>(meeting.confirmedTime);
+  const updateMeeting = useUpdateMeeting(orgId, meeting.id);
+
+  const unchanged = date === originalDate && time === meeting.confirmedTime;
+
+  return (
+    <div className="mt-6 border-2 border-ink bg-paper p-5">
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+        리더 · 날짜/시간 변경
+      </p>
+      <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-3">
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+            모임 날짜
+          </label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="input-underline text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+            모임 시간
+          </label>
+          <TimePicker value={time} onChange={setTime} />
+        </div>
+        <Button
+          variant="primary"
+          size="sm"
+          loading={updateMeeting.isPending}
+          disabled={!date || unchanged}
+          onClick={() =>
+            updateMeeting.mutate({
+              confirmedDate: date !== originalDate ? date : undefined,
+              confirmedTime: time !== meeting.confirmedTime ? time : undefined,
+            })
+          }
+        >
+          변경 저장
+        </Button>
+      </div>
+      {updateMeeting.isSuccess && unchanged && (
+        <p className="mt-2 text-xs text-muted">
+          변경됐어요. 멤버 리마인더도 새 시각으로 재예약돼요.
+        </p>
+      )}
+      {updateMeeting.isError && (
+        <p className="mt-2 text-xs text-danger">변경에 실패했어요. 다시 시도해주세요.</p>
+      )}
+    </div>
+  );
+}
+
 export default function AvailabilityPage() {
   const { orgId, meetingId } = useParams<{ orgId: string; meetingId: string }>();
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const meetingQuery = useMeeting(orgId, meetingId);
   const submitMutation = useSubmitAvailability(orgId, meetingId);
+  const orgQuery = useOrg(orgId);
+  const isOwner = orgQuery.data?.myRole === 'OWNER';
+  const updateMeeting = useUpdateMeeting(orgId, meetingId as string);
 
   const [selected, setSelected] = useState<string[]>([]);
   const [timeNote, setTimeNote] = useState('');
@@ -220,21 +286,28 @@ export default function AvailabilityPage() {
                 </p>
               </div>
             ) : meeting.status !== 'PENDING' ? (
-              <div className="mt-8 border-2 border-ink bg-surface">
-                <EmptyState
-                  title="이미 확정된 모임이에요"
-                  description={
-                    meeting.confirmedDate
-                      ? `${formatKorean(isoDate(meeting.confirmedDate))}에 열려요`
-                      : undefined
-                  }
-                  action={
-                    <Button variant="ghost" onClick={() => navigate(`/orgs/${orgId}`)}>
-                      오가니제이션으로
-                    </Button>
-                  }
-                />
-              </div>
+              <>
+                <div className="mt-8 border-2 border-ink bg-surface">
+                  <EmptyState
+                    title="이미 확정된 모임이에요"
+                    description={
+                      meeting.confirmedDate
+                        ? `${formatKorean(isoDate(meeting.confirmedDate))}${
+                            meeting.confirmedTime ? ` ${meeting.confirmedTime}` : ''
+                          }에 열려요`
+                        : undefined
+                    }
+                    action={
+                      <Button variant="ghost" onClick={() => navigate(`/orgs/${orgId}`)}>
+                        오가니제이션으로
+                      </Button>
+                    }
+                  />
+                </div>
+                {isOwner && meeting.status === 'CONFIRMED' && orgId && (
+                  <OwnerReschedule orgId={orgId} meeting={meeting} />
+                )}
+              </>
             ) : (
               <>
                 {/* WhenSee식 추천 배너 */}
@@ -306,6 +379,37 @@ export default function AvailabilityPage() {
                       className="input-underline mt-1.5 text-[15px]"
                     />
                   </div>
+
+                  {isOwner && (
+                    <div className="mt-5 border-2 border-ink bg-surface p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+                            모임 시간 · 리더 설정 (선택)
+                          </p>
+                          <p className="mt-1 text-xs text-muted max-w-[36ch] break-keep">
+                            날짜가 확정될 때 이 시간으로 함께 안내돼요. 고르는 즉시
+                            저장됩니다.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <TimePicker
+                            value={meeting.confirmedTime}
+                            onChange={(v) => updateMeeting.mutate({ confirmedTime: v })}
+                            disabled={updateMeeting.isPending}
+                          />
+                          {updateMeeting.isSuccess && (
+                            <span className="text-[11px] text-muted">저장됨</span>
+                          )}
+                        </div>
+                      </div>
+                      {updateMeeting.isError && (
+                        <p className="mt-2 text-xs text-danger">
+                          시간 저장에 실패했어요. 다시 시도해주세요.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </section>
 
                 <section className="mt-10">

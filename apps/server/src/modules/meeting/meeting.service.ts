@@ -313,9 +313,15 @@ export class MeetingService {
     await this.enqueueDiscussionGeneration(meetingId);
     this.notifyOrgEvent(groupId, 'meeting-confirmed');
     const workLabel = meetingWorkLabel(meeting);
-    // 자동 확정은 날짜만 정해지므로 시간은 미정(null)
-    this.notifyDateConfirmed(groupId, meetingId, confirmedDate, null, workLabel).catch(
-      (error: Error) => this.logger.warn(`날짜 확정 알림 실패: ${error.message}`),
+    // 자동 확정은 날짜만 정해짐 — 리더가 조율 중 미리 설정해둔 시간이 있으면 그대로 사용
+    this.notifyDateConfirmed(
+      groupId,
+      meetingId,
+      confirmedDate,
+      meeting.confirmedTime,
+      workLabel,
+    ).catch((error: Error) =>
+      this.logger.warn(`날짜 확정 알림 실패: ${error.message}`),
     );
 
     return {
