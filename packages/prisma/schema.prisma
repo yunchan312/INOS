@@ -29,6 +29,13 @@ enum DiscussionStatus {
   PUBLISHED
 }
 
+enum NotificationType {
+  DATE_CONFIRMED
+  DISCUSSION_READY
+  MEETING_REMINDER_3H
+  AVAILABILITY_REMINDER
+}
+
 enum PromptKind {
   BOOK
   MOVIE
@@ -62,6 +69,7 @@ model User {
   personalLibraryReviews PersonalLibraryReview[]
   updatedGroupReviews    GroupLibraryReview[]    @relation("GroupReviewUpdatedBy")
   manualLibraryEntries   ManualLibraryEntry[]
+  notificationLogs       NotificationLog[]
   customPrompts          DiscussionCustomPrompt[]
   impressions            DiscussionImpression[]
 
@@ -121,12 +129,13 @@ model Meeting {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  group           Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  createdBy       User                    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
-  availabilities  MeetingAvailability[]
-  discussion      Discussion?
-  personalReviews PersonalLibraryReview[]
-  groupReviews    GroupLibraryReview[]
+  group             Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy         User                    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
+  availabilities    MeetingAvailability[]
+  discussion        Discussion?
+  personalReviews   PersonalLibraryReview[]
+  groupReviews      GroupLibraryReview[]
+  notificationLogs  NotificationLog[]
 
   @@index([groupId, status])
   @@index([groupId, confirmedDate])
@@ -298,4 +307,19 @@ model GroupLibraryReview {
 
   @@unique([meetingId, kind])
   @@map("group_library_reviews")
+}
+
+// 이메일 알림 발송 이력 — (모임, 수신자, 종류)당 최대 1건으로 중복 발송 방지
+model NotificationLog {
+  id        String           @id @default(uuid()) @db.Uuid
+  meetingId String           @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  sentAt    DateTime         @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId, type])
+  @@map("notification_logs")
 }

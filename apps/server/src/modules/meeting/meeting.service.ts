@@ -12,6 +12,8 @@ import { Queue } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GroupService } from '../group/group.service';
 import { MailService } from '../mail/mail.service';
+import { NotificationService } from '../notification/notification.service';
+import { formatDateLabel, meetingWorkLabel } from '../notification/notification.util';
 import {
   CreateMeetingDto,
   MeetingResponseDto,
@@ -52,6 +54,7 @@ export class MeetingService {
     private readonly prisma: PrismaService,
     private readonly groupService: GroupService,
     private readonly mailService: MailService,
+    private readonly notificationService: NotificationService,
     private readonly config: ConfigService,
     @InjectQueue(MEETING_INVITE_QUEUE)
     private readonly meetingInviteQueue: Queue,
@@ -94,6 +97,9 @@ export class MeetingService {
         { removeOnComplete: true, removeOnFail: 100, attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
       );
     }
+
+    // 생성 48시간 후에도 응답하지 않은 멤버에게 리마인더 발송
+    await this.notificationService.scheduleAvailabilityReminder(meeting.id);
 
     this.notifyOrgEvent(groupId, 'meeting-created');
 
@@ -193,6 +199,19 @@ export class MeetingService {
     if (confirmedDate && meeting.status === MeetingStatus.PENDING) {
       await this.enqueueDiscussionGeneration(meetingId);
       this.notifyOrgEvent(groupId, 'meeting-confirmed');
+      const workLabel = meetingWorkLabel({
+        bookTitle: dto.bookTitle ?? meeting.bookTitle,
+        movieTitle: dto.movieTitle ?? meeting.movieTitle,
+      });
+      this.notifyDateConfirmed(groupId, meetingId, confirmedDate, workLabel).catch(
+        (error: Error) => this.logger.warn(`날짜 확정 알림 실패: ${error.message}`),
+      );
+    } else if (confirmedDate) {
+      // 이미 확정된 모임의 날짜 재조정 — 리마인더만 새 시각으로 재예약(확정 안내는 최초 1회만)
+      this.notifyOrgEvent(groupId, 'meeting-updated');
+      this.notificationService
+        .scheduleMeetingReminder(meetingId, confirmedDate)
+        .catch((error: Error) => this.logger.warn(`리마인더 재예약 실패: ${error.message}`));
     } else {
       this.notifyOrgEvent(groupId, 'meeting-updated');
     }
@@ -281,6 +300,10 @@ export class MeetingService {
 
     await this.enqueueDiscussionGeneration(meetingId);
     this.notifyOrgEvent(groupId, 'meeting-confirmed');
+    const workLabel = meetingWorkLabel(meeting);
+    this.notifyDateConfirmed(groupId, meetingId, confirmedDate, workLabel).catch(
+      (error: Error) => this.logger.warn(`날짜 확정 알림 실패: ${error.message}`),
+    );
 
     return {
       confirmed: true,
@@ -288,6 +311,50 @@ export class MeetingService {
       respondedCount: availabilities.length,
       totalMembers: memberCount,
     };
+  }
+
+  // 날짜 확정 알림 메일(전원) + 3시간 전 리마인더 예약 + 응답 독촉 리마인더 취소
+  private async notifyDateConfirmed(
+    groupId: string,
+    meetingId: string,
+    confirmedDate: Date,
+    workLabel: string,
+  ): Promise<void> {
+    const [group, members] = await Promise.all([
+      this.prisma.group.findUnique({ where: { id: groupId }, select: { name: true } }),
+      this.loadMembersWithContact(groupId),
+    ]);
+    if (!group) return;
+
+    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
+    const meetingUrl = `${frontendUrl}/orgs/${groupId}/meetings/${meetingId}`;
+    const dateLabel = formatDateLabel(confirmedDate);
+
+    for (const m of members) {
+      await this.notificationService.sendOnce(meetingId, m.id, 'DATE_CONFIRMED', () =>
+        this.mailService.sendDateConfirmed({
+          toEmail: m.email,
+          toName: m.nickname,
+          groupName: group.name,
+          workLabel,
+          dateLabel,
+          meetingUrl,
+        }),
+      );
+    }
+
+    await this.notificationService.cancelAvailabilityReminder(meetingId);
+    await this.notificationService.scheduleMeetingReminder(meetingId, confirmedDate);
+  }
+
+  private async loadMembersWithContact(
+    groupId: string,
+  ): Promise<{ id: string; email: string; nickname: string }[]> {
+    const members = await this.prisma.groupMember.findMany({
+      where: { groupId },
+      select: { user: { select: { id: true, email: true, nickname: true } } },
+    });
+    return members.map((m) => m.user);
   }
 
   // 날짜 확정 즉시 발제문 생성 시작
@@ -359,6 +426,10 @@ export class MeetingService {
         this.logger.warn(`모임 종료 브로드캐스트 실패: ${error.message}`);
       });
     this.notifyOrgEvent(groupId, 'meeting-finished');
+    // 조기 종료된 모임에 예약된 3시간 전 리마인더는 취소
+    this.notificationService
+      .cancelMeetingReminder(meetingId)
+      .catch((error: Error) => this.logger.warn(`리마인더 취소 실패: ${error.message}`));
 
     return this.load(groupId, meetingId, userId);
   }
@@ -370,6 +441,12 @@ export class MeetingService {
     }
     await this.prisma.meeting.delete({ where: { id: meetingId } });
     this.notifyOrgEvent(groupId, 'meeting-deleted');
+    await Promise.all([
+      this.notificationService.cancelMeetingReminder(meetingId),
+      this.notificationService.cancelAvailabilityReminder(meetingId),
+    ]).catch((error: Error) =>
+      this.logger.warn(`예약된 알림 취소 실패: ${error.message}`),
+    );
   }
 
   async findMemberEmail(
