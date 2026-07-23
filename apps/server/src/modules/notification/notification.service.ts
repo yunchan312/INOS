@@ -89,11 +89,12 @@ export class NotificationService {
     const delay = meetingAt.getTime() - REMINDER_LEAD_MS - Date.now();
     if (delay <= 0) return; // 이미 지난 시각이면 예약하지 않음
 
+    // BullMQ 커스텀 jobId에는 ':'를 쓸 수 없음(Redis 키 구분자와 충돌)
     await this.reminderQueue.add(
       MEETING_REMINDER_JOB,
       { meetingId },
       {
-        jobId: `${MEETING_REMINDER_JOB}:${meetingId}`,
+        jobId: `${MEETING_REMINDER_JOB}-${meetingId}`,
         delay,
         removeOnComplete: true,
         removeOnFail: true,
@@ -102,7 +103,7 @@ export class NotificationService {
   }
 
   async cancelMeetingReminder(meetingId: string): Promise<void> {
-    const job = await this.reminderQueue.getJob(`${MEETING_REMINDER_JOB}:${meetingId}`);
+    const job = await this.reminderQueue.getJob(`${MEETING_REMINDER_JOB}-${meetingId}`);
     if (job) await job.remove();
   }
 
@@ -111,7 +112,7 @@ export class NotificationService {
       AVAILABILITY_REMINDER_JOB,
       { meetingId },
       {
-        jobId: `${AVAILABILITY_REMINDER_JOB}:${meetingId}`,
+        jobId: `${AVAILABILITY_REMINDER_JOB}-${meetingId}`,
         delay: AVAILABILITY_REMINDER_DELAY_MS,
         removeOnComplete: true,
         removeOnFail: true,
@@ -121,7 +122,7 @@ export class NotificationService {
 
   async cancelAvailabilityReminder(meetingId: string): Promise<void> {
     const job = await this.reminderQueue.getJob(
-      `${AVAILABILITY_REMINDER_JOB}:${meetingId}`,
+      `${AVAILABILITY_REMINDER_JOB}-${meetingId}`,
     );
     if (job) await job.remove();
   }
