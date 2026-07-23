@@ -56,7 +56,9 @@ export class NotificationReminderProcessor extends WorkerHost {
     const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
     const meetingUrl = `${frontendUrl}/orgs/${meeting.groupId}/meetings/${meeting.id}`;
     const workLabel = meetingWorkLabel(meeting);
-    const dateLabel = formatDateLabel(meeting.confirmedDate);
+    const dateLabel =
+      formatDateLabel(meeting.confirmedDate) +
+      (meeting.confirmedTime ? ` ${meeting.confirmedTime}` : '');
 
     for (const m of members) {
       await this.notificationService.sendOnce(

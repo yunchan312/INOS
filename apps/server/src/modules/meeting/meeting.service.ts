@@ -162,6 +162,11 @@ export class MeetingService {
     const confirmedDate = dto.confirmedDate
       ? this.parseDateOnly(dto.confirmedDate)
       : meeting.confirmedDate;
+    // undefined = 유지, null = 미정으로 초기화, "HH:mm" = 변경
+    const confirmedTime =
+      dto.confirmedTime === undefined
+        ? meeting.confirmedTime
+        : dto.confirmedTime;
 
     // 조율 중(PENDING) 확정은 후보 기간 안에서만.
     // 이미 확정된 모임의 일정 변경은 소유자가 자유롭게.
@@ -188,6 +193,7 @@ export class MeetingService {
         movieDirector: dto.movieDirector ?? meeting.movieDirector,
         location: dto.location ?? meeting.location,
         confirmedDate,
+        confirmedTime,
         status:
           confirmedDate && meeting.status === MeetingStatus.PENDING
             ? MeetingStatus.CONFIRMED
@@ -203,14 +209,20 @@ export class MeetingService {
         bookTitle: dto.bookTitle ?? meeting.bookTitle,
         movieTitle: dto.movieTitle ?? meeting.movieTitle,
       });
-      this.notifyDateConfirmed(groupId, meetingId, confirmedDate, workLabel).catch(
-        (error: Error) => this.logger.warn(`날짜 확정 알림 실패: ${error.message}`),
+      this.notifyDateConfirmed(
+        groupId,
+        meetingId,
+        confirmedDate,
+        confirmedTime,
+        workLabel,
+      ).catch((error: Error) =>
+        this.logger.warn(`날짜 확정 알림 실패: ${error.message}`),
       );
     } else if (confirmedDate) {
-      // 이미 확정된 모임의 날짜 재조정 — 리마인더만 새 시각으로 재예약(확정 안내는 최초 1회만)
+      // 이미 확정된 모임의 날짜/시간 재조정 — 리마인더만 새 시각으로 재예약(확정 안내는 최초 1회만)
       this.notifyOrgEvent(groupId, 'meeting-updated');
       this.notificationService
-        .scheduleMeetingReminder(meetingId, confirmedDate)
+        .scheduleMeetingReminder(meetingId, confirmedDate, confirmedTime)
         .catch((error: Error) => this.logger.warn(`리마인더 재예약 실패: ${error.message}`));
     } else {
       this.notifyOrgEvent(groupId, 'meeting-updated');
@@ -301,7 +313,8 @@ export class MeetingService {
     await this.enqueueDiscussionGeneration(meetingId);
     this.notifyOrgEvent(groupId, 'meeting-confirmed');
     const workLabel = meetingWorkLabel(meeting);
-    this.notifyDateConfirmed(groupId, meetingId, confirmedDate, workLabel).catch(
+    // 자동 확정은 날짜만 정해지므로 시간은 미정(null)
+    this.notifyDateConfirmed(groupId, meetingId, confirmedDate, null, workLabel).catch(
       (error: Error) => this.logger.warn(`날짜 확정 알림 실패: ${error.message}`),
     );
 
@@ -318,6 +331,7 @@ export class MeetingService {
     groupId: string,
     meetingId: string,
     confirmedDate: Date,
+    confirmedTime: string | null,
     workLabel: string,
   ): Promise<void> {
     const [group, members] = await Promise.all([
@@ -328,7 +342,8 @@ export class MeetingService {
 
     const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
     const meetingUrl = `${frontendUrl}/orgs/${groupId}/meetings/${meetingId}`;
-    const dateLabel = formatDateLabel(confirmedDate);
+    const dateLabel =
+      formatDateLabel(confirmedDate) + (confirmedTime ? ` ${confirmedTime}` : '');
 
     for (const m of members) {
       await this.notificationService.sendOnce(meetingId, m.id, 'DATE_CONFIRMED', () =>
@@ -344,7 +359,11 @@ export class MeetingService {
     }
 
     await this.notificationService.cancelAvailabilityReminder(meetingId);
-    await this.notificationService.scheduleMeetingReminder(meetingId, confirmedDate);
+    await this.notificationService.scheduleMeetingReminder(
+      meetingId,
+      confirmedDate,
+      confirmedTime,
+    );
   }
 
   private async loadMembersWithContact(
@@ -511,6 +530,7 @@ export class MeetingService {
       candidateFrom: meeting.candidateFrom,
       candidateTo: meeting.candidateTo,
       confirmedDate: meeting.confirmedDate,
+      confirmedTime: meeting.confirmedTime,
       location: meeting.location,
       status: meeting.status,
       createdAt: meeting.createdAt,

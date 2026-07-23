@@ -160,6 +160,8 @@ export interface UpdateMeetingDto {
   movieDirector?: string;
   location?: string;
   confirmedDate?: string;
+  /** 모임 시작 시각 "HH:mm" — null이면 시간 미정으로 초기화 */
+  confirmedTime?: string | null;
 }
 
 export interface MeetingResponderDto {
@@ -184,6 +186,8 @@ export interface MeetingDto {
   movieTitle: string | null;
   movieDirector: string | null;
   confirmedDate: string | null;
+  /** 모임 시작 시각 "HH:mm" (null이면 미정) */
+  confirmedTime: string | null;
   location: string | null;
   candidateFrom: string;
   candidateTo: string;

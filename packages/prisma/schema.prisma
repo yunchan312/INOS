@@ -122,6 +122,7 @@ model Meeting {
   movieTitle    String?
   movieDirector String?
   confirmedDate DateTime?
+  confirmedTime String?       @db.VarChar(5) // 모임 시작 시각 "HH:mm" (null이면 미정)
   location      String?
   status        MeetingStatus @default(PENDING)
   candidateFrom DateTime

@@ -63,20 +63,29 @@ export class NotificationService {
     });
   }
 
-  // 모임 확정일 저녁(기본 19시)에서 3시간 전 시각을 계산
-  getAssumedMeetingDateTime(confirmedDate: Date): Date {
+  // 모임 시작 시각 계산 — confirmedTime("HH:mm")이 있으면 그대로, 없으면 저녁(기본 19시) 가정
+  getAssumedMeetingDateTime(confirmedDate: Date, confirmedTime?: string | null): Date {
+    const dt = new Date(confirmedDate);
+    const parsed = confirmedTime?.match(/^(\d{2}):(\d{2})$/);
+    if (parsed) {
+      dt.setHours(Number(parsed[1]), Number(parsed[2]), 0, 0);
+      return dt;
+    }
     const hour = Number(
       this.config.get<string>('MEETING_DEFAULT_HOUR', String(DEFAULT_MEETING_HOUR)),
     );
-    const dt = new Date(confirmedDate);
     dt.setHours(hour, 0, 0, 0);
     return dt;
   }
 
-  async scheduleMeetingReminder(meetingId: string, confirmedDate: Date): Promise<void> {
+  async scheduleMeetingReminder(
+    meetingId: string,
+    confirmedDate: Date,
+    confirmedTime?: string | null,
+  ): Promise<void> {
     await this.cancelMeetingReminder(meetingId);
 
-    const meetingAt = this.getAssumedMeetingDateTime(confirmedDate);
+    const meetingAt = this.getAssumedMeetingDateTime(confirmedDate, confirmedTime);
     const delay = meetingAt.getTime() - REMINDER_LEAD_MS - Date.now();
     if (delay <= 0) return; // 이미 지난 시각이면 예약하지 않음
 
