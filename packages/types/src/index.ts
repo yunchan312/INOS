@@ -375,3 +375,44 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
 }
+
+// ─── 오가니제이션 게시판 (하고싶은 말) ───────────────────────────
+
+export interface GroupPostSummaryDto {
+  id: string;
+  groupId: string;
+  authorId: string;
+  authorNickname: string;
+  title: string;
+  likeCount: number;
+  likedByMe: boolean;
+  createdAt: string;
+}
+
+export interface GroupPostDto extends GroupPostSummaryDto {
+  /** 마크다운 원문 */
+  content: string;
+  updatedAt: string;
+}
+
+export interface GroupPostListDto {
+  items: GroupPostSummaryDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CreateGroupPostDto {
+  title: string;
+  content: string;
+}
+
+export interface UpdateGroupPostDto {
+  title?: string;
+  content?: string;
+}
+
+export interface GroupPostLikeDto {
+  likeCount: number;
+  likedByMe: boolean;
+}

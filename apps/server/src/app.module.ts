@@ -9,6 +9,7 @@ import { MeetingModule } from './modules/meeting/meeting.module';
 import { LibraryModule } from './modules/library/library.module';
 import { MailModule } from './modules/mail/mail.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { BoardModule } from './modules/board/board.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -35,6 +36,7 @@ import { HealthController } from './health.controller';
     MeetingModule,
     LibraryModule,
     AdminModule,
+    BoardModule,
   ],
 })
 export class AppModule {}
