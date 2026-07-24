@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { MeetingDto } from '@inos/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,6 +6,7 @@ import { useOrg } from '@/hooks/useOrg';
 import { useMeetings } from '@/hooks/useMeetings';
 import { useRemoveMember } from '@/hooks/useRemoveMember';
 import { useOrgEvents } from '@/hooks/useOrgEvents';
+import { useOrgPosts } from '@/hooks/useOrgPosts';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Card } from '@/components/Card';
@@ -51,6 +52,106 @@ function partitionMeetings(meetings: MeetingDto[] | undefined): Sections {
     upcoming.push(m);
   }
   return { today, upcoming, past };
+}
+
+function formatPostDate(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
+}
+
+// 하고싶은 말 — 최신순 5개 + 페이지네이션 (멤버 누구나 등록 가능)
+function OrgBoardSection({ orgId }: { orgId: string }) {
+  const [page, setPage] = useState(1);
+  const postsQuery = useOrgPosts(orgId, page);
+  const data = postsQuery.data;
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+
+  return (
+    <section className="mt-10">
+      <div className="flex items-center justify-between mb-4">
+        <SectionLabel num="00">하고싶은 말</SectionLabel>
+        <Link
+          to={`/orgs/${orgId}/posts/new`}
+          className="text-xs font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+        >
+          + 글 남기기
+        </Link>
+      </div>
+
+      {postsQuery.isLoading ? (
+        <Skeleton className="h-24" />
+      ) : !data || data.total === 0 ? (
+        <Card>
+          <EmptyState
+            title="아직 하고싶은 말이 없어요"
+            description="모임에 대한 생각, 공지, 아무 말이든 남겨보세요."
+            action={
+              <Link to={`/orgs/${orgId}/posts/new`}>
+                <Button variant="primary">첫 글 남기기</Button>
+              </Link>
+            }
+          />
+        </Card>
+      ) : (
+        <>
+          <ul className="border-t-2 border-ink">
+            {data.items.map((p) => (
+              <li key={p.id}>
+                <Link
+                  to={`/orgs/${orgId}/posts/${p.id}`}
+                  className="flex items-baseline gap-3 border-b border-line px-1 py-3 transition-colors hover:bg-surface"
+                >
+                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
+                    {p.title}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {p.authorNickname}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {formatPostDate(p.createdAt)}
+                  </span>
+                  <span
+                    className={`shrink-0 text-xs font-bold ${
+                      p.likedByMe ? 'text-ink' : 'text-muted'
+                    }`}
+                  >
+                    ♥ {p.likeCount}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {totalPages > 1 && (
+            <div className="mt-3 flex items-center justify-end gap-3 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                aria-label="이전 페이지"
+                className="border-2 border-ink px-2 py-0.5 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ←
+              </button>
+              <span className="text-muted">
+                {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                aria-label="다음 페이지"
+                className="border-2 border-ink px-2 py-0.5 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                →
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
 }
 
 export default function OrgHomePage() {
@@ -129,6 +230,8 @@ export default function OrgHomePage() {
                 )}
               </div>
             </div>
+
+            <OrgBoardSection orgId={orgId as string} />
 
             {sections.today.length > 0 && (
               <section className="mt-10">

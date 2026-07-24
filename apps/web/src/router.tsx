@@ -8,6 +8,8 @@ const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
 const OrgSelectorPage = lazy(() => import('@/pages/orgs/OrgSelectorPage'));
 const OrgHomePage = lazy(() => import('@/pages/orgs/OrgHomePage'));
 const OrgSettingsPage = lazy(() => import('@/pages/orgs/OrgSettingsPage'));
+const OrgPostFormPage = lazy(() => import('@/pages/orgs/OrgPostFormPage'));
+const OrgPostDetailPage = lazy(() => import('@/pages/orgs/OrgPostDetailPage'));
 const CreateMeetingPage = lazy(
   () => import('@/pages/meetings/CreateMeetingPage'),
 );
@@ -49,6 +51,15 @@ export const router = createBrowserRouter([
       { path: '/orgs', element: suspend(<OrgSelectorPage />) },
       { path: '/orgs/:orgId', element: suspend(<OrgHomePage />) },
       { path: '/orgs/:orgId/settings', element: suspend(<OrgSettingsPage />) },
+      { path: '/orgs/:orgId/posts/new', element: suspend(<OrgPostFormPage />) },
+      {
+        path: '/orgs/:orgId/posts/:postId',
+        element: suspend(<OrgPostDetailPage />),
+      },
+      {
+        path: '/orgs/:orgId/posts/:postId/edit',
+        element: suspend(<OrgPostFormPage />),
+      },
       { path: '/orgs/:orgId/library', element: suspend(<OrgLibraryPage />) },
       {
         path: '/orgs/:orgId/meetings/new',
