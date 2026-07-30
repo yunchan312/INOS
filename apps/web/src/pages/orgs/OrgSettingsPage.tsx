@@ -10,6 +10,11 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { Skeleton } from '@/components/Skeleton';
 import { InviteEmailInput } from '@/components/InviteEmailInput';
+import {
+  useCreateInviteLink,
+  useInviteLink,
+  useRevokeInviteLink,
+} from '@/hooks/useInviteLink';
 
 function FieldLabel({ children }: { children: string }) {
   return (
@@ -22,6 +27,92 @@ function InputLabel({ children }: { children: string }) {
     <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
       {children}
     </label>
+  );
+}
+
+// 초대 링크 — 발급/복사/교체/끄기 (카톡·문자 등으로 직접 공유)
+function InviteLinkBlock({ orgId }: { orgId: string }) {
+  const linkQuery = useInviteLink(orgId);
+  const createLink = useCreateInviteLink(orgId);
+  const revokeLink = useRevokeInviteLink(orgId);
+  const [copied, setCopied] = useState(false);
+
+  const link = linkQuery.data;
+
+  const handleCopy = async () => {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard 권한이 없으면 인풋을 선택 상태로 두어 수동 복사 유도
+    }
+  };
+
+  return (
+    <div className="mt-5 border-t border-line pt-5">
+      <InputLabel>초대 링크 — 카톡·문자로 직접 공유</InputLabel>
+
+      {link ? (
+        <div className="border-2 border-ink bg-surface p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              readOnly
+              value={link.url}
+              onFocus={(e) => e.target.select()}
+              className="input-underline min-w-0 flex-1 text-[13px]"
+              aria-label="초대 링크"
+            />
+            <Button variant="outline" size="sm" onClick={handleCopy}>
+              {copied ? '복사됨 ✓' : '복사'}
+            </Button>
+          </div>
+          <p className="mt-2 text-[11px] text-muted">
+            {new Date(link.expiresAt).toLocaleDateString('ko-KR')} 까지 유효 ·{' '}
+            {link.useCount}명 참여 · 링크를 받은 사람은 로그인만 하면 참여돼요
+          </p>
+          <div className="mt-2.5 flex items-center gap-4 text-xs">
+            <button
+              type="button"
+              onClick={() => createLink.mutate()}
+              disabled={createLink.isPending}
+              className="font-medium text-muted border-b border-muted hover:text-ink hover:border-ink disabled:opacity-50"
+            >
+              새 링크로 교체
+            </button>
+            <button
+              type="button"
+              onClick={() => revokeLink.mutate()}
+              disabled={revokeLink.isPending}
+              className="font-medium text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2 disabled:opacity-50"
+            >
+              링크 끄기
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <Button
+            variant="outline"
+            size="sm"
+            loading={createLink.isPending}
+            onClick={() => createLink.mutate()}
+          >
+            + 초대 링크 만들기
+          </Button>
+          <p className="mt-2 text-[11px] text-muted">
+            링크를 받은 사람은 누구나 로그인 후 바로 참여할 수 있어요 (7일 유효)
+          </p>
+        </div>
+      )}
+
+      {(createLink.isError || revokeLink.isError) && (
+        <p className="mt-2 text-xs text-danger">
+          처리에 실패했어요. 다시 시도해주세요.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -154,7 +245,10 @@ export default function OrgSettingsPage() {
 
             <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
               <FieldLabel>멤버 초대</FieldLabel>
-              <InviteEmailInput orgId={orgQuery.data.id} />
+              <div>
+                <InviteEmailInput orgId={orgQuery.data.id} />
+                <InviteLinkBlock orgId={orgQuery.data.id} />
+              </div>
             </section>
 
             {(invitationsQuery.data?.length ?? 0) > 0 && (

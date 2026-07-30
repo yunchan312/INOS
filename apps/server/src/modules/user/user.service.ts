@@ -41,6 +41,27 @@ export class UserService {
     });
   }
 
+  findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  // 로컬(이메일/비밀번호) 가입 — unique(oauthProvider, oauthId) 충족을 위해 oauthId에 이메일 사용
+  async createLocalUser(input: {
+    email: string;
+    passwordHash: string;
+    nickname: string;
+  }): Promise<User> {
+    return this.prisma.user.create({
+      data: {
+        email: input.email,
+        nickname: input.nickname,
+        oauthProvider: OAuthProvider.LOCAL,
+        oauthId: input.email,
+        passwordHash: input.passwordHash,
+      },
+    });
+  }
+
   async update(userId: string, dto: UpdateUserDto): Promise<User> {
     const existing = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!existing) throw new NotFoundException('사용자를 찾을 수 없습니다');

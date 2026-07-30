@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Footer } from "@/components/Footer";
 import mascotFace from "@/assets/character-mascot.png";
@@ -248,7 +248,13 @@ export default function HomePage() {
                 </a>
               </div>
               <p className="mt-4 text-xs text-muted">
-                회원가입 없음 · 초대장이 있어야 모임에 들어갈 수 있어요
+                초대장이나 초대 링크가 있어야 모임에 들어갈 수 있어요 ·{' '}
+                <Link
+                  to="/login"
+                  className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+                >
+                  이메일로 계속하기
+                </Link>
               </p>
             </div>
 

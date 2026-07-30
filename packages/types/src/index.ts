@@ -416,3 +416,39 @@ export interface GroupPostLikeDto {
   likeCount: number;
   likedByMe: boolean;
 }
+
+// ─── 오가니제이션 링크 초대 ───────────────────────────────────────
+
+export interface GroupInviteLinkDto {
+  /** 공유용 전체 URL */
+  url: string;
+  token: string;
+  expiresAt: string;
+  useCount: number;
+  createdAt: string;
+}
+
+export interface InviteLinkPreviewDto {
+  groupName: string;
+  inviterName: string;
+  memberCount: number;
+  /** 만료 또는 철회됨 */
+  expired: boolean;
+}
+
+export interface InviteLinkAcceptResponseDto {
+  groupId: string;
+}
+
+// ─── 로컬(이메일/비밀번호) 인증 ──────────────────────────────────
+
+export interface LocalSignupDto {
+  email: string;
+  password: string;
+  nickname: string;
+}
+
+export interface LocalLoginDto {
+  email: string;
+  password: string;
+}

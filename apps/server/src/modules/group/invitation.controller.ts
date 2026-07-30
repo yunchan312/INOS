@@ -5,6 +5,10 @@ import {
   InvitationAcceptResponseDto,
   InvitationPreviewDto,
 } from './dto/invitation.dto';
+import type {
+  InviteLinkAcceptResponseDto,
+  InviteLinkPreviewDto,
+} from '@inos/types';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, AuthUser } from '../auth/decorators/current-user.decorator';
 
@@ -12,6 +16,22 @@ import { CurrentUser, AuthUser } from '../auth/decorators/current-user.decorator
 @Controller('invitations')
 export class InvitationController {
   constructor(private readonly groupService: GroupService) {}
+
+  @Get('link/:token')
+  @ApiOperation({ summary: '초대 링크 프리뷰 (공개)' })
+  linkPreview(@Param('token') token: string): Promise<InviteLinkPreviewDto> {
+    return this.groupService.getInviteLinkPreview(token);
+  }
+
+  @Post('link/:token/accept')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '초대 링크로 참여 (로그인 필요, 이메일 불문)' })
+  linkAccept(
+    @Param('token') token: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<InviteLinkAcceptResponseDto> {
+    return this.groupService.acceptInviteLink(token, user.id);
+  }
 
   @Get(':token')
   @ApiOperation({ summary: '초대장 프리뷰 (공개)' })

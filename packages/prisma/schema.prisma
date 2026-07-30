@@ -9,6 +9,7 @@ datasource db {
 
 enum OAuthProvider {
   GOOGLE
+  LOCAL
 }
 
 enum GroupRole {
@@ -48,6 +49,7 @@ model User {
   profileImageUrl String?
   oauthProvider   OAuthProvider
   oauthId         String
+  passwordHash    String? // 로컬 로그인 계정만 사용 (bcrypt)
   isAdmin         Boolean       @default(false)
   libraryShareId  String?       @unique // 공개 서가 공유 링크 슬러그 (null이면 비공개)
   createdAt       DateTime      @default(now())
@@ -64,6 +66,7 @@ model User {
   manualLibraryEntries   ManualLibraryEntry[]
   groupPosts             GroupPost[]
   groupPostLikes         GroupPostLike[]
+  createdInviteLinks     GroupInviteLink[]       @relation("InviteLinkCreatedBy")
   customPrompts          DiscussionCustomPrompt[]
   impressions            DiscussionImpression[]
 
@@ -88,6 +91,7 @@ model Group {
   discussions Discussion[]
   invitations Invitation[]
   posts       GroupPost[]
+  inviteLinks GroupInviteLink[]
 
   @@index([ownerId])
   @@map("groups")
@@ -332,4 +336,22 @@ model GroupPostLike {
 
   @@unique([postId, userId])
   @@map("group_post_likes")
+}
+
+// 오가니제이션 링크 초대 — 그룹당 활성 링크 1개, 링크를 아는 로그인 사용자는 누구나 참여
+model GroupInviteLink {
+  id          String    @id @default(uuid()) @db.Uuid
+  groupId     String    @db.Uuid
+  token       String    @unique
+  createdById String    @db.Uuid
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  useCount    Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("InviteLinkCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt(sort: Desc)])
+  @@map("group_invite_links")
 }

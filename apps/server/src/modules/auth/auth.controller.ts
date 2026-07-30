@@ -6,13 +6,22 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+  ConflictException,
   UnauthorizedException,
   InternalServerErrorException,
   Redirect,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import { compare, hash } from 'bcryptjs';
 import axios from 'axios';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -29,6 +38,30 @@ class RefreshDto {
   @IsString()
   @IsNotEmpty()
   refreshToken!: string;
+}
+
+class LocalSignupBody {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(72)
+  password!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(30)
+  nickname!: string;
+}
+
+class LocalLoginBody {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password!: string;
 }
 
 class RequestOrgDto {
@@ -164,6 +197,61 @@ export class AuthController {
       }
       throw error;
     }
+  }
+
+  @Post('signup')
+  @ApiOperation({ summary: '로컬 회원가입 (이메일/비밀번호)' })
+  async signup(
+    @Body() dto: LocalSignupBody,
+  ): Promise<{ token: string; refreshToken: string }> {
+    const email = dto.email.trim().toLowerCase();
+    const existing = await this.userService.findByEmail(email);
+    if (existing) {
+      throw new ConflictException(
+        existing.passwordHash
+          ? '이미 가입된 이메일이에요. 로그인해주세요.'
+          : '구글로 가입된 이메일이에요. "Google 로 계속하기"를 이용해주세요.',
+      );
+    }
+
+    const passwordHash = await hash(dto.password, 10);
+    const user = await this.userService.createLocalUser({
+      email,
+      passwordHash,
+      nickname: dto.nickname.trim(),
+    });
+
+    return {
+      token: this.authService.issueAccessToken(user.id),
+      refreshToken: this.authService.issueRefreshToken(user.id),
+    };
+  }
+
+  @Post('login')
+  @ApiOperation({ summary: '로컬 로그인 (이메일/비밀번호)' })
+  async login(
+    @Body() dto: LocalLoginBody,
+  ): Promise<{ token: string; refreshToken: string }> {
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.userService.findByEmail(email);
+    // 계정 존재 여부가 드러나지 않도록 실패 사유는 동일 문구로
+    if (!user) {
+      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않아요');
+    }
+    if (!user.passwordHash) {
+      throw new UnauthorizedException(
+        '구글로 가입된 계정이에요. "Google 로 계속하기"를 이용해주세요.',
+      );
+    }
+    const matches = await compare(dto.password, user.passwordHash);
+    if (!matches) {
+      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않아요');
+    }
+
+    return {
+      token: this.authService.issueAccessToken(user.id),
+      refreshToken: this.authService.issueRefreshToken(user.id),
+    };
   }
 
   @Post('refresh')
