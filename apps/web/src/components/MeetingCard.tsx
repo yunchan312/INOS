@@ -5,6 +5,7 @@ import { Card } from './Card';
 import { Button } from './Button';
 import { useUpdateMeeting } from '@/hooks/useUpdateMeeting';
 import { useDeleteMeeting } from '@/hooks/useDeleteMeeting';
+import { TimePicker } from './TimePicker';
 
 interface MeetingCardProps {
   meeting: MeetingDto;
@@ -57,6 +58,9 @@ function MeetingEditForm({
   const [confirmedDate, setConfirmedDate] = useState(
     meeting.confirmedDate ? toDateInputValue(meeting.confirmedDate) : '',
   );
+  const [confirmedTime, setConfirmedTime] = useState<string | null>(
+    meeting.confirmedTime,
+  );
   const updateMeeting = useUpdateMeeting(orgId, meeting.id);
 
   // 확정된 모임만 날짜 변경 가능, 후보 기간 내로 제한
@@ -76,6 +80,10 @@ function MeetingEditForm({
         confirmedDate:
           canEditDate && confirmedDate && confirmedDate !== originalDate
             ? confirmedDate
+            : undefined,
+        confirmedTime:
+          canEditDate && confirmedTime !== meeting.confirmedTime
+            ? confirmedTime
             : undefined,
       },
       { onSuccess: onClose },
@@ -122,16 +130,24 @@ function MeetingEditForm({
         className={inputClass}
       />
       {canEditDate && (
-        <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
-            모임 날짜
-          </label>
-          <input
-            type="date"
-            value={confirmedDate}
-            onChange={(e) => setConfirmedDate(e.target.value)}
-            className={inputClass}
-          />
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+              모임 날짜
+            </label>
+            <input
+              type="date"
+              value={confirmedDate}
+              onChange={(e) => setConfirmedDate(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+              모임 시간
+            </label>
+            <TimePicker value={confirmedTime} onChange={setConfirmedTime} />
+          </div>
         </div>
       )}
       {updateMeeting.isError && (
@@ -166,6 +182,7 @@ function ManualConfirmSection({
   urgent: boolean;
 }) {
   const [manualDate, setManualDate] = useState('');
+  const [manualTime, setManualTime] = useState<string | null>(null);
   const updateMeeting = useUpdateMeeting(orgId, meeting.id);
 
   const ranked = Object.entries(meeting.dateCounts ?? {}).sort((a, b) => {
@@ -176,12 +193,16 @@ function ManualConfirmSection({
   const nonResponders = meeting.nonResponders ?? [];
 
   const handleConfirm = (date: string, count: number) => {
+    const timeLabel = manualTime ? ` ${manualTime}` : '';
     if (
       window.confirm(
-        `${formatKoreanDate(date)} (${count}/${meeting.totalMembers}명 가능)로 확정할까요?`,
+        `${formatKoreanDate(date)}${timeLabel} (${count}/${meeting.totalMembers}명 가능)로 확정할까요?`,
       )
     ) {
-      updateMeeting.mutate({ confirmedDate: date });
+      updateMeeting.mutate({
+        confirmedDate: date,
+        confirmedTime: manualTime ?? undefined,
+      });
     }
   };
 
@@ -223,7 +244,7 @@ function ManualConfirmSection({
         </ul>
       )}
 
-      <div className="flex items-end gap-3">
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
         <div className="flex-1 max-w-[200px]">
           <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
             직접 선택 (후보 기간 내)
@@ -237,13 +258,19 @@ function ManualConfirmSection({
             className={inputClass}
           />
         </div>
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted mb-1.5">
+            모임 시간
+          </label>
+          <TimePicker value={manualTime} onChange={setManualTime} />
+        </div>
         <button
           type="button"
           onClick={() =>
             handleConfirm(manualDate, meeting.dateCounts?.[manualDate] ?? 0)
           }
           disabled={!manualDate || updateMeeting.isPending}
-          className="text-xs font-semibold text-ink border-b border-ink pb-0.5 hover:text-muted-2 hover:border-muted-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="pb-2 text-xs font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           이 날짜로 확정
         </button>
@@ -300,10 +327,11 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
           className: 'border-2 border-ink text-ink',
         };
   } else if (meeting.status === 'CONFIRMED' && meeting.confirmedDate) {
+    const timeSuffix = meeting.confirmedTime ? ` ${meeting.confirmedTime}` : '';
     statusPill = {
       text: isToday(meeting.confirmedDate)
-        ? '오늘'
-        : `${formatKoreanDate(meeting.confirmedDate)} 확정`,
+        ? `오늘${timeSuffix}`
+        : `${formatKoreanDate(meeting.confirmedDate)}${timeSuffix} 확정`,
       className: 'border-2 border-ink bg-point text-ink',
     };
   } else if (meeting.status === 'DONE') {

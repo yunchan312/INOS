@@ -30,6 +30,13 @@ enum DiscussionStatus {
   PUBLISHED
 }
 
+enum NotificationType {
+  DATE_CONFIRMED
+  DISCUSSION_READY
+  MEETING_REMINDER_3H
+  AVAILABILITY_REMINDER
+}
+
 enum PromptKind {
   BOOK
   MOVIE
@@ -56,17 +63,18 @@ model User {
   updatedAt       DateTime      @updatedAt
 
   groupMembers           GroupMember[]
-  ownedGroups            Group[]                 @relation("GroupOwner")
+  ownedGroups            Group[]                  @relation("GroupOwner")
   meetingAvails          MeetingAvailability[]
   discussionNotes        DiscussionNote[]
-  createdMeetings        Meeting[]               @relation("MeetingCreatedBy")
-  sentInvitations        Invitation[]            @relation("InvitationInvitedBy")
+  createdMeetings        Meeting[]                @relation("MeetingCreatedBy")
+  sentInvitations        Invitation[]             @relation("InvitationInvitedBy")
   personalLibraryReviews PersonalLibraryReview[]
-  updatedGroupReviews    GroupLibraryReview[]    @relation("GroupReviewUpdatedBy")
+  updatedGroupReviews    GroupLibraryReview[]     @relation("GroupReviewUpdatedBy")
   manualLibraryEntries   ManualLibraryEntry[]
   groupPosts             GroupPost[]
   groupPostLikes         GroupPostLike[]
-  createdInviteLinks     GroupInviteLink[]       @relation("InviteLinkCreatedBy")
+  createdInviteLinks     GroupInviteLink[]        @relation("InviteLinkCreatedBy")
+  notificationLogs       NotificationLog[]
   customPrompts          DiscussionCustomPrompt[]
   impressions            DiscussionImpression[]
 
@@ -85,7 +93,7 @@ model Group {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  owner       User          @relation("GroupOwner", fields: [ownerId], references: [id])
+  owner       User              @relation("GroupOwner", fields: [ownerId], references: [id])
   members     GroupMember[]
   meetings    Meeting[]
   discussions Discussion[]
@@ -121,6 +129,7 @@ model Meeting {
   movieTitle    String?
   movieDirector String?
   confirmedDate DateTime?
+  confirmedTime String?       @db.VarChar(5) // 모임 시작 시각 "HH:mm" (null이면 미정)
   location      String?
   status        MeetingStatus @default(PENDING)
   candidateFrom DateTime
@@ -128,12 +137,13 @@ model Meeting {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  group           Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  createdBy       User                    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
-  availabilities  MeetingAvailability[]
-  discussion      Discussion?
-  personalReviews PersonalLibraryReview[]
-  groupReviews    GroupLibraryReview[]
+  group            Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy        User                    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
+  availabilities   MeetingAvailability[]
+  discussion       Discussion?
+  personalReviews  PersonalLibraryReview[]
+  groupReviews     GroupLibraryReview[]
+  notificationLogs NotificationLog[]
 
   @@index([groupId, status])
   @@index([groupId, confirmedDate])
@@ -354,4 +364,19 @@ model GroupInviteLink {
 
   @@index([groupId, createdAt(sort: Desc)])
   @@map("group_invite_links")
+}
+
+// 이메일 알림 발송 이력 — (모임, 수신자, 종류)당 최대 1건으로 중복 발송 방지
+model NotificationLog {
+  id        String           @id @default(uuid()) @db.Uuid
+  meetingId String           @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  sentAt    DateTime         @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId, type])
+  @@map("notification_logs")
 }

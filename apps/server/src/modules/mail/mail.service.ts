@@ -176,6 +176,108 @@ export class MailService {
     await this.send(adminEmail, subject, html);
   }
 
+  async sendDateConfirmed(input: {
+    toEmail: string;
+    toName: string;
+    groupName: string;
+    workLabel: string;
+    dateLabel: string;
+    meetingUrl: string;
+  }): Promise<void> {
+    const subject = `[INOS] 「${input.groupName}」 모임 날짜가 ${input.dateLabel}로 확정됐어요`;
+    const html = await render(
+      SimpleNotice({
+        preview: subject,
+        headerLabel: input.groupName,
+        label: '날짜 확정',
+        title: `${input.dateLabel}, ${input.workLabel}`,
+        lines: [
+          `${input.toName}님, 「${input.groupName}」 모임 날짜가 확정됐어요.`,
+          '곧 AI가 만든 발제 질문도 도착할 예정이에요.',
+        ],
+        ctaText: '모임 바로가기',
+        ctaUrl: input.meetingUrl,
+      }),
+    );
+    await this.send(input.toEmail, subject, html);
+  }
+
+  async sendDiscussionReady(input: {
+    toEmail: string;
+    toName: string;
+    groupName: string;
+    workLabel: string;
+    meetingUrl: string;
+  }): Promise<void> {
+    const subject = `[INOS] 「${input.groupName}」 발제 질문이 도착했어요`;
+    const html = await render(
+      SimpleNotice({
+        preview: subject,
+        headerLabel: input.groupName,
+        label: '발제문 도착',
+        title: `${input.workLabel} 발제 질문이 준비됐어요`,
+        lines: [
+          `${input.toName}님, 모임 전에 미리 읽어보고 생각을 정리해보세요.`,
+          '노트 작성은 모임 당일에만 가능해요.',
+        ],
+        ctaText: '발제 질문 보기',
+        ctaUrl: input.meetingUrl,
+      }),
+    );
+    await this.send(input.toEmail, subject, html);
+  }
+
+  async sendMeetingReminder(input: {
+    toEmail: string;
+    toName: string;
+    groupName: string;
+    workLabel: string;
+    dateLabel: string;
+    meetingUrl: string;
+  }): Promise<void> {
+    const subject = `[INOS] 오늘 「${input.groupName}」 모임이 있어요`;
+    const html = await render(
+      SimpleNotice({
+        preview: subject,
+        headerLabel: input.groupName,
+        label: '모임 리마인더',
+        title: `오늘 ${input.dateLabel}, ${input.workLabel}`,
+        lines: [
+          `${input.toName}님, 잠시 후 모임이 시작돼요.`,
+          '발제 질문을 다시 한 번 확인해보세요.',
+        ],
+        ctaText: '모임 바로가기',
+        ctaUrl: input.meetingUrl,
+      }),
+    );
+    await this.send(input.toEmail, subject, html);
+  }
+
+  async sendAvailabilityReminder(input: {
+    toEmail: string;
+    toName: string;
+    groupName: string;
+    workLabel: string;
+    availabilityUrl: string;
+  }): Promise<void> {
+    const subject = `[INOS] 「${input.groupName}」 모임 날짜를 아직 선택하지 않으셨어요`;
+    const html = await render(
+      SimpleNotice({
+        preview: subject,
+        headerLabel: input.groupName,
+        label: '일정 응답 필요',
+        title: `${input.workLabel} — 가능한 날짜를 선택해주세요`,
+        lines: [
+          `${input.toName}님, 아직 일정 응답을 남기지 않으셨어요.`,
+          '전원이 응답해야 모임 날짜가 확정돼요.',
+        ],
+        ctaText: '날짜 선택하러 가기',
+        ctaUrl: input.availabilityUrl,
+      }),
+    );
+    await this.send(input.toEmail, subject, html);
+  }
+
   async sendMeetingInvite(input: SendMeetingInviteInput): Promise<void> {
     const props: MeetingInviteProps = {
       toName: input.toName,

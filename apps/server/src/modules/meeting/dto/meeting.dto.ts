@@ -6,7 +6,9 @@ import {
   IsDateString,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateMeetingDto {
@@ -84,6 +86,19 @@ export class UpdateMeetingDto {
   @IsOptional()
   @IsDateString()
   confirmedDate?: string;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    example: '19:30',
+    description: '모임 시작 시각 "HH:mm" — null이면 시간 미정으로 초기화',
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: '시간은 HH:mm 형식이어야 합니다',
+  })
+  confirmedTime?: string | null;
 }
 
 export class SubmitAvailabilityDto {
@@ -152,6 +167,9 @@ export class MeetingResponseDto {
 
   @ApiProperty({ required: false, nullable: true })
   confirmedDate!: Date | null;
+
+  @ApiProperty({ required: false, nullable: true, example: '19:30' })
+  confirmedTime!: string | null;
 
   @ApiProperty({ required: false, nullable: true })
   location!: string | null;

@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import axios from 'axios';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { MailService } from '../../mail/mail.service';
+import { NotificationService } from '../../notification/notification.service';
+import { meetingWorkLabel } from '../../notification/notification.util';
 import { DISCUSSION_GENERATION_QUEUE } from '../meeting.service';
 
 interface DiscussionJobData {
@@ -13,7 +17,12 @@ interface DiscussionJobData {
 export class DiscussionProcessor extends WorkerHost {
   private readonly logger = new Logger(DiscussionProcessor.name);
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+    private readonly notificationService: NotificationService,
+  ) {
     super();
   }
 
@@ -36,6 +45,43 @@ export class DiscussionProcessor extends WorkerHost {
         `Failed to trigger discussion generation for meeting ${meetingId}: ${(error as Error).message}`,
       );
       throw error;
+    }
+
+    this.notifyDiscussionReady(meetingId).catch((error: Error) =>
+      this.logger.warn(`발제문 도착 알림 실패: ${error.message}`),
+    );
+  }
+
+  private async notifyDiscussionReady(meetingId: string): Promise<void> {
+    const meeting = await this.prisma.meeting.findUnique({
+      where: { id: meetingId },
+      include: { group: { select: { name: true } } },
+    });
+    if (!meeting) return;
+
+    const members = await this.prisma.groupMember.findMany({
+      where: { groupId: meeting.groupId },
+      select: { user: { select: { id: true, email: true, nickname: true } } },
+    });
+
+    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
+    const meetingUrl = `${frontendUrl}/orgs/${meeting.groupId}/meetings/${meeting.id}`;
+    const workLabel = meetingWorkLabel(meeting);
+
+    for (const m of members) {
+      await this.notificationService.sendOnce(
+        meetingId,
+        m.user.id,
+        'DISCUSSION_READY',
+        () =>
+          this.mailService.sendDiscussionReady({
+            toEmail: m.user.email,
+            toName: m.user.nickname,
+            groupName: meeting.group.name,
+            workLabel,
+            meetingUrl,
+          }),
+      );
     }
   }
 }

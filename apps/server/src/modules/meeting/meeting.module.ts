@@ -6,11 +6,13 @@ import { MeetingInviteProcessor } from './queues/meeting-invite.processor';
 import { DiscussionProcessor } from './queues/discussion.processor';
 import { AuthModule } from '../auth/auth.module';
 import { GroupModule } from '../group/group.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
     AuthModule,
     GroupModule,
+    NotificationModule,
     BullModule.registerQueue(
       { name: MEETING_INVITE_QUEUE },
       { name: DISCUSSION_GENERATION_QUEUE },
