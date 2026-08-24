@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import type { PromptKind } from '@inos/types';
-import { useAuth } from '@/hooks/useAuth';
-import { useMeeting } from '@/hooks/useMeeting';
-import { useDiscussion } from '@/hooks/useDiscussion';
-import { useCustomPrompts } from '@/hooks/useCustomPrompts';
-import { Button } from '@/components/Button';
-import { Skeleton } from '@/components/Skeleton';
-import { EmptyState } from '@/components/EmptyState';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import type { PromptKind } from "@inos/types";
+import { useAuth } from "@/hooks/useAuth";
+import { useMeeting } from "@/hooks/useMeeting";
+import { useDiscussion } from "@/hooks/useDiscussion";
+import { useCustomPrompts } from "@/hooks/useCustomPrompts";
+import { Button } from "@/components/Button";
+import { Skeleton } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 interface Slide {
   kind: PromptKind;
@@ -20,18 +20,24 @@ interface Slide {
 // 모임 진행용 전체화면 모드 — 발제 질문을 하나씩 크게 띄운다.
 // 좌우 화살표/클릭으로 이동, ESC로 모임 페이지 복귀.
 export default function PresentPage() {
-  const { orgId, meetingId } = useParams<{ orgId: string; meetingId: string }>();
+  const { orgId, meetingId } = useParams<{
+    orgId: string;
+    meetingId: string;
+  }>();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const meetingQuery = useMeeting(orgId, meetingId);
   const discussionQuery = useDiscussion(meetingId);
-  const customPromptsQuery = useCustomPrompts(meetingId, !!discussionQuery.data);
+  const customPromptsQuery = useCustomPrompts(
+    meetingId,
+    !!discussionQuery.data,
+  );
 
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    if (!isAuthenticated) navigate('/', { replace: true });
+    if (!isAuthenticated) navigate("/", { replace: true });
   }, [isAuthenticated, navigate]);
 
   const meeting = meetingQuery.data;
@@ -44,9 +50,13 @@ export default function PresentPage() {
   // 책 → 영화 순, 각 작품 안에서는 AI 발제 뒤에 자체 발제
   const slides = useMemo<Slide[]>(() => {
     if (!meeting) return [];
-    const build = (kind: PromptKind, title: string | null, aiPrompts: string[]) => {
+    const build = (
+      kind: PromptKind,
+      title: string | null,
+      aiPrompts: string[],
+    ) => {
       if (!title) return [];
-      const label = `${kind === 'BOOK' ? '📖' : '🎬'} ${title}`;
+      const label = `${kind === "BOOK" ? "📖" : "🎬"} ${title}`;
       return [
         ...aiPrompts.map((content) => ({ kind, workLabel: label, content })),
         ...customPrompts
@@ -60,8 +70,8 @@ export default function PresentPage() {
       ];
     };
     return [
-      ...build('BOOK', meeting.bookTitle, discussion?.bookPrompts ?? []),
-      ...build('MOVIE', meeting.movieTitle, discussion?.moviePrompts ?? []),
+      ...build("BOOK", meeting.bookTitle, discussion?.bookPrompts ?? []),
+      ...build("MOVIE", meeting.movieTitle, discussion?.moviePrompts ?? []),
     ];
   }, [meeting, discussion, customPrompts]);
 
@@ -71,24 +81,25 @@ export default function PresentPage() {
     [navigate, orgId, meetingId],
   );
   const go = useCallback(
-    (delta: number) => setIndex((i) => Math.min(total - 1, Math.max(0, i + delta))),
+    (delta: number) =>
+      setIndex((i) => Math.min(total - 1, Math.max(0, i + delta))),
     [total],
   );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
         e.preventDefault();
         go(1);
-      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         e.preventDefault();
         go(-1);
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         exit();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [go, exit]);
 
   if (meetingQuery.isLoading || discussionQuery.isLoading) {
@@ -121,14 +132,17 @@ export default function PresentPage() {
   return (
     <div className="fixed inset-0 flex flex-col bg-paper">
       {/* 상단 바 — 작품명 · 진행도 · 닫기 */}
-      <header className="flex items-center justify-between gap-4 border-b-2 border-ink px-6 py-3 pt-safe">
+      <header className="flex items-center justify-between gap-4 border-b-2 border-ink px-6 py-3">
         <p className="min-w-0 truncate text-sm font-bold tracking-tight">
           {slide.workLabel}
         </p>
-        <div className="flex shrink-0 items-center gap-4">
-          <span className="text-sm font-extrabold tabular-nums">
-            {String(index + 1).padStart(2, '0')}
-            <span className="text-muted"> / {String(total).padStart(2, '0')}</span>
+        <div className="flex items-center gap-4">
+          <span className="text-md font-extrabold tabular-nums">
+            {String(index + 1).padStart(2, "0")}
+            <span className="text-muted">
+              {" "}
+              / {String(total).padStart(2, "0")}
+            </span>
           </span>
           <button
             type="button"
@@ -141,7 +155,8 @@ export default function PresentPage() {
       </header>
 
       {/* 질문 — 좌우 가장자리를 클릭하면 이전/다음 */}
-      <div className="relative flex flex-1 items-center overflow-hidden">
+      {/* 질문이 화면보다 길면 잘리지 않고 스크롤되도록 */}
+      <div className="relative flex flex-1 overflow-y-auto">
         <button
           type="button"
           aria-label="이전 질문"
@@ -157,7 +172,7 @@ export default function PresentPage() {
           className="absolute inset-y-0 right-0 z-10 w-1/4 cursor-e-resize disabled:cursor-default"
         />
 
-        <div className="mx-auto w-full max-w-4xl px-8 py-10 sm:px-14">
+        <div className="m-auto w-full max-w-300 px-8 py-10 sm:px-14">
           {slide.authorNickname && (
             <p className="mb-6 flex items-center gap-2">
               <span className="border-2 border-ink bg-point px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-on-accent">
@@ -168,9 +183,10 @@ export default function PresentPage() {
               </span>
             </p>
           )}
+          {/* 입력한 줄바꿈 유지 + 공백 없는 긴 한글도 강제 개행 */}
           <p
             key={index}
-            className="page-enter text-[clamp(26px,4.6vw,54px)] font-extrabold leading-[1.28] tracking-tight break-keep"
+            className="mx-auto text-3xl font-normal leading-relaxed whitespace-pre-wrap break-keep break-words"
           >
             {slide.content}
           </p>

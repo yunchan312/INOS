@@ -72,7 +72,8 @@ export function PromptCard({
       </span>
       <div>
         {meta}
-        <p className="text-lg font-semibold leading-relaxed max-w-[62ch]">
+        {/* 입력한 줄바꿈 유지 + 공백 없는 긴 한글도 강제 개행 */}
+        <p className="text-lg font-semibold leading-relaxed max-w-[62ch] whitespace-pre-wrap break-keep break-words">
           {prompt}
         </p>
 
