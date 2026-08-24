@@ -22,6 +22,32 @@ function errorMessage(error: unknown, fallback: string): string {
 const inputClass =
   'w-full box-border border-2 border-ink bg-surface px-3.5 py-3 text-[15px] outline-none focus:border-point-hover';
 
+// 구글 브랜드 마크 (흰 배경 위 4색 G)
+function GoogleMark() {
+  return (
+    <span className="flex h-6 w-6 items-center justify-center bg-white">
+      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+        <path
+          fill="#4285F4"
+          d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.63h6.46a5.5 5.5 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.8Z"
+        />
+        <path
+          fill="#34A853"
+          d="M12 24c3.24 0 5.96-1.08 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.73-4.95H1.26v3.1A12 12 0 0 0 12 24Z"
+        />
+        <path
+          fill="#FBBC05"
+          d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56v-3.1H1.26a12 12 0 0 0 0 10.76l4.01-3.1Z"
+        />
+        <path
+          fill="#EA4335"
+          d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.18 15.24 0 12 0A12 12 0 0 0 1.26 6.62l4.01 3.1C6.22 6.88 8.87 4.75 12 4.75Z"
+        />
+      </svg>
+    </span>
+  );
+}
+
 // 로컬(이메일/비밀번호) 로그인·회원가입
 export default function LoginPage() {
   const { isAuthenticated } = useAuth();
@@ -37,6 +63,11 @@ export default function LoginPage() {
   useEffect(() => {
     if (isAuthenticated) navigate('/orgs', { replace: true });
   }, [isAuthenticated, navigate]);
+
+  const handleGoogleLogin = () => {
+    const apiBase = import.meta.env.VITE_API_URL ?? '/api';
+    window.location.href = `${apiBase}/auth/google`;
+  };
 
   const canSubmit =
     !pending &&
@@ -93,13 +124,33 @@ export default function LoginPage() {
         </div>
 
         <h1 className="mt-4 text-[clamp(28px,5vw,40px)] font-extrabold leading-[1.15] tracking-tight">
-          이메일로
-          <br />
           {mode === 'login' ? '로그인하기' : '시작하기'}
         </h1>
 
+        {/* 가장 간편한 경로 — 구글 로그인을 최상단에 크게 */}
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="mt-7 flex w-full min-h-14 items-center justify-center gap-3 border-2 border-ink bg-point px-5 text-base font-bold text-on-accent cursor-pointer hover:bg-point-hover transition-colors"
+        >
+          <GoogleMark />
+          Google 로 계속하기
+        </button>
+        <p className="mt-2 text-center text-[11px] text-muted">
+          비밀번호 없이 3초 만에 시작해요
+        </p>
+
+        {/* 구분선 */}
+        <div className="mt-6 flex items-center gap-3">
+          <span className="h-px flex-1 bg-line" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+            또는 이메일로
+          </span>
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
         {/* 탭 */}
-        <div className="mt-7 flex border-2 border-ink">
+        <div className="mt-5 flex border-2 border-ink">
           {(
             [
               ['login', '로그인'],
@@ -189,11 +240,9 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-5 text-xs text-muted">
-          구글 계정이 있다면 처음 화면의{' '}
-          <Link to="/" className="font-semibold text-ink border-b border-ink">
-            Google 로 계속하기
-          </Link>
-          가 더 간편해요.
+          {mode === 'login'
+            ? '계정이 없다면 위 회원가입 탭에서 만들 수 있어요.'
+            : '가입해도 초대장이나 초대 링크가 있어야 모임에 들어갈 수 있어요.'}
         </p>
       </main>
       <Footer wide />
