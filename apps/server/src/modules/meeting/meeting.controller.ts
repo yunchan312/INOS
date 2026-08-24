@@ -17,6 +17,7 @@ import {
   MeetingResponseDto,
   SubmitAvailabilityDto,
   SubmitAvailabilityResponseDto,
+  RetryDiscussionDto,
   UpdateMeetingDto,
 } from './dto/meeting.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -72,6 +73,21 @@ export class MeetingController {
     @Body() dto: UpdateMeetingDto,
   ): Promise<MeetingResponseDto> {
     return this.meetingService.update(groupId, meetingId, dto, user.id);
+  }
+
+  @Post(':meetingId/discussion/retry')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({
+    summary: '발제문 생성 재시도 (소유자) — 작품 정보를 함께 고칠 수 있음',
+  })
+  retryDiscussion(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+    @Param('meetingId', new ParseUUIDPipe()) meetingId: string,
+    @CurrentUser() user: AuthUser,
+    @Body() dto: RetryDiscussionDto,
+  ): Promise<MeetingResponseDto> {
+    return this.meetingService.retryDiscussion(groupId, meetingId, dto, user.id);
   }
 
   @Delete(':meetingId')

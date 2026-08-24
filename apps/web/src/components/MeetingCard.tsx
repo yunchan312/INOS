@@ -314,6 +314,9 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
     meeting.status === 'CONFIRMED' &&
     (meeting.discussionStatus === 'GENERATED' ||
       meeting.discussionStatus === 'PUBLISHED');
+  // 실패는 "생성 중"으로 계속 두지 않고, 작품 정보를 고칠 수 있는 화면으로 안내
+  const discussionFailed =
+    meeting.status === 'CONFIRMED' && meeting.discussionStatus === 'FAILED';
 
   let statusPill: { text: string; className: string };
   if (meeting.status === 'PENDING') {
@@ -401,6 +404,14 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
             />
             발제문 생성 중…
           </span>
+        )}
+        {discussionFailed && (
+          <Link
+            to={`/orgs/${orgId}/meetings/${meeting.id}`}
+            className="font-semibold text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2"
+          >
+            발제문 생성 실패 · 작품 정보 확인
+          </Link>
         )}
         {discussionReady && !showMeetingLink && (
           <Link

@@ -44,6 +44,19 @@ export class DiscussionProcessor extends WorkerHost {
       this.logger.error(
         `Failed to trigger discussion generation for meeting ${meetingId}: ${(error as Error).message}`,
       );
+      // 마지막 시도까지 실패하면 FAILED로 남긴다 — ai-server에 닿지 못해
+      // 그쪽에서 상태를 못 바꾼 경우에도 사용자가 재시도 화면을 볼 수 있어야 한다
+      const attempts = job.opts.attempts ?? 1;
+      if (job.attemptsMade + 1 >= attempts) {
+        await this.prisma.discussion
+          .updateMany({
+            where: { meetingId, status: 'GENERATING' },
+            data: { status: 'FAILED' },
+          })
+          .catch((e: Error) =>
+            this.logger.warn(`발제문 실패 상태 기록 실패: ${e.message}`),
+          );
+      }
       throw error;
     }
 

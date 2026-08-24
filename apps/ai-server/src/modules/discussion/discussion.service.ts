@@ -111,28 +111,40 @@ export class DiscussionService {
     let moviePrompts: string[] | null = null;
     let movieContext: string | null = null;
 
-    if (meeting.bookTitle && meeting.bookAuthor) {
-      let text = '';
-      for await (const chunk of this.claude.streamText(
-        buildBookPrompt(meeting.bookTitle, meeting.bookAuthor),
-        SYSTEM_PROMPT,
-      )) {
-        text += chunk;
+    try {
+      if (meeting.bookTitle && meeting.bookAuthor) {
+        let text = '';
+        for await (const chunk of this.claude.streamText(
+          buildBookPrompt(meeting.bookTitle, meeting.bookAuthor),
+          SYSTEM_PROMPT,
+        )) {
+          text += chunk;
+        }
+        bookContext = text;
+        bookPrompts = parsePrompts(text);
       }
-      bookContext = text;
-      bookPrompts = parsePrompts(text);
+
+      if (meeting.movieTitle && meeting.movieDirector) {
+        let text = '';
+        for await (const chunk of this.claude.streamText(
+          buildMoviePrompt(meeting.movieTitle, meeting.movieDirector),
+          SYSTEM_PROMPT,
+        )) {
+          text += chunk;
+        }
+        movieContext = text;
+        moviePrompts = parsePrompts(text);
+      }
+    } catch (error) {
+      // 생성 중 오류 — FAILED로 남겨 사용자가 작품 정보를 고쳐 재시도할 수 있게 한다
+      await this.markFailed(discussion.id);
+      throw error;
     }
 
-    if (meeting.movieTitle && meeting.movieDirector) {
-      let text = '';
-      for await (const chunk of this.claude.streamText(
-        buildMoviePrompt(meeting.movieTitle, meeting.movieDirector),
-        SYSTEM_PROMPT,
-      )) {
-        text += chunk;
-      }
-      movieContext = text;
-      moviePrompts = parsePrompts(text);
+    // 작품을 특정하지 못해 질문이 하나도 안 나온 경우도 실패로 취급
+    if (!hasUsablePrompts({ bookPrompts, moviePrompts })) {
+      await this.markFailed(discussion.id);
+      return;
     }
 
     await this.prisma.discussion.update({
@@ -145,6 +157,13 @@ export class DiscussionService {
         status: 'GENERATED',
         generatedAt: new Date(),
       },
+    });
+  }
+
+  private async markFailed(discussionId: string): Promise<void> {
+    await this.prisma.discussion.update({
+      where: { id: discussionId },
+      data: { status: 'FAILED' },
     });
   }
 

@@ -28,6 +28,7 @@ enum DiscussionStatus {
   GENERATING
   GENERATED
   PUBLISHED
+  FAILED // 생성 실패 — 작품 정보 확인 후 재시도 필요
 }
 
 enum NotificationType {

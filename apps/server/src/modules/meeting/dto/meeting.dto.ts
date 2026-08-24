@@ -101,6 +101,33 @@ export class UpdateMeetingDto {
   confirmedTime?: string | null;
 }
 
+// 발제문 재생성 — 작품 정보를 고쳐서 함께 보낼 수 있다 (생략하면 기존 값 유지)
+export class RetryDiscussionDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  bookTitle?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  bookAuthor?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  movieTitle?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  movieDirector?: string;
+}
+
 export class SubmitAvailabilityDto {
   @ApiProperty({ type: [String], example: ['2026-07-15', '2026-07-16'] })
   @IsArray()

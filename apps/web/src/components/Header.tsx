@@ -1,6 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useUnreadNotificationCount } from '@/hooks/useNotifications';
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useUnreadNotificationCount } from "@/hooks/useNotifications";
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -9,14 +9,14 @@ export function Header() {
 
   const handleLogout = () => {
     logout();
-    navigate('/', { replace: true });
+    navigate("/", { replace: true });
   };
 
   return (
     <header className="sticky top-0 z-40 bg-paper border-b-2 border-ink pt-safe">
       <div className="mx-auto max-w-3xl px-4 h-[60px] flex items-center justify-between">
         <Link
-          to={isAuthenticated ? '/orgs' : '/'}
+          to={isAuthenticated ? "/orgs" : "/"}
           className="flex items-baseline gap-2.5"
         >
           <span className="text-xl font-extrabold tracking-tight">INOS</span>
@@ -29,15 +29,13 @@ export function Header() {
             <Link
               to="/notifications"
               aria-label={
-                unreadCount > 0 ? `알림 ${unreadCount}개 안 읽음` : '알림함'
+                unreadCount > 0 ? `알림 ${unreadCount}개 안 읽음` : "알림함"
               }
               className="relative text-[13px] font-medium text-muted hover:text-ink"
             >
               알림
               {unreadCount > 0 && (
-                <span className="absolute -right-2.5 -top-1.5 min-w-4 border border-ink bg-point px-1 text-center text-[10px] font-bold leading-4 text-on-accent">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
+                <div className="absolute size-2 -right-2 -top-0.5 border border-ink bg-point text-center text-[10px] font-bold leading-4 rounded-full text-on-accent" />
               )}
             </Link>
             <Link
@@ -63,7 +61,7 @@ export function Header() {
                 />
               ) : (
                 <div className="w-8 h-8 bg-ink text-point flex items-center justify-center text-xs font-bold">
-                  {user?.nickname?.[0] ?? '?'}
+                  {user?.nickname?.[0] ?? "?"}
                 </div>
               )}
             </Link>

@@ -224,7 +224,11 @@ export interface SubmitAvailabilityResponseDto {
 
 // Discussion DTOs
 export type PromptKind = 'BOOK' | 'MOVIE';
-export type DiscussionStatus = 'GENERATING' | 'GENERATED' | 'PUBLISHED';
+export type DiscussionStatus =
+  | 'GENERATING'
+  | 'GENERATED'
+  | 'PUBLISHED'
+  | 'FAILED';
 
 export interface DiscussionDto {
   id: string;

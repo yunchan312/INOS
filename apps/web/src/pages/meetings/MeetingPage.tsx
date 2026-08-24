@@ -23,6 +23,7 @@ import {
   useUpdateCustomPrompt,
 } from '@/hooks/useCustomPrompts';
 import { useOrg } from '@/hooks/useOrg';
+import { useRetryDiscussion } from '@/hooks/useRetryDiscussion';
 import {
   useDeleteImpression,
   useImpressions,
@@ -258,6 +259,137 @@ function ImpressionSection({
   );
 }
 
+// 발제문 생성 실패 — 작품 정보를 다시 확인받고 재시도한다
+function DiscussionRetryPanel({
+  meeting,
+  orgId,
+  meetingId,
+  canRetry,
+}: {
+  meeting: MeetingDto;
+  orgId: string;
+  meetingId: string;
+  canRetry: boolean;
+}) {
+  const [bookTitle, setBookTitle] = useState(meeting.bookTitle ?? '');
+  const [bookAuthor, setBookAuthor] = useState(meeting.bookAuthor ?? '');
+  const [movieTitle, setMovieTitle] = useState(meeting.movieTitle ?? '');
+  const [movieDirector, setMovieDirector] = useState(meeting.movieDirector ?? '');
+  const retry = useRetryDiscussion(orgId, meetingId);
+
+  const hasBook = !!bookTitle.trim() && !!bookAuthor.trim();
+  const hasMovie = !!movieTitle.trim() && !!movieDirector.trim();
+  const inputClass =
+    'w-full box-border border-2 border-ink bg-paper px-3 py-2 text-sm outline-none focus:border-point-hover';
+
+  return (
+    <section className="mt-6 border-2 border-ink bg-surface p-5">
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+        발제문 생성 실패
+      </p>
+      <h2 className="mt-2 text-xl font-extrabold tracking-tight break-keep">
+        작품 정보를 다시 확인해주세요
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed text-muted break-keep">
+        제목이나 작가·감독 이름이 정확하지 않으면 AI가 작품을 특정하지 못해요.
+        맞게 고친 뒤 다시 시도해주세요.
+      </p>
+
+      {canRetry ? (
+        <>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+                📖 책 제목
+              </label>
+              <input
+                type="text"
+                value={bookTitle}
+                onChange={(e) => setBookTitle(e.target.value)}
+                placeholder="예: 이방인"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+                저자
+              </label>
+              <input
+                type="text"
+                value={bookAuthor}
+                onChange={(e) => setBookAuthor(e.target.value)}
+                placeholder="예: 알베르 카뮈"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+                🎬 영화 제목
+              </label>
+              <input
+                type="text"
+                value={movieTitle}
+                onChange={(e) => setMovieTitle(e.target.value)}
+                placeholder="예: 화양연화"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+                감독
+              </label>
+              <input
+                type="text"
+                value={movieDirector}
+                onChange={(e) => setMovieDirector(e.target.value)}
+                placeholder="예: 왕가위"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <p className="mt-2 text-xs text-muted">
+            책은 제목과 저자, 영화는 제목과 감독이 짝을 이뤄야 생성할 수 있어요.
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button
+              variant="primary"
+              size="md"
+              loading={retry.isPending}
+              disabled={!hasBook && !hasMovie}
+              onClick={() =>
+                retry.mutate({
+                  bookTitle: bookTitle.trim(),
+                  bookAuthor: bookAuthor.trim(),
+                  movieTitle: movieTitle.trim(),
+                  movieDirector: movieDirector.trim(),
+                })
+              }
+            >
+              확인했어요 · 다시 생성
+            </Button>
+            {retry.isSuccess && (
+              <span className="text-xs text-muted">
+                다시 생성 중이에요. 잠시 후 새로고침해주세요.
+              </span>
+            )}
+            {retry.isError && (
+              <span className="text-xs text-danger">
+                재시도에 실패했어요. 잠시 후 다시 시도해주세요.
+              </span>
+            )}
+          </div>
+        </>
+      ) : (
+        <p className="mt-4 text-sm text-muted break-keep">
+          오가니제이션 소유자가 작품 정보를 확인한 뒤 다시 생성할 수 있어요.
+        </p>
+      )}
+    </section>
+  );
+}
+
 export default function MeetingPage() {
   const { orgId, meetingId } = useParams<{ orgId: string; meetingId: string }>();
   const { isAuthenticated, user } = useAuth();
@@ -284,6 +416,7 @@ export default function MeetingPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamDone, setStreamDone] = useState(false);
   const [streamError, setStreamError] = useState(false);
+  const [showRetryPanel, setShowRetryPanel] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -576,14 +709,30 @@ export default function MeetingPage() {
           </div>
         )}
 
-        {(streamError ||
+        {/* 생성이 멈춘 채 남아 있을 수 있어, 진행 중일 때도 소유자에게 재시도 경로를 연다 */}
+        {isOwner &&
+          !showRetryPanel &&
+          discussionQuery.data?.status === 'GENERATING' &&
+          !hasStoredPrompts && (
+            <button
+              type="button"
+              onClick={() => setShowRetryPanel(true)}
+              className="mt-3 text-xs font-medium text-muted border-b border-muted hover:text-ink hover:border-ink"
+            >
+              생성이 너무 오래 걸리나요? 작품 정보 확인하고 다시 생성
+            </button>
+          )}
+
+        {(showRetryPanel ||
+          discussionQuery.data?.status === 'FAILED' ||
+          streamError ||
           (streamDone && prompts.book.length === 0 && prompts.movie.length === 0)) && (
-          <div className="mt-6">
-            <EmptyState
-              title="발제 질문을 만들지 못했어요"
-              description="책/영화 제목과 작가·감독 정보가 정확한지 확인해주세요. 정보가 부정확하면 AI가 작품을 특정하지 못해요."
-            />
-          </div>
+          <DiscussionRetryPanel
+            meeting={meeting}
+            orgId={orgId as string}
+            meetingId={meetingId as string}
+            canRetry={isOwner}
+          />
         )}
 
         {notesLocked && (prompts.book.length > 0 || prompts.movie.length > 0) && (

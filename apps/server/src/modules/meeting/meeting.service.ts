@@ -17,6 +17,7 @@ import { formatDateLabel, meetingWorkLabel } from '../notification/notification.
 import {
   CreateMeetingDto,
   MeetingResponseDto,
+  RetryDiscussionDto,
   SubmitAvailabilityDto,
   SubmitAvailabilityResponseDto,
   UpdateMeetingDto,
@@ -380,6 +381,61 @@ export class MeetingService {
       select: { user: { select: { id: true, email: true, nickname: true } } },
     });
     return members.map((m) => m.user);
+  }
+
+  // 발제문 생성 실패 후 재시도 — 작품 정보를 고쳐 보내면 반영한 뒤 다시 큐에 넣는다
+  async retryDiscussion(
+    groupId: string,
+    meetingId: string,
+    dto: RetryDiscussionDto,
+    callerId: string,
+  ): Promise<MeetingResponseDto> {
+    const meeting = await this.prisma.meeting.findUnique({
+      where: { id: meetingId },
+      include: { discussion: { select: { id: true } } },
+    });
+    if (!meeting || meeting.groupId !== groupId) {
+      throw new NotFoundException('모임을 찾을 수 없습니다');
+    }
+
+    const bookTitle = dto.bookTitle?.trim() || meeting.bookTitle;
+    const bookAuthor = dto.bookAuthor?.trim() || meeting.bookAuthor;
+    const movieTitle = dto.movieTitle?.trim() || meeting.movieTitle;
+    const movieDirector = dto.movieDirector?.trim() || meeting.movieDirector;
+
+    // 생성에 쓰이려면 제목과 저자/감독이 짝을 이뤄야 한다
+    const hasBook = !!bookTitle && !!bookAuthor;
+    const hasMovie = !!movieTitle && !!movieDirector;
+    if (!hasBook && !hasMovie) {
+      throw new BadRequestException(
+        '책은 제목과 저자, 영화는 제목과 감독이 모두 있어야 발제문을 만들 수 있어요',
+      );
+    }
+
+    await this.prisma.meeting.update({
+      where: { id: meetingId },
+      data: { bookTitle, bookAuthor, movieTitle, movieDirector },
+    });
+
+    // 이전 실패 흔적을 지우고 생성 중 상태로 되돌린다
+    if (meeting.discussion) {
+      await this.prisma.discussion.update({
+        where: { id: meeting.discussion.id },
+        data: {
+          status: 'GENERATING',
+          bookPrompts: Prisma.DbNull,
+          moviePrompts: Prisma.DbNull,
+          bookContext: null,
+          movieContext: null,
+          generatedAt: null,
+        },
+      });
+    }
+
+    await this.enqueueDiscussionGeneration(meetingId);
+    this.notifyOrgEvent(groupId, 'meeting-updated');
+
+    return this.load(groupId, meetingId, callerId);
   }
 
   // 날짜 확정 즉시 발제문 생성 시작
