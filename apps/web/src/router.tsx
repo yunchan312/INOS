@@ -26,6 +26,9 @@ const InviteLinkPage = lazy(
 );
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const AdminPage = lazy(() => import('@/pages/admin/AdminPage'));
+const NotificationsPage = lazy(
+  () => import('@/pages/notifications/NotificationsPage'),
+);
 const MyLibraryPage = lazy(() => import('@/pages/library/MyLibraryPage'));
 const OrgLibraryPage = lazy(() => import('@/pages/library/OrgLibraryPage'));
 const SharedLibraryPage = lazy(
@@ -86,6 +89,7 @@ export const router = createBrowserRouter([
       { path: '/invite/:token', element: suspend(<InviteLinkPage />) },
       { path: '/login', element: suspend(<LoginPage />) },
       { path: '/admin', element: suspend(<AdminPage />) },
+      { path: '/notifications', element: suspend(<NotificationsPage />) },
       { path: '/privacy', element: suspend(<PrivacyPage />) },
       { path: '/terms', element: suspend(<TermsPage />) },
       { path: '*', element: suspend(<NotFoundPage />) },

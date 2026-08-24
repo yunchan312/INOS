@@ -373,10 +373,12 @@ model NotificationLog {
   userId    String           @db.Uuid
   type      NotificationType
   sentAt    DateTime         @default(now())
+  readAt    DateTime? // 알림함에서 확인한 시각 (null이면 안 읽음)
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([meetingId, userId, type])
+  @@index([userId, sentAt(sort: Desc)])
   @@map("notification_logs")
 }

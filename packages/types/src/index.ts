@@ -456,3 +456,33 @@ export interface LocalLoginDto {
   email: string;
   password: string;
 }
+
+// ─── 알림함 ─────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'DATE_CONFIRMED'
+  | 'DISCUSSION_READY'
+  | 'MEETING_REMINDER_3H'
+  | 'AVAILABILITY_REMINDER';
+
+export interface NotificationDto {
+  id: string;
+  type: NotificationType;
+  sentAt: string;
+  readAt: string | null;
+  meetingId: string;
+  groupId: string;
+  groupName: string;
+  /** 작품 표기 (책 · 영화) */
+  workLabel: string;
+  confirmedDate: string | null;
+  confirmedTime: string | null;
+}
+
+export interface NotificationListDto {
+  items: NotificationDto[];
+  total: number;
+  unreadCount: number;
+  page: number;
+  pageSize: number;
+}

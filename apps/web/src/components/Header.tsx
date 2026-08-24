@@ -1,8 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
+  const unreadCount = useUnreadNotificationCount();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -24,6 +26,20 @@ export function Header() {
         </Link>
         {isAuthenticated && (
           <div className="flex items-center gap-4">
+            <Link
+              to="/notifications"
+              aria-label={
+                unreadCount > 0 ? `알림 ${unreadCount}개 안 읽음` : '알림함'
+              }
+              className="relative text-[13px] font-medium text-muted hover:text-ink"
+            >
+              알림
+              {unreadCount > 0 && (
+                <span className="absolute -right-2.5 -top-1.5 min-w-4 border border-ink bg-point px-1 text-center text-[10px] font-bold leading-4 text-on-accent">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Link>
             <Link
               to="/library"
               className="text-[13px] font-medium text-muted hover:text-ink"

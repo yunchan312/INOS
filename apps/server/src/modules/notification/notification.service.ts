@@ -2,8 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { NotificationType } from '@prisma/client';
+import type { NotificationDto, NotificationListDto } from '@inos/types';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
+import { meetingWorkLabel } from './notification.util';
 
 export const NOTIFICATION_REMINDER_QUEUE = 'notification-reminder';
 export const MEETING_REMINDER_JOB = 'meeting-reminder';
@@ -13,6 +15,7 @@ export const AVAILABILITY_REMINDER_JOB = 'availability-reminder';
 const DEFAULT_MEETING_HOUR = 19;
 const AVAILABILITY_REMINDER_DELAY_MS = 48 * 60 * 60 * 1000;
 const REMINDER_LEAD_MS = 3 * 60 * 60 * 1000;
+export const NOTIFICATIONS_PAGE_SIZE = 20;
 
 interface MeetingReminderJobData {
   meetingId: string;
@@ -60,6 +63,73 @@ export class NotificationService {
       where: { meetingId_userId_type: { meetingId, userId, type } },
       update: {},
       create: { meetingId, userId, type },
+    });
+  }
+
+  // ─── 알림함 ───────────────────────────────────────────────────
+
+  async listForUser(userId: string, page: number): Promise<NotificationListDto> {
+    const safePage = Math.max(1, page);
+    const where = { userId };
+
+    const [total, unreadCount, rows] = await Promise.all([
+      this.prisma.notificationLog.count({ where }),
+      this.prisma.notificationLog.count({ where: { ...where, readAt: null } }),
+      this.prisma.notificationLog.findMany({
+        where,
+        orderBy: { sentAt: 'desc' },
+        skip: (safePage - 1) * NOTIFICATIONS_PAGE_SIZE,
+        take: NOTIFICATIONS_PAGE_SIZE,
+        include: {
+          meeting: {
+            select: {
+              id: true,
+              groupId: true,
+              bookTitle: true,
+              movieTitle: true,
+              confirmedDate: true,
+              confirmedTime: true,
+              group: { select: { name: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const items: NotificationDto[] = rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      sentAt: r.sentAt.toISOString(),
+      readAt: r.readAt?.toISOString() ?? null,
+      meetingId: r.meeting.id,
+      groupId: r.meeting.groupId,
+      groupName: r.meeting.group.name,
+      workLabel: meetingWorkLabel(r.meeting),
+      confirmedDate: r.meeting.confirmedDate?.toISOString() ?? null,
+      confirmedTime: r.meeting.confirmedTime,
+    }));
+
+    return {
+      items,
+      total,
+      unreadCount,
+      page: safePage,
+      pageSize: NOTIFICATIONS_PAGE_SIZE,
+    };
+  }
+
+  // 본인 알림만 갱신 — userId 조건이 있어 남의 알림은 대상이 되지 않는다
+  async markRead(userId: string, notificationId: string): Promise<void> {
+    await this.prisma.notificationLog.updateMany({
+      where: { id: notificationId, userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+  }
+
+  async markAllRead(userId: string): Promise<void> {
+    await this.prisma.notificationLog.updateMany({
+      where: { userId, readAt: null },
+      data: { readAt: new Date() },
     });
   }
 
