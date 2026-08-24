@@ -475,9 +475,9 @@ export default function MeetingPage() {
       return (
         <article
           key={cp.id}
-          className="py-9 border-b border-line grid grid-cols-[56px_minmax(0,1fr)] sm:grid-cols-[72px_minmax(0,1fr)] gap-4"
+          className="py-9 border-b border-line grid grid-cols-[28px_minmax(0,1fr)] sm:grid-cols-[36px_minmax(0,1fr)] gap-3 sm:gap-4"
         >
-          <span className="text-3xl sm:text-[40px] font-extrabold leading-none">
+          <span className="pt-0.5 text-sm sm:text-base font-extrabold leading-relaxed text-muted tabular-nums">
             {String(displayNumber).padStart(2, '0')}
           </span>
           <div className="min-w-0">
@@ -552,9 +552,19 @@ export default function MeetingPage() {
             {readOnly ? '종료된 모임' : '모임'}
             {meeting.location && ` · ${meeting.location}`}
           </p>
-          <h1 className="mt-3 text-[clamp(30px,5vw,52px)] font-extrabold leading-[1.1] tracking-tight">
-            {label}
-          </h1>
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+            <h1 className="text-[clamp(30px,5vw,52px)] font-extrabold leading-[1.1] tracking-tight">
+              {label}
+            </h1>
+            {(prompts.book.length > 0 || prompts.movie.length > 0) && (
+              <Link to={`/orgs/${orgId}/meetings/${meetingId}/present`}>
+                <Button variant="outline" size="md">
+                  <span className="whitespace-nowrap">프레젠테이션 모드</span>
+                  <span aria-hidden="true">▶</span>
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         {(isStreaming || (!hasStoredPrompts && !streamDone && discussionQuery.isLoading)) && (
@@ -587,8 +597,14 @@ export default function MeetingPage() {
 
         {(prompts.book.length > 0 || customBook.length > 0) && (
           <section className="mt-8">
-            <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted mb-1">
-              📖 {meeting.bookTitle}
+            <h2 className="mb-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[clamp(20px,3.2vw,28px)] font-extrabold tracking-tight break-keep">
+              <span aria-hidden="true">📖</span>
+              {meeting.bookTitle}
+              {meeting.bookAuthor && (
+                <span className="text-sm font-medium text-muted">
+                  {meeting.bookAuthor}
+                </span>
+              )}
             </h2>
             <div>
               {prompts.book.map((q, i) => {
@@ -615,8 +631,14 @@ export default function MeetingPage() {
 
         {(prompts.movie.length > 0 || customMovie.length > 0) && (
           <section className="mt-8">
-            <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted mb-1">
-              🎬 {meeting.movieTitle}
+            <h2 className="mb-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[clamp(20px,3.2vw,28px)] font-extrabold tracking-tight break-keep">
+              <span aria-hidden="true">🎬</span>
+              {meeting.movieTitle}
+              {meeting.movieDirector && (
+                <span className="text-sm font-medium text-muted">
+                  {meeting.movieDirector} 감독
+                </span>
+              )}
             </h2>
             <div>
               {prompts.movie.map((q, i) => {

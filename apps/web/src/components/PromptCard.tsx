@@ -66,8 +66,8 @@ export function PromptCard({
   const othersNotes = publicNotes.filter((n) => n.userId !== myNote?.userId);
 
   return (
-    <article className="py-9 border-b border-line grid grid-cols-[56px_minmax(0,1fr)] sm:grid-cols-[72px_minmax(0,1fr)] gap-4">
-      <span className="text-3xl sm:text-[40px] font-extrabold leading-none">
+    <article className="py-9 border-b border-line grid grid-cols-[28px_minmax(0,1fr)] sm:grid-cols-[36px_minmax(0,1fr)] gap-3 sm:gap-4">
+      <span className="pt-0.5 text-sm sm:text-base font-extrabold leading-relaxed text-muted tabular-nums">
         {String(displayNumber ?? questionIndex + 1).padStart(2, '0')}
       </span>
       <div>

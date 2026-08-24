@@ -17,6 +17,7 @@ const AvailabilityPage = lazy(
   () => import('@/pages/meetings/AvailabilityPage'),
 );
 const MeetingPage = lazy(() => import('@/pages/meetings/MeetingPage'));
+const PresentPage = lazy(() => import('@/pages/meetings/PresentPage'));
 const AcceptInvitePage = lazy(
   () => import('@/pages/invitations/AcceptInvitePage'),
 );
@@ -76,6 +77,10 @@ export const router = createBrowserRouter([
       {
         path: '/orgs/:orgId/meetings/:meetingId/availability',
         element: suspend(<AvailabilityPage />),
+      },
+      {
+        path: '/orgs/:orgId/meetings/:meetingId/present',
+        element: suspend(<PresentPage />),
       },
       { path: '/invitations/:token', element: suspend(<AcceptInvitePage />) },
       { path: '/invite/:token', element: suspend(<InviteLinkPage />) },
