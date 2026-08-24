@@ -35,7 +35,8 @@ export function Header() {
             >
               알림
               {unreadCount > 0 && (
-                <div className="absolute size-2 -right-2 -top-0.5 border border-ink bg-point text-center text-[10px] font-bold leading-4 rounded-full text-on-accent" />
+                /* 개수 대신 점으로만 표시 — 정확한 수는 aria-label로 전달 */
+                <div className="absolute size-2 -right-2 -top-0.5 rounded-full border border-ink bg-point" />
               )}
             </Link>
             <Link
