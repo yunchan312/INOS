@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
 import type { DiscussionNoteDto, PromptKind } from '@inos/types';
+import { PromptText } from './PromptText';
 
 interface PromptCardProps {
   prompt: string;
@@ -72,10 +73,10 @@ export function PromptCard({
       </span>
       <div>
         {meta}
-        {/* 입력한 줄바꿈 유지 + 공백 없는 긴 한글도 강제 개행 */}
-        <p className="text-lg font-semibold leading-relaxed max-w-[62ch] whitespace-pre-wrap break-keep break-words">
-          {prompt}
-        </p>
+        <PromptText
+          content={prompt}
+          className="text-lg font-normal leading-relaxed max-w-[62ch]"
+        />
 
         {!readOnly && (
           <div className="mt-5 flex flex-col gap-2.5">

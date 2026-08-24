@@ -8,6 +8,7 @@ import { useCustomPrompts } from "@/hooks/useCustomPrompts";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { PromptText } from "@/components/PromptText";
 
 interface Slide {
   kind: PromptKind;
@@ -183,13 +184,11 @@ export default function PresentPage() {
               </span>
             </p>
           )}
-          {/* 입력한 줄바꿈 유지 + 공백 없는 긴 한글도 강제 개행 */}
-          <p
+          <PromptText
             key={index}
-            className="mx-auto text-3xl font-normal leading-relaxed whitespace-pre-wrap break-keep break-words"
-          >
-            {slide.content}
-          </p>
+            content={slide.content}
+            className="mx-auto text-3xl font-normal leading-relaxed"
+          />
         </div>
       </div>
 
