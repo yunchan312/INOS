@@ -17,10 +17,18 @@ const AvailabilityPage = lazy(
   () => import('@/pages/meetings/AvailabilityPage'),
 );
 const MeetingPage = lazy(() => import('@/pages/meetings/MeetingPage'));
+const PresentPage = lazy(() => import('@/pages/meetings/PresentPage'));
 const AcceptInvitePage = lazy(
   () => import('@/pages/invitations/AcceptInvitePage'),
 );
+const InviteLinkPage = lazy(
+  () => import('@/pages/invitations/InviteLinkPage'),
+);
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const AdminPage = lazy(() => import('@/pages/admin/AdminPage'));
+const NotificationsPage = lazy(
+  () => import('@/pages/notifications/NotificationsPage'),
+);
 const MyLibraryPage = lazy(() => import('@/pages/library/MyLibraryPage'));
 const OrgLibraryPage = lazy(() => import('@/pages/library/OrgLibraryPage'));
 const SharedLibraryPage = lazy(
@@ -73,8 +81,15 @@ export const router = createBrowserRouter([
         path: '/orgs/:orgId/meetings/:meetingId/availability',
         element: suspend(<AvailabilityPage />),
       },
+      {
+        path: '/orgs/:orgId/meetings/:meetingId/present',
+        element: suspend(<PresentPage />),
+      },
       { path: '/invitations/:token', element: suspend(<AcceptInvitePage />) },
+      { path: '/invite/:token', element: suspend(<InviteLinkPage />) },
+      { path: '/login', element: suspend(<LoginPage />) },
       { path: '/admin', element: suspend(<AdminPage />) },
+      { path: '/notifications', element: suspend(<NotificationsPage />) },
       { path: '/privacy', element: suspend(<PrivacyPage />) },
       { path: '/terms', element: suspend(<TermsPage />) },
       { path: '*', element: suspend(<NotFoundPage />) },

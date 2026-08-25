@@ -160,6 +160,8 @@ export interface UpdateMeetingDto {
   movieDirector?: string;
   location?: string;
   confirmedDate?: string;
+  /** 모임 시작 시각 "HH:mm" — null이면 시간 미정으로 초기화 */
+  confirmedTime?: string | null;
 }
 
 export interface MeetingResponderDto {
@@ -184,6 +186,8 @@ export interface MeetingDto {
   movieTitle: string | null;
   movieDirector: string | null;
   confirmedDate: string | null;
+  /** 모임 시작 시각 "HH:mm" (null이면 미정) */
+  confirmedTime: string | null;
   location: string | null;
   candidateFrom: string;
   candidateTo: string;
@@ -220,7 +224,11 @@ export interface SubmitAvailabilityResponseDto {
 
 // Discussion DTOs
 export type PromptKind = 'BOOK' | 'MOVIE';
-export type DiscussionStatus = 'GENERATING' | 'GENERATED' | 'PUBLISHED';
+export type DiscussionStatus =
+  | 'GENERATING'
+  | 'GENERATED'
+  | 'PUBLISHED'
+  | 'FAILED';
 
 export interface DiscussionDto {
   id: string;
@@ -415,4 +423,70 @@ export interface UpdateGroupPostDto {
 export interface GroupPostLikeDto {
   likeCount: number;
   likedByMe: boolean;
+}
+
+// ─── 오가니제이션 링크 초대 ───────────────────────────────────────
+
+export interface GroupInviteLinkDto {
+  /** 공유용 전체 URL */
+  url: string;
+  token: string;
+  expiresAt: string;
+  useCount: number;
+  createdAt: string;
+}
+
+export interface InviteLinkPreviewDto {
+  groupName: string;
+  inviterName: string;
+  memberCount: number;
+  /** 만료 또는 철회됨 */
+  expired: boolean;
+}
+
+export interface InviteLinkAcceptResponseDto {
+  groupId: string;
+}
+
+// ─── 로컬(이메일/비밀번호) 인증 ──────────────────────────────────
+
+export interface LocalSignupDto {
+  email: string;
+  password: string;
+  nickname: string;
+}
+
+export interface LocalLoginDto {
+  email: string;
+  password: string;
+}
+
+// ─── 알림함 ─────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'DATE_CONFIRMED'
+  | 'DISCUSSION_READY'
+  | 'MEETING_REMINDER_3H'
+  | 'AVAILABILITY_REMINDER';
+
+export interface NotificationDto {
+  id: string;
+  type: NotificationType;
+  sentAt: string;
+  readAt: string | null;
+  meetingId: string;
+  groupId: string;
+  groupName: string;
+  /** 작품 표기 (책 · 영화) */
+  workLabel: string;
+  confirmedDate: string | null;
+  confirmedTime: string | null;
+}
+
+export interface NotificationListDto {
+  items: NotificationDto[];
+  total: number;
+  unreadCount: number;
+  page: number;
+  pageSize: number;
 }

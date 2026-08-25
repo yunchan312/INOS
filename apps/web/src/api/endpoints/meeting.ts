@@ -47,4 +47,21 @@ export const meetingApi = {
     apiClient
       .post<MeetingDto>(`/groups/${groupId}/meetings/${meetingId}/done`)
       .then((r) => r.data),
+
+  retryDiscussion: (
+    groupId: string,
+    meetingId: string,
+    dto: {
+      bookTitle?: string;
+      bookAuthor?: string;
+      movieTitle?: string;
+      movieDirector?: string;
+    },
+  ) =>
+    apiClient
+      .post<MeetingDto>(
+        `/groups/${groupId}/meetings/${meetingId}/discussion/retry`,
+        dto,
+      )
+      .then((r) => r.data),
 };

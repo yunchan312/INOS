@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Footer } from "@/components/Footer";
 import mascotFace from "@/assets/character-mascot.png";
@@ -185,11 +185,6 @@ export default function HomePage() {
     if (isAuthenticated) navigate("/orgs", { replace: true });
   }, [isAuthenticated, navigate]);
 
-  const handleGoogleLogin = () => {
-    const apiBase = import.meta.env.VITE_API_URL ?? "/api";
-    window.location.href = `${apiBase}/auth/google`;
-  };
-
   return (
     <div className="min-h-dvh bg-paper flex flex-col">
       {/* 네비 */}
@@ -201,13 +196,12 @@ export default function HomePage() {
               인문학의 OS
             </span>
           </span>
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
+          <Link
+            to="/login"
             className="flex min-h-10 items-center px-4 bg-ink text-paper text-[13px] font-semibold whitespace-nowrap cursor-pointer hover:bg-muted-2 transition-colors"
           >
-            Google 로 계속하기
-          </button>
+            로그인하기
+          </Link>
         </div>
       </header>
 
@@ -233,13 +227,12 @@ export default function HomePage() {
                 집중하도록.
               </p>
               <div className="mt-8 flex flex-wrap gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
+                <Link
+                  to="/login"
                   className="flex min-h-13 items-center gap-3.5 border-2 border-ink bg-point px-[22px] text-[15px] font-bold text-on-accent whitespace-nowrap cursor-pointer hover:bg-point-hover transition-colors"
                 >
-                  Google 로 시작하기 →
-                </button>
+                  로그인하기 →
+                </Link>
                 <a
                   href="#how"
                   className="flex min-h-13 items-center border-2 border-ink px-[22px] text-[15px] font-semibold whitespace-nowrap hover:bg-ink/5 transition-colors"
@@ -248,7 +241,8 @@ export default function HomePage() {
                 </a>
               </div>
               <p className="mt-4 text-xs text-muted">
-                회원가입 없음 · 초대장이 있어야 모임에 들어갈 수 있어요
+                구글 계정 또는 이메일로 시작할 수 있어요 · 초대장이나 초대 링크가 있어야
+                모임에 들어갈 수 있어요
               </p>
             </div>
 
@@ -392,13 +386,12 @@ export default function HomePage() {
                 당신은 <span className="text-point">대화</span>에
               </h2>
               <div className="mt-8 flex flex-wrap gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
+                <Link
+                  to="/login"
                   className="flex min-h-13 items-center gap-3.5 border-2 border-paper bg-point px-[22px] text-[15px] font-bold text-on-accent whitespace-nowrap cursor-pointer hover:bg-point-hover transition-colors"
                 >
-                  Google 로 시작하기 →
-                </button>
+                  로그인하기 →
+                </Link>
               </div>
               <p className="mt-4 text-xs text-muted break-keep">
                 초대장이 없다면 — 모임을 직접 만들고 싶은 분은 로그인 후 생성

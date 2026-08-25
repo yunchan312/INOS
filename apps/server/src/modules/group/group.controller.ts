@@ -22,6 +22,7 @@ import {
   InviteMemberDto,
   InvitationPreviewDto,
 } from './dto/invitation.dto';
+import type { GroupInviteLinkDto } from '@inos/types';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GroupRoleGuard } from '../auth/guards/group-role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -78,6 +79,37 @@ export class GroupController {
     @Body() dto: InviteMemberDto,
   ): Promise<InvitationPreviewDto> {
     return this.groupService.inviteMember(groupId, user.id, dto.email);
+  }
+
+  @Post(':groupId/invite-link')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '초대 링크 발급 (소유자, 기존 링크는 철회)' })
+  createInviteLink(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<GroupInviteLinkDto> {
+    return this.groupService.createInviteLink(groupId, user.id);
+  }
+
+  @Get(':groupId/invite-link')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '활성 초대 링크 조회 (소유자, 없으면 null)' })
+  getInviteLink(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+  ): Promise<GroupInviteLinkDto | null> {
+    return this.groupService.getActiveInviteLink(groupId);
+  }
+
+  @Delete(':groupId/invite-link')
+  @UseGuards(GroupRoleGuard)
+  @Roles('OWNER')
+  @ApiOperation({ summary: '초대 링크 철회 (소유자)' })
+  revokeInviteLink(
+    @Param('groupId', new ParseUUIDPipe()) groupId: string,
+  ): Promise<void> {
+    return this.groupService.revokeInviteLink(groupId);
   }
 
   @Get(':groupId/invitations')

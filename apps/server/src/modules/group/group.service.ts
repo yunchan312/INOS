@@ -21,6 +21,11 @@ import {
   InvitationAcceptResponseDto,
   InvitationPreviewDto,
 } from './dto/invitation.dto';
+import type {
+  GroupInviteLinkDto,
+  InviteLinkAcceptResponseDto,
+  InviteLinkPreviewDto,
+} from '@inos/types';
 
 @Injectable()
 export class GroupService {
@@ -309,6 +314,112 @@ export class GroupService {
     });
     if (!membership) throw new ForbiddenException('그룹 멤버가 아닙니다');
     return membership.role;
+  }
+
+  // ─── 링크 초대 — 그룹당 활성 링크 1개, 링크를 아는 로그인 사용자는 누구나 참여 ───
+
+  async createInviteLink(
+    groupId: string,
+    ownerUserId: string,
+  ): Promise<GroupInviteLinkDto> {
+    const group = await this.prisma.group.findUnique({ where: { id: groupId } });
+    if (!group) throw new NotFoundException('그룹을 찾을 수 없습니다');
+
+    const ttlDays = this.config.get<number>('INVITATION_TTL_DAYS', 7);
+    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
+    const token = this.generateToken();
+
+    const [, link] = await this.prisma.$transaction([
+      // 기존 활성 링크는 철회 — 언제나 최신 링크 하나만 유효
+      this.prisma.groupInviteLink.updateMany({
+        where: { groupId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      this.prisma.groupInviteLink.create({
+        data: { groupId, token, createdById: ownerUserId, expiresAt },
+      }),
+    ]);
+
+    return this.toInviteLinkDto(link);
+  }
+
+  async getActiveInviteLink(groupId: string): Promise<GroupInviteLinkDto | null> {
+    const link = await this.prisma.groupInviteLink.findFirst({
+      where: { groupId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return link ? this.toInviteLinkDto(link) : null;
+  }
+
+  async revokeInviteLink(groupId: string): Promise<void> {
+    await this.prisma.groupInviteLink.updateMany({
+      where: { groupId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  async getInviteLinkPreview(token: string): Promise<InviteLinkPreviewDto> {
+    const link = await this.prisma.groupInviteLink.findUnique({
+      where: { token },
+      include: {
+        group: {
+          select: { name: true, _count: { select: { members: true } } },
+        },
+        createdBy: { select: { nickname: true } },
+      },
+    });
+    if (!link) throw new NotFoundException('초대 링크를 찾을 수 없습니다');
+
+    return {
+      groupName: link.group.name,
+      inviterName: link.createdBy.nickname,
+      memberCount: link.group._count.members,
+      expired: !!link.revokedAt || link.expiresAt < new Date(),
+    };
+  }
+
+  async acceptInviteLink(
+    token: string,
+    userId: string,
+  ): Promise<InviteLinkAcceptResponseDto> {
+    const link = await this.prisma.groupInviteLink.findUnique({
+      where: { token },
+    });
+    if (!link) throw new NotFoundException('초대 링크를 찾을 수 없습니다');
+    if (link.revokedAt || link.expiresAt < new Date()) {
+      throw new BadRequestException('만료되거나 철회된 초대 링크예요');
+    }
+
+    // 이메일 초대와 달리 수신자를 특정하지 않으므로 이메일 일치 검사 없음
+    await this.prisma.$transaction([
+      this.prisma.groupMember.upsert({
+        where: { groupId_userId: { groupId: link.groupId, userId } },
+        update: {},
+        create: { groupId: link.groupId, userId, role: GroupRole.MEMBER },
+      }),
+      this.prisma.groupInviteLink.update({
+        where: { id: link.id },
+        data: { useCount: { increment: 1 } },
+      }),
+    ]);
+
+    return { groupId: link.groupId };
+  }
+
+  private toInviteLinkDto(link: {
+    token: string;
+    expiresAt: Date;
+    useCount: number;
+    createdAt: Date;
+  }): GroupInviteLinkDto {
+    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
+    return {
+      url: `${frontendUrl}/invite/${link.token}`,
+      token: link.token,
+      expiresAt: link.expiresAt.toISOString(),
+      useCount: link.useCount,
+      createdAt: link.createdAt.toISOString(),
+    };
   }
 
   private generateToken(): string {

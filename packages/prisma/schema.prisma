@@ -9,6 +9,7 @@ datasource db {
 
 enum OAuthProvider {
   GOOGLE
+  LOCAL
 }
 
 enum GroupRole {
@@ -27,6 +28,14 @@ enum DiscussionStatus {
   GENERATING
   GENERATED
   PUBLISHED
+  FAILED // 생성 실패 — 작품 정보 확인 후 재시도 필요
+}
+
+enum NotificationType {
+  DATE_CONFIRMED
+  DISCUSSION_READY
+  MEETING_REMINDER_3H
+  AVAILABILITY_REMINDER
 }
 
 enum PromptKind {
@@ -48,22 +57,25 @@ model User {
   profileImageUrl String?
   oauthProvider   OAuthProvider
   oauthId         String
+  passwordHash    String? // 로컬 로그인 계정만 사용 (bcrypt)
   isAdmin         Boolean       @default(false)
   libraryShareId  String?       @unique // 공개 서가 공유 링크 슬러그 (null이면 비공개)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   groupMembers           GroupMember[]
-  ownedGroups            Group[]                 @relation("GroupOwner")
+  ownedGroups            Group[]                  @relation("GroupOwner")
   meetingAvails          MeetingAvailability[]
   discussionNotes        DiscussionNote[]
-  createdMeetings        Meeting[]               @relation("MeetingCreatedBy")
-  sentInvitations        Invitation[]            @relation("InvitationInvitedBy")
+  createdMeetings        Meeting[]                @relation("MeetingCreatedBy")
+  sentInvitations        Invitation[]             @relation("InvitationInvitedBy")
   personalLibraryReviews PersonalLibraryReview[]
-  updatedGroupReviews    GroupLibraryReview[]    @relation("GroupReviewUpdatedBy")
+  updatedGroupReviews    GroupLibraryReview[]     @relation("GroupReviewUpdatedBy")
   manualLibraryEntries   ManualLibraryEntry[]
   groupPosts             GroupPost[]
   groupPostLikes         GroupPostLike[]
+  createdInviteLinks     GroupInviteLink[]        @relation("InviteLinkCreatedBy")
+  notificationLogs       NotificationLog[]
   customPrompts          DiscussionCustomPrompt[]
   impressions            DiscussionImpression[]
 
@@ -82,12 +94,13 @@ model Group {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  owner       User          @relation("GroupOwner", fields: [ownerId], references: [id])
+  owner       User              @relation("GroupOwner", fields: [ownerId], references: [id])
   members     GroupMember[]
   meetings    Meeting[]
   discussions Discussion[]
   invitations Invitation[]
   posts       GroupPost[]
+  inviteLinks GroupInviteLink[]
 
   @@index([ownerId])
   @@map("groups")
@@ -117,6 +130,7 @@ model Meeting {
   movieTitle    String?
   movieDirector String?
   confirmedDate DateTime?
+  confirmedTime String?       @db.VarChar(5) // 모임 시작 시각 "HH:mm" (null이면 미정)
   location      String?
   status        MeetingStatus @default(PENDING)
   candidateFrom DateTime
@@ -124,12 +138,13 @@ model Meeting {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  group           Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  createdBy       User                    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
-  availabilities  MeetingAvailability[]
-  discussion      Discussion?
-  personalReviews PersonalLibraryReview[]
-  groupReviews    GroupLibraryReview[]
+  group            Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy        User                    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
+  availabilities   MeetingAvailability[]
+  discussion       Discussion?
+  personalReviews  PersonalLibraryReview[]
+  groupReviews     GroupLibraryReview[]
+  notificationLogs NotificationLog[]
 
   @@index([groupId, status])
   @@index([groupId, confirmedDate])
@@ -332,4 +347,39 @@ model GroupPostLike {
 
   @@unique([postId, userId])
   @@map("group_post_likes")
+}
+
+// 오가니제이션 링크 초대 — 그룹당 활성 링크 1개, 링크를 아는 로그인 사용자는 누구나 참여
+model GroupInviteLink {
+  id          String    @id @default(uuid()) @db.Uuid
+  groupId     String    @db.Uuid
+  token       String    @unique
+  createdById String    @db.Uuid
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  useCount    Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("InviteLinkCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt(sort: Desc)])
+  @@map("group_invite_links")
+}
+
+// 이메일 알림 발송 이력 — (모임, 수신자, 종류)당 최대 1건으로 중복 발송 방지
+model NotificationLog {
+  id        String           @id @default(uuid()) @db.Uuid
+  meetingId String           @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  sentAt    DateTime         @default(now())
+  readAt    DateTime? // 알림함에서 확인한 시각 (null이면 안 읽음)
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId, type])
+  @@index([userId, sentAt(sort: Desc)])
+  @@map("notification_logs")
 }

@@ -2,8 +2,11 @@ import { apiClient } from '@/api/client';
 import type {
   GroupDetailDto,
   GroupInvitationDto,
+  GroupInviteLinkDto,
   GroupMemberDto,
   GroupSummaryDto,
+  InviteLinkAcceptResponseDto,
+  InviteLinkPreviewDto,
   InviteMemberDto,
   InvitationPreviewDto,
   UpdateGroupSettingsDto,
@@ -42,5 +45,29 @@ export const groupApi = {
   removeMember: (groupId: string, userId: string) =>
     apiClient
       .delete<void>(`/groups/${groupId}/members/${userId}`)
+      .then((r) => r.data),
+
+  // ─── 링크 초대 ───
+  createInviteLink: (groupId: string) =>
+    apiClient
+      .post<GroupInviteLinkDto>(`/groups/${groupId}/invite-link`)
+      .then((r) => r.data),
+
+  getInviteLink: (groupId: string) =>
+    apiClient
+      .get<GroupInviteLinkDto | null>(`/groups/${groupId}/invite-link`)
+      .then((r) => r.data),
+
+  revokeInviteLink: (groupId: string) =>
+    apiClient.delete<void>(`/groups/${groupId}/invite-link`),
+
+  getInviteLinkPreview: (token: string) =>
+    apiClient
+      .get<InviteLinkPreviewDto>(`/invitations/link/${token}`)
+      .then((r) => r.data),
+
+  acceptInviteLink: (token: string) =>
+    apiClient
+      .post<InviteLinkAcceptResponseDto>(`/invitations/link/${token}/accept`)
       .then((r) => r.data),
 };

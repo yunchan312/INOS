@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
 import type { DiscussionNoteDto, PromptKind } from '@inos/types';
+import { PromptText } from './PromptText';
 
 interface PromptCardProps {
   prompt: string;
@@ -66,15 +67,16 @@ export function PromptCard({
   const othersNotes = publicNotes.filter((n) => n.userId !== myNote?.userId);
 
   return (
-    <article className="py-9 border-b border-line grid grid-cols-[56px_minmax(0,1fr)] sm:grid-cols-[72px_minmax(0,1fr)] gap-4">
-      <span className="text-3xl sm:text-[40px] font-extrabold leading-none">
+    <article className="py-9 border-b border-line grid grid-cols-[28px_minmax(0,1fr)] sm:grid-cols-[36px_minmax(0,1fr)] gap-3 sm:gap-4">
+      <span className="pt-0.5 text-sm sm:text-base font-extrabold leading-relaxed text-muted tabular-nums">
         {String(displayNumber ?? questionIndex + 1).padStart(2, '0')}
       </span>
       <div>
         {meta}
-        <p className="text-lg font-semibold leading-relaxed max-w-[62ch]">
-          {prompt}
-        </p>
+        <PromptText
+          content={prompt}
+          className="text-lg font-normal leading-relaxed max-w-[62ch]"
+        />
 
         {!readOnly && (
           <div className="mt-5 flex flex-col gap-2.5">
