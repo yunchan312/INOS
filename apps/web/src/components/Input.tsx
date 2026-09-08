@@ -25,7 +25,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {hint && !error && (
         <p className="mt-1 text-xs text-muted">{hint}</p>
       )}
-      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+      {error && (
+        <p className="mt-1 text-xs font-semibold text-danger">{error}</p>
+      )}
     </div>
   );
 });
@@ -55,7 +57,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {hint && !error && (
           <p className="mt-1 text-xs text-muted">{hint}</p>
         )}
-        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+        {error && (
+          <p className="mt-1 text-xs font-semibold text-danger">{error}</p>
+        )}
       </div>
     );
   },

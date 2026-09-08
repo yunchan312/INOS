@@ -119,7 +119,7 @@ function CreateOrgForm() {
   return (
     <div className="space-y-4">
       {created && (
-        <div className="border-2 border-ink bg-point/20 p-4 text-sm">
+        <div className="border border-line rounded-card bg-surface-2 p-4 text-sm">
           <p className="font-bold">
             「{created.name}」 생성 완료
           </p>
@@ -547,10 +547,10 @@ function UserManageSection({ myId }: { myId: string }) {
                   <img
                     src={u.profileImageUrl}
                     alt={u.nickname}
-                    className="w-9 h-9 object-cover border-2 border-ink"
+                    className="w-9 h-9 object-cover border border-line rounded-full"
                   />
                 ) : (
-                  <div className="w-9 h-9 bg-ink text-point flex items-center justify-center text-sm font-bold">
+                  <div className="w-9 h-9 rounded-full bg-ink text-paper flex items-center justify-center text-sm font-bold">
                     {u.nickname[0]}
                   </div>
                 )}
@@ -558,7 +558,7 @@ function UserManageSection({ myId }: { myId: string }) {
                   <p className="text-sm truncate">
                     {u.nickname}
                     {u.isAdmin && (
-                      <span className="ml-2 text-[10px] font-bold uppercase tracking-[0.06em] bg-ink text-point px-1.5 py-0.5 align-middle">
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-[0.06em] bg-ink text-paper px-1.5 py-0.5 align-middle">
                         관리자
                       </span>
                     )}
@@ -647,7 +647,7 @@ export default function AdminPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
           관리자
         </p>
-        <h2 className="mt-2.5 text-[clamp(28px,4vw,40px)] font-extrabold tracking-tight">
+        <h2 className="mt-2.5 text-[clamp(28px,4vw,40px)] font-bold tracking-tight">
           운영 도구
         </h2>
 
@@ -657,7 +657,7 @@ export default function AdminPage() {
               key={menu.key}
               type="button"
               onClick={() => setActiveMenu(menu.key)}
-              className={`border-2 px-4 py-2 text-sm font-bold transition-colors ${
+              className={`border rounded-ui px-4 py-2 text-sm font-semibold transition-colors ${
                 activeMenu === menu.key
                   ? 'bg-ink border-ink text-paper'
                   : 'bg-transparent border-ink text-ink hover:bg-ink/[0.06]'

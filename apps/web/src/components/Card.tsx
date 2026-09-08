@@ -14,8 +14,8 @@ export function Card({
   return (
     <div
       className={[
-        'bg-surface border-2 border-ink p-4',
-        interactive ? 'card-hover hover:bg-point/20' : '',
+        'bg-surface border border-line rounded-card p-5',
+        interactive ? 'card-hover hover:border-muted-2' : '',
         className,
       ]
         .filter(Boolean)

@@ -25,6 +25,15 @@ const SYSTEM_PROMPT = `당신은 인문학 모임 전문 사회자이자 발제�
 각 발제 질문은 참가자들이 깊이 있는 토론을 나눌 수 있도록, 단순한 사실 확인이 아닌
 성찰과 논의를 유도하는 방향으로 한국어로 작성하세요.`;
 
+/** 프롬프트에 실어 보낼 영화 사실 정보 — movie_works 행에서 필요한 것만 추린 형태 */
+interface MovieWorkFacts {
+  originalTitle: string | null;
+  releaseDate: Date | null;
+  runtime: number | null;
+  genres: string[];
+  overview: string | null;
+}
+
 function buildBookPrompt(title: string, author: string): string {
   return `책 "${title}" (저자: ${author})에 대한 인문학 모임 발제 질문 5개를 작성해주세요.
 
@@ -39,8 +48,29 @@ function buildBookPrompt(title: string, author: string): string {
 각 질문은 단순 사실 확인보다 참가자의 성찰, 가치관, 삶과의 연결을 이끌어낼 수 있어야 합니다.`;
 }
 
-function buildMoviePrompt(title: string, director: string): string {
-  return `영화 "${title}" (감독: ${director})에 대한 인문학 모임 발제 질문 5개를 작성해주세요.
+/**
+ * TMDB로 확정된 영화면 원제·개봉연도·장르·줄거리까지 함께 넘긴다.
+ * 모델이 그 작품을 이미 알고 있어야만 제대로 답하던 의존을 줄이려는 것 —
+ * 제목만으로는 동명 영화나 오타를 구분할 방법이 없다.
+ */
+function buildMoviePrompt(
+  title: string,
+  director: string,
+  work?: MovieWorkFacts | null,
+): string {
+  const facts: string[] = [];
+  if (work?.originalTitle && work.originalTitle !== title) {
+    facts.push(`원제: ${work.originalTitle}`);
+  }
+  if (work?.releaseDate) facts.push(`개봉: ${work.releaseDate.getFullYear()}년`);
+  if (work?.runtime) facts.push(`상영시간: ${work.runtime}분`);
+  if (work?.genres?.length) facts.push(`장르: ${work.genres.join(', ')}`);
+  const factLine = facts.length > 0 ? `\n${facts.join(' / ')}` : '';
+  const synopsis = work?.overview?.trim()
+    ? `\n\n줄거리 참고:\n${work.overview.trim()}`
+    : '';
+
+  return `영화 "${title}" (감독: ${director})에 대한 인문학 모임 발제 질문 5개를 작성해주세요.${factLine}${synopsis}
 
 반드시 다음 형식으로 작성하세요:
 1. (질문 내용)
@@ -92,6 +122,7 @@ export class DiscussionService {
   async generate(meetingId: string): Promise<void> {
     const meeting = await this.prisma.meeting.findUnique({
       where: { id: meetingId },
+      include: { movieWork: true },
     });
     if (!meeting) throw new NotFoundException('모임을 찾을 수 없습니다');
 
@@ -127,7 +158,11 @@ export class DiscussionService {
       if (meeting.movieTitle && meeting.movieDirector) {
         let text = '';
         for await (const chunk of this.claude.streamText(
-          buildMoviePrompt(meeting.movieTitle, meeting.movieDirector),
+          buildMoviePrompt(
+            meeting.movieTitle,
+            meeting.movieDirector,
+            meeting.movieWork,
+          ),
           SYSTEM_PROMPT,
         )) {
           text += chunk;
@@ -173,6 +208,7 @@ export class DiscussionService {
         try {
           const meeting = await this.prisma.meeting.findUnique({
             where: { id: meetingId },
+            include: { movieWork: true },
           });
 
           if (!meeting) {
@@ -257,7 +293,11 @@ export class DiscussionService {
             subscriber.next({ data: JSON.stringify({ type: 'section-start', section: 'MOVIE' }) } as MessageEvent);
             let text = '';
             for await (const chunk of this.claude.streamText(
-              buildMoviePrompt(meeting.movieTitle, meeting.movieDirector),
+              buildMoviePrompt(
+                meeting.movieTitle,
+                meeting.movieDirector,
+                meeting.movieWork,
+              ),
               SYSTEM_PROMPT,
             )) {
               text += chunk;

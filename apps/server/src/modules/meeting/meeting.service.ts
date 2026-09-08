@@ -13,6 +13,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { GroupService } from '../group/group.service';
 import { MailService } from '../mail/mail.service';
 import { NotificationService } from '../notification/notification.service';
+import { SeojiService, toBookWorkDto } from '../seoji/seoji.service';
+import { TmdbService, toMovieWorkDto } from '../tmdb/tmdb.service';
 import { formatDateLabel, meetingWorkLabel } from '../notification/notification.util';
 import {
   CreateMeetingDto,
@@ -33,6 +35,8 @@ const MAX_RANGE_DAYS = 30;
 interface MeetingWithAvailability {
   meeting: Prisma.MeetingGetPayload<{
     include: {
+      bookWork: true;
+      movieWork: true;
       discussion: { select: { id: true; status: true } };
       availabilities: {
         select: {
@@ -56,6 +60,8 @@ export class MeetingService {
     private readonly groupService: GroupService,
     private readonly mailService: MailService,
     private readonly notificationService: NotificationService,
+    private readonly seojiService: SeojiService,
+    private readonly tmdbService: TmdbService,
     private readonly config: ConfigService,
     @InjectQueue(MEETING_INVITE_QUEUE)
     private readonly meetingInviteQueue: Queue,
@@ -70,15 +76,19 @@ export class MeetingService {
   ): Promise<MeetingResponseDto> {
     this.validateContent(dto);
     const { from, to } = this.parseAndValidateRange(dto.candidateFrom, dto.candidateTo);
+    const book = await this.resolveBook(dto.bookIsbn);
+    const movie = await this.resolveMovie(dto.movieTmdbId);
 
     const meeting = await this.prisma.meeting.create({
       data: {
         groupId,
         createdById: ownerUserId,
-        bookTitle: dto.bookTitle ?? null,
-        bookAuthor: dto.bookAuthor ?? null,
-        movieTitle: dto.movieTitle ?? null,
-        movieDirector: dto.movieDirector ?? null,
+        bookTitle: book?.title ?? dto.bookTitle ?? null,
+        bookAuthor: book?.author ?? dto.bookAuthor ?? null,
+        bookWorkId: book?.id ?? null,
+        movieTitle: movie?.title ?? dto.movieTitle ?? null,
+        movieDirector: movie?.director ?? dto.movieDirector ?? null,
+        movieWorkId: movie?.id ?? null,
         candidateFrom: from,
         candidateTo: to,
         location: dto.location ?? null,
@@ -115,6 +125,8 @@ export class MeetingService {
       where: { groupId },
       orderBy: [{ confirmedDate: 'desc' }, { createdAt: 'desc' }],
       include: {
+        bookWork: true,
+        movieWork: true,
         discussion: { select: { id: true, status: true } },
         availabilities: {
           select: {
@@ -185,13 +197,19 @@ export class MeetingService {
       }
     }
 
+    const updatedBook = await this.resolveBook(dto.bookIsbn);
+    const updatedMovie = await this.resolveMovie(dto.movieTmdbId);
+
     await this.prisma.meeting.update({
       where: { id: meetingId },
       data: {
-        bookTitle: dto.bookTitle ?? meeting.bookTitle,
-        bookAuthor: dto.bookAuthor ?? meeting.bookAuthor,
-        movieTitle: dto.movieTitle ?? meeting.movieTitle,
-        movieDirector: dto.movieDirector ?? meeting.movieDirector,
+        bookTitle: updatedBook?.title ?? dto.bookTitle ?? meeting.bookTitle,
+        bookAuthor: updatedBook?.author ?? dto.bookAuthor ?? meeting.bookAuthor,
+        bookWorkId: updatedBook?.id ?? meeting.bookWorkId,
+        movieTitle: updatedMovie?.title ?? dto.movieTitle ?? meeting.movieTitle,
+        movieDirector:
+          updatedMovie?.director ?? dto.movieDirector ?? meeting.movieDirector,
+        movieWorkId: updatedMovie?.id ?? meeting.movieWorkId,
         location: dto.location ?? meeting.location,
         confirmedDate,
         confirmedTime,
@@ -207,8 +225,8 @@ export class MeetingService {
       await this.enqueueDiscussionGeneration(meetingId);
       this.notifyOrgEvent(groupId, 'meeting-confirmed');
       const workLabel = meetingWorkLabel({
-        bookTitle: dto.bookTitle ?? meeting.bookTitle,
-        movieTitle: dto.movieTitle ?? meeting.movieTitle,
+        bookTitle: updatedBook?.title ?? dto.bookTitle ?? meeting.bookTitle,
+        movieTitle: updatedMovie?.title ?? dto.movieTitle ?? meeting.movieTitle,
       });
       this.notifyDateConfirmed(
         groupId,
@@ -398,10 +416,14 @@ export class MeetingService {
       throw new NotFoundException('모임을 찾을 수 없습니다');
     }
 
-    const bookTitle = dto.bookTitle?.trim() || meeting.bookTitle;
-    const bookAuthor = dto.bookAuthor?.trim() || meeting.bookAuthor;
-    const movieTitle = dto.movieTitle?.trim() || meeting.movieTitle;
-    const movieDirector = dto.movieDirector?.trim() || meeting.movieDirector;
+    const retryBook = await this.resolveBook(dto.bookIsbn);
+    const retryMovie = await this.resolveMovie(dto.movieTmdbId);
+    const bookTitle = retryBook?.title ?? dto.bookTitle?.trim() ?? meeting.bookTitle;
+    const bookAuthor =
+      retryBook?.author ?? dto.bookAuthor?.trim() ?? meeting.bookAuthor;
+    const movieTitle = retryMovie?.title ?? dto.movieTitle?.trim() ?? meeting.movieTitle;
+    const movieDirector =
+      retryMovie?.director ?? dto.movieDirector?.trim() ?? meeting.movieDirector;
 
     // 생성에 쓰이려면 제목과 저자/감독이 짝을 이뤄야 한다
     const hasBook = !!bookTitle && !!bookAuthor;
@@ -414,7 +436,14 @@ export class MeetingService {
 
     await this.prisma.meeting.update({
       where: { id: meetingId },
-      data: { bookTitle, bookAuthor, movieTitle, movieDirector },
+      data: {
+        bookTitle,
+        bookAuthor,
+        bookWorkId: retryBook?.id ?? meeting.bookWorkId,
+        movieTitle,
+        movieDirector,
+        movieWorkId: retryMovie?.id ?? meeting.movieWorkId,
+      },
     });
 
     // 이전 실패 흔적을 지우고 생성 중 상태로 되돌린다
@@ -555,6 +584,8 @@ export class MeetingService {
     const meeting = await this.prisma.meeting.findUnique({
       where: { id: meetingId },
       include: {
+        bookWork: true,
+        movieWork: true,
         discussion: { select: { id: true, status: true } },
         availabilities: {
           select: {
@@ -587,8 +618,10 @@ export class MeetingService {
       createdById: meeting.createdById,
       bookTitle: meeting.bookTitle,
       bookAuthor: meeting.bookAuthor,
+      bookWork: toBookWorkDto(meeting.bookWork),
       movieTitle: meeting.movieTitle,
       movieDirector: meeting.movieDirector,
+      movieWork: toMovieWorkDto(meeting.movieWork),
       candidateFrom: meeting.candidateFrom,
       candidateTo: meeting.candidateTo,
       confirmedDate: meeting.confirmedDate,
@@ -629,18 +662,33 @@ export class MeetingService {
   private validateContent(dto: CreateMeetingDto): void {
     const hasBookTitle = !!dto.bookTitle?.trim();
     const hasBookAuthor = !!dto.bookAuthor?.trim();
+    // 국중도/TMDB에서 고른 작품은 제목·저자·감독이 서버에서 채워지므로 짝 검사를 건너뛴다
+    const hasSeojiBook = !!dto.bookIsbn;
+    const hasTmdbMovie = !!dto.movieTmdbId;
     const hasMovieTitle = !!dto.movieTitle?.trim();
     const hasMovieDirector = !!dto.movieDirector?.trim();
 
-    if (hasBookTitle !== hasBookAuthor) {
+    if (!hasSeojiBook && hasBookTitle !== hasBookAuthor) {
       throw new BadRequestException('책 제목과 저자는 함께 입력해야 해요');
     }
-    if (hasMovieTitle !== hasMovieDirector) {
+    if (!hasTmdbMovie && hasMovieTitle !== hasMovieDirector) {
       throw new BadRequestException('영화 제목과 감독은 함께 입력해야 해요');
     }
-    if (!hasBookTitle && !hasMovieTitle) {
+    if (!hasBookTitle && !hasSeojiBook && !hasMovieTitle && !hasTmdbMovie) {
       throw new BadRequestException('책 또는 영화 중 하나는 필수예요');
     }
+  }
+
+  /** bookIsbn이 오면 국중도에서 확정해 book_works에 적재한다. 없으면 null */
+  private async resolveBook(isbn: string | undefined) {
+    if (!isbn) return null;
+    return this.seojiService.resolveBookWork(isbn);
+  }
+
+  /** movieTmdbId가 오면 TMDB에서 확정해 movie_works에 적재한다. 없으면 null */
+  private async resolveMovie(tmdbId: number | undefined) {
+    if (!tmdbId) return null;
+    return this.tmdbService.resolveMovieWork(tmdbId);
   }
 
   private parseAndValidateRange(

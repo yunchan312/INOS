@@ -121,14 +121,65 @@ model GroupMember {
   @@map("group_members")
 }
 
+/// TMDB에서 받아온 영화 정보. tmdbId가 유일키라서 중복 제거와 API 호출 캐시를 겸한다.
+/// posterPath/backdropPath는 전체 URL이 아니라 TMDB 경로 조각("/abc.jpg")만 저장한다 —
+/// 베이스 URL과 이미지 크기는 렌더링 시점에 결정한다.
+model BookWork {
+  id              String    @id @default(uuid()) @db.Uuid
+  isbn13          String    @unique @db.VarChar(13)
+  setIsbn         String?   @db.VarChar(13)
+  title           String
+  seriesTitle     String?
+  author          String?
+  publisher       String?
+  publishDate     DateTime? @db.Date
+  page            Int?
+  kdc             String?   @db.VarChar(32)
+  subject         String?
+  coverUrl        String?
+  // SEOJI는 책소개·목차를 본문이 아니라 URL로 준다. 본문을 발제문에 쓰려면
+  // 이 URL을 한 번 더 받아와야 해서, 지금은 링크만 담아둔다.
+  introductionUrl String?
+  tocUrl          String?
+  fetchedAt       DateTime  @default(now())
+
+  meetings Meeting[]
+
+  @@map("book_works")
+}
+
+model MovieWork {
+  id            String    @id @default(uuid()) @db.Uuid
+  tmdbId        Int       @unique
+  title         String
+  originalTitle String?
+  director      String?
+  releaseDate   DateTime? @db.Date
+  runtime       Int?
+  overview      String?   @db.Text
+  genres        String[]
+  posterPath    String?
+  backdropPath  String?
+  certification String?   @db.VarChar(16)
+  fetchedAt     DateTime  @default(now())
+
+  meetings Meeting[]
+
+  @@map("movie_works")
+}
+
 model Meeting {
   id            String        @id @default(uuid()) @db.Uuid
   groupId       String        @db.Uuid
   createdById   String        @db.Uuid
   bookTitle     String?
   bookAuthor    String?
+  // 국립중앙도서관(SEOJI)으로 식별된 책 (없으면 bookTitle/bookAuthor 자유 입력으로 폴백)
+  bookWorkId    String?       @db.Uuid
   movieTitle    String?
   movieDirector String?
+  // TMDB로 식별된 영화 (없으면 movieTitle/movieDirector 자유 입력으로 폴백)
+  movieWorkId   String?       @db.Uuid
   confirmedDate DateTime?
   confirmedTime String?       @db.VarChar(5) // 모임 시작 시각 "HH:mm" (null이면 미정)
   location      String?
@@ -140,6 +191,8 @@ model Meeting {
 
   group            Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
   createdBy        User                    @relation("MeetingCreatedBy", fields: [createdById], references: [id])
+  bookWork         BookWork?               @relation(fields: [bookWorkId], references: [id], onDelete: SetNull)
+  movieWork        MovieWork?              @relation(fields: [movieWorkId], references: [id], onDelete: SetNull)
   availabilities   MeetingAvailability[]
   discussion       Discussion?
   personalReviews  PersonalLibraryReview[]

@@ -32,8 +32,8 @@ export function BookEditPanel({
   const meta = year ? `${origin} · ${year}` : origin;
 
   return (
-    <div className="mt-4 mb-2 max-w-[720px] box-border border-2 border-ink bg-surface p-5">
-      <p className="mb-4 text-[15px] font-extrabold">
+    <div className="mt-4 mb-2 max-w-[720px] box-border border border-line rounded-card bg-surface p-5">
+      <p className="mb-4 text-[15px] font-bold">
         {item.title}
         {item.creator && (
           <span className="font-normal text-muted"> — {item.creator}</span>
@@ -45,7 +45,7 @@ export function BookEditPanel({
         <p className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
           별점 · 0.5 단위
         </p>
-        <span className="text-[13px] font-extrabold">
+        <span className="text-[13px] font-bold">
           {rating > 0 ? formatRating(rating) : '—'}
         </span>
       </div>
@@ -106,14 +106,14 @@ export function BookEditPanel({
           type="button"
           onClick={() => rating >= 1 && onSave({ rating, comment: comment.trim() || null })}
           disabled={rating < 1 || isSaving}
-          className="flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap border-2 border-ink bg-point px-[18px] text-[13px] font-bold text-on-accent hover:bg-point-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted"
+          className="flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap border border-point rounded-ui bg-point px-[18px] text-[13px] font-bold text-on-accent hover:bg-point-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted"
         >
           {isSaving ? <span className="loading loading-spinner loading-sm" /> : '저장'}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="min-h-11 cursor-pointer whitespace-nowrap border-2 border-ink bg-transparent px-[18px] text-[13px] font-semibold text-ink hover:bg-ink/[0.06]"
+          className="min-h-11 cursor-pointer whitespace-nowrap border border-line rounded-ui bg-transparent px-[18px] text-[13px] font-semibold text-ink hover:bg-ink/[0.06]"
         >
           취소
         </button>

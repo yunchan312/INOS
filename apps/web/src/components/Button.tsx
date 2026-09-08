@@ -15,20 +15,21 @@ const boxedVariants: Variant[] = ['primary', 'dark', 'outline'];
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-point text-on-accent border-2 border-ink hover:bg-point-hover disabled:bg-line disabled:border-line disabled:text-muted',
-  dark: 'bg-ink text-paper border-2 border-ink hover:bg-muted-2 hover:border-muted-2 disabled:bg-line disabled:border-line disabled:text-paper',
+    'bg-point text-on-accent border border-point rounded-ui hover:bg-point-hover hover:border-point-hover disabled:bg-surface-2 disabled:border-surface-2 disabled:text-muted',
+  dark: 'bg-ink text-paper border border-ink rounded-ui hover:bg-muted-2 hover:border-muted-2 disabled:bg-surface-2 disabled:border-surface-2 disabled:text-muted',
   outline:
-    'bg-transparent text-ink border-2 border-ink hover:bg-ink/[0.06] disabled:text-muted disabled:border-line',
+    'bg-transparent text-ink border border-line rounded-ui hover:bg-surface-2 hover:border-ink disabled:text-muted disabled:border-line',
   ghost:
-    'bg-transparent text-muted border-b border-muted hover:text-ink hover:border-ink disabled:text-muted/50 disabled:border-transparent',
+    'bg-transparent text-muted rounded-ui hover:bg-surface-2 hover:text-ink disabled:text-muted/50 disabled:hover:bg-transparent',
+  // 흑백에는 경고색이 없다 — 파괴적 액션은 밑줄로 구분하고 확인 단계로 막는다.
   danger:
-    'bg-transparent text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2 disabled:text-muted disabled:border-transparent',
+    'bg-transparent text-danger underline underline-offset-4 decoration-1 decoration-line hover:decoration-ink disabled:text-muted disabled:no-underline',
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: 'text-xs px-3 min-h-9 font-semibold',
-  md: 'text-sm px-4 min-h-11 font-bold',
-  lg: 'text-base px-5 min-h-14 font-bold',
+  sm: 'text-xs px-3.5 min-h-9 font-semibold',
+  md: 'text-sm px-[18px] min-h-11 font-semibold',
+  lg: 'text-[15px] px-6 min-h-14 font-semibold',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

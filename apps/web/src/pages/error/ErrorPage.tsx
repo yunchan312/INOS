@@ -29,17 +29,17 @@ export function ErrorPage({
     <main className="min-h-dvh flex flex-col items-center justify-center bg-paper px-6 pt-safe pb-safe">
       <div className="w-full max-w-sm text-center page-enter">
         {code && (
-          <p className="text-5xl font-extrabold tracking-tight text-line">
+          <p className="text-5xl font-bold tracking-tight text-line">
             {code}
           </p>
         )}
-        <h1 className="mt-4 text-2xl font-extrabold tracking-tight">
+        <h1 className="mt-4 text-2xl font-bold tracking-tight">
           {title}
         </h1>
         <p className="mt-3 text-sm text-muted">{description}</p>
 
         {isDev && detail && (
-          <pre className="mt-6 max-h-40 overflow-auto border-2 border-ink bg-surface p-3 text-left text-xs text-danger whitespace-pre-wrap break-words">
+          <pre className="mt-6 max-h-40 overflow-auto border border-line rounded-ui bg-surface p-3 text-left text-xs text-danger whitespace-pre-wrap break-words">
             {detail}
           </pre>
         )}

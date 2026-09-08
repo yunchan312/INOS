@@ -9,6 +9,9 @@ import { MeetingModule } from './modules/meeting/meeting.module';
 import { LibraryModule } from './modules/library/library.module';
 import { MailModule } from './modules/mail/mail.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { SeojiModule } from './modules/seoji/seoji.module';
+import { TmdbModule } from './modules/tmdb/tmdb.module';
+import { ShowcaseModule } from './modules/showcase/showcase.module';
 import { BoardModule } from './modules/board/board.module';
 import { HealthController } from './health.controller';
 
@@ -37,6 +40,9 @@ import { HealthController } from './health.controller';
     LibraryModule,
     AdminModule,
     BoardModule,
+    SeojiModule,
+    TmdbModule,
+    ShowcaseModule,
   ],
 })
 export class AppModule {}

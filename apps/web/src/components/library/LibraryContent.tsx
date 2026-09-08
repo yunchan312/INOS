@@ -123,12 +123,12 @@ export function LibraryContent({
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-6">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
         <div>
           <p className="whitespace-nowrap text-xs font-semibold uppercase tracking-[0.16em] text-muted">
             {kicker}
           </p>
-          <h1 className="mt-2.5 text-[clamp(30px,5vw,48px)] font-extrabold tracking-tight">
+          <h1 className="mt-2.5 text-[clamp(30px,5vw,48px)] font-bold tracking-tight">
             {title}
           </h1>
           <p className="mt-2 text-sm text-muted">{subtitle}</p>
@@ -136,13 +136,13 @@ export function LibraryContent({
         {library && (
           <div className="flex gap-6 text-right">
             <div>
-              <p className="text-2xl font-extrabold leading-none">{library.books.length}</p>
+              <p className="text-2xl font-bold leading-none">{library.books.length}</p>
               <p className="mt-1 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
                 책
               </p>
             </div>
             <div>
-              <p className="text-2xl font-extrabold leading-none">{library.movies.length}</p>
+              <p className="text-2xl font-bold leading-none">{library.movies.length}</p>
               <p className="mt-1 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
                 영화
               </p>
@@ -169,7 +169,7 @@ export function LibraryContent({
             <button
               type="button"
               onClick={() => setShowManualForm(true)}
-              className="text-[13px] font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+              className="text-[13px] font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2"
             >
               + 책/영화 직접 추가
             </button>

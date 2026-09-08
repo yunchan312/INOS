@@ -13,13 +13,13 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-paper border-b-2 border-ink pt-safe">
+    <header className="sticky top-0 z-40 bg-paper border-b border-line pt-safe">
       <div className="mx-auto max-w-3xl px-4 h-[60px] flex items-center justify-between">
         <Link
           to={isAuthenticated ? "/orgs" : "/"}
           className="flex items-baseline gap-2.5"
         >
-          <span className="text-xl font-extrabold tracking-tight">INOS</span>
+          <span className="text-xl font-extrabold tracking-[-0.045em]">INOS</span>
           <span className="hidden sm:inline text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
             인문학의 OS
           </span>
@@ -58,10 +58,10 @@ export function Header() {
                 <img
                   src={user.profileImageUrl}
                   alt={user.nickname}
-                  className="w-8 h-8 border-2 border-ink object-cover"
+                  className="w-8 h-8 border border-line rounded-full object-cover"
                 />
               ) : (
-                <div className="w-8 h-8 bg-ink text-point flex items-center justify-center text-xs font-bold">
+                <div className="w-8 h-8 rounded-full bg-ink text-paper flex items-center justify-center text-xs font-bold">
                   {user?.nickname?.[0] ?? "?"}
                 </div>
               )}

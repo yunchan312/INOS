@@ -140,14 +140,93 @@ export interface GroupInvitationDto {
   createdAt: string;
 }
 
+// TMDB DTOs
+// 런타임 값(이미지 URL 조립, 출처 문구)은 apps/web/src/lib/tmdb.ts에 있다 —
+// 이 패키지는 타입 전용이라 CJS dist에서 named export를 꺼낼 수 없다.
+
+export type TmdbPosterSize = 'w92' | 'w154' | 'w185' | 'w342' | 'w500' | 'w780';
+export type TmdbBackdropSize = 'w300' | 'w780' | 'w1280';
+
+/** 검색 자동완성 한 줄 (선택 전이라 아직 저장되지 않은 후보) */
+export interface TmdbMovieSearchItemDto {
+  tmdbId: number;
+  title: string;
+  originalTitle: string | null;
+  director: string | null;
+  releaseYear: number | null;
+  posterPath: string | null;
+}
+
+/** 저장된 영화 정보 */
+export interface MovieWorkDto {
+  tmdbId: number;
+  title: string;
+  originalTitle: string | null;
+  director: string | null;
+  /** ISO date-only ("2024-09-07") */
+  releaseDate: string | null;
+  /** 분 단위 상영시간 */
+  runtime: number | null;
+  overview: string | null;
+  genres: string[];
+  /** TMDB 경로 조각 — tmdbImageUrl()로 변환해서 사용 */
+  posterPath: string | null;
+  backdropPath: string | null;
+  /** 한국 관람등급 */
+  certification: string | null;
+}
+
+// 국립중앙도서관 서지정보(SEOJI) DTOs
+// TMDB와 달리 표지·책소개는 완성된 절대 URL로 내려오므로 조립 유틸이 필요 없다.
+
+/** 검색 자동완성 한 줄 (선택 전이라 아직 저장되지 않은 후보) */
+export interface SeojiBookSearchItemDto {
+  /** 13자리 ISBN (EA_ISBN) — 책을 확정할 때 쓰는 키 */
+  isbn13: string;
+  title: string;
+  /** SEOJI 원문 그대로 ("한강 지음"처럼 역할어가 붙어 있을 수 있다) */
+  author: string | null;
+  publisher: string | null;
+  publishYear: number | null;
+  coverUrl: string | null;
+}
+
+/** 저장된 책 정보 */
+export interface BookWorkDto {
+  isbn13: string;
+  /** 세트 ISBN (전집의 낱권이면 값이 있다) */
+  setIsbn: string | null;
+  title: string;
+  seriesTitle: string | null;
+  author: string | null;
+  publisher: string | null;
+  /** ISO date-only ("2024-03-15") */
+  publishDate: string | null;
+  /** 쪽수 */
+  page: number | null;
+  /** 한국십진분류 */
+  kdc: string | null;
+  /** KDC 대분류 주제명 */
+  subject: string | null;
+  coverUrl: string | null;
+  /** 책소개 원문 URL — 본문은 아직 가져오지 않는다 */
+  introductionUrl: string | null;
+  /** 목차 원문 URL */
+  tocUrl: string | null;
+}
+
 // Meeting DTOs
 export type MeetingStatus = 'PENDING' | 'CONFIRMED' | 'DONE' | 'CANCELLED';
 
 export interface CreateMeetingDto {
   bookTitle?: string;
   bookAuthor?: string;
+  /** 국중도에서 고른 책. 주면 bookTitle/bookAuthor는 SEOJI 값으로 채워진다 */
+  bookIsbn?: string;
   movieTitle?: string;
   movieDirector?: string;
+  /** TMDB에서 고른 영화. 주면 movieTitle/movieDirector는 TMDB 값으로 채워진다 */
+  movieTmdbId?: number;
   candidateFrom: string;
   candidateTo: string;
   location?: string;
@@ -156,8 +235,12 @@ export interface CreateMeetingDto {
 export interface UpdateMeetingDto {
   bookTitle?: string;
   bookAuthor?: string;
+  /** 국중도에서 고른 책. 주면 bookTitle/bookAuthor는 SEOJI 값으로 채워진다 */
+  bookIsbn?: string;
   movieTitle?: string;
   movieDirector?: string;
+  /** TMDB에서 고른 영화. 주면 movieTitle/movieDirector는 TMDB 값으로 채워진다 */
+  movieTmdbId?: number;
   location?: string;
   confirmedDate?: string;
   /** 모임 시작 시각 "HH:mm" — null이면 시간 미정으로 초기화 */
@@ -183,8 +266,12 @@ export interface MeetingDto {
   createdById: string;
   bookTitle: string | null;
   bookAuthor: string | null;
+  /** 국중도로 식별된 책 정보 (자유 입력만 했으면 null) */
+  bookWork: BookWorkDto | null;
   movieTitle: string | null;
   movieDirector: string | null;
+  /** TMDB로 식별된 영화 정보 (자유 입력만 했으면 null) */
+  movieWork: MovieWorkDto | null;
   confirmedDate: string | null;
   /** 모임 시작 시각 "HH:mm" (null이면 미정) */
   confirmedTime: string | null;
@@ -489,4 +576,32 @@ export interface NotificationListDto {
   unreadCount: number;
   page: number;
   pageSize: number;
+}
+
+// ─── 랜딩 쇼케이스 (공개) ────────────────────────────────────────
+
+/** 랜딩 서가에 꽂히는 인기 도서 한 권 */
+export interface ShowcaseBookDto {
+  title: string;
+  author: string | null;
+  /** 표지 전체 URL. 외부 API가 주는 형태가 제각각이라 경로 조각이 아닌 완성 URL */
+  coverUrl: string | null;
+}
+
+/** 랜딩 서가에 걸리는 인기 영화 한 편 */
+export interface ShowcaseMovieDto {
+  tmdbId: number;
+  title: string;
+  releaseYear: number | null;
+  /** TMDB 경로 조각 — tmdbImageUrl()로 변환해서 쓴다 */
+  posterPath: string | null;
+}
+
+/**
+ * 랜딩 페이지용 인기 작품 묶음. 외부 API가 죽어도 랜딩은 떠야 하므로
+ * 실패한 쪽은 빈 배열로 내려가고, 화면이 자체 폴백을 채운다.
+ */
+export interface ShowcaseDto {
+  books: ShowcaseBookDto[];
+  movies: ShowcaseMovieDto[];
 }

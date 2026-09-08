@@ -20,7 +20,7 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 const inputClass =
-  'w-full box-border border-2 border-ink bg-surface px-3.5 py-3 text-[15px] outline-none focus:border-point-hover';
+  'w-full box-border border border-line rounded-ui bg-surface px-3.5 py-3 text-[15px] outline-none focus:border-ink';
 
 // 구글 브랜드 마크 (흰 배경 위 4색 G)
 function GoogleMark() {
@@ -117,13 +117,13 @@ export default function LoginPage() {
         </Link>
 
         <div className="mt-8 flex items-baseline gap-2.5">
-          <span className="text-xl font-extrabold tracking-tight">INOS</span>
+          <span className="text-xl font-bold tracking-tight">INOS</span>
           <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
             인문학의 OS
           </span>
         </div>
 
-        <h1 className="mt-4 text-[clamp(28px,5vw,40px)] font-extrabold leading-[1.15] tracking-tight">
+        <h1 className="mt-4 text-[clamp(28px,5vw,40px)] font-bold leading-[1.15] tracking-tight">
           {mode === 'login' ? '로그인하기' : '시작하기'}
         </h1>
 
@@ -131,7 +131,7 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="mt-7 flex w-full min-h-14 items-center justify-center gap-3 border-2 border-ink bg-point px-5 text-base font-bold text-on-accent cursor-pointer hover:bg-point-hover transition-colors"
+          className="mt-7 flex w-full min-h-14 items-center justify-center gap-3 border border-point rounded-ui bg-point px-5 text-base font-bold text-on-accent cursor-pointer hover:bg-point-hover transition-colors"
         >
           <GoogleMark />
           Google 로 계속하기
@@ -150,7 +150,7 @@ export default function LoginPage() {
         </div>
 
         {/* 탭 */}
-        <div className="mt-5 flex border-2 border-ink">
+        <div className="mt-5 flex overflow-hidden border border-line rounded-ui">
           {(
             [
               ['login', '로그인'],

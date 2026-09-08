@@ -7,6 +7,11 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import {
+  MovieSearchInput,
+  toMoviePayload,
+  type MovieSelection,
+} from '@/components/MovieSearchInput';
 
 function todayIso(): string {
   const d = new Date();
@@ -45,8 +50,7 @@ export default function CreateMeetingPage() {
 
   const [bookTitle, setBookTitle] = useState('');
   const [bookAuthor, setBookAuthor] = useState('');
-  const [movieTitle, setMovieTitle] = useState('');
-  const [movieDirector, setMovieDirector] = useState('');
+  const [movie, setMovie] = useState<MovieSelection | null>(null);
   const [candidateFrom, setCandidateFrom] = useState(todayIso());
   const [candidateTo, setCandidateTo] = useState(addDays(todayIso(), 7));
   const [location, setLocation] = useState('');
@@ -63,9 +67,11 @@ export default function CreateMeetingPage() {
   }, [orgQuery.data, orgId, navigate]);
 
   const bookFilled = !!bookTitle.trim() && !!bookAuthor.trim();
-  const movieFilled = !!movieTitle.trim() && !!movieDirector.trim();
   const bookPartial = !!bookTitle.trim() !== !!bookAuthor.trim();
-  const moviePartial = !!movieTitle.trim() !== !!movieDirector.trim();
+  const moviePayload = toMoviePayload(movie);
+  const movieFilled = !!moviePayload.movieTmdbId || !!moviePayload.movieTitle;
+  // 직접 입력 모드에서 제목만 적고 감독을 비운 상태
+  const moviePartial = movie?.kind === 'manual' && !movieFilled;
   const canSubmit = useMemo(
     () =>
       (bookFilled || movieFilled) &&
@@ -86,8 +92,7 @@ export default function CreateMeetingPage() {
       {
         bookTitle: bookFilled ? bookTitle.trim() : undefined,
         bookAuthor: bookFilled ? bookAuthor.trim() : undefined,
-        movieTitle: movieFilled ? movieTitle.trim() : undefined,
-        movieDirector: movieFilled ? movieDirector.trim() : undefined,
+        ...moviePayload,
         candidateFrom,
         candidateTo,
         location: location.trim() ? location.trim() : undefined,
@@ -117,7 +122,7 @@ export default function CreateMeetingPage() {
         <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
           새 모임
         </p>
-        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold tracking-tight">
+        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-bold tracking-tight">
           무엇을 함께 읽을까요?
         </h1>
         <p className="mt-3 text-sm text-muted leading-relaxed max-w-[52ch]">
@@ -125,7 +130,7 @@ export default function CreateMeetingPage() {
           이메일 초대장이 전송돼요.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-8 border-t-2 border-ink">
+        <form onSubmit={handleSubmit} className="mt-8 border-t border-line">
           <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
             <FieldLabelWithHint label="책" hint="선택" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -149,26 +154,21 @@ export default function CreateMeetingPage() {
 
           <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
             <FieldLabelWithHint label="영화" hint="선택" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <Input
-                label="제목"
+            <div className="max-w-[420px]">
+              <MovieSearchInput
+                value={movie}
+                onChange={setMovie}
                 placeholder="예: 오펜하이머"
-                value={movieTitle}
-                onChange={(e) => setMovieTitle(e.target.value)}
               />
-              <Input
-                label="감독"
-                placeholder="예: 크리스토퍼 놀란"
-                value={movieDirector}
-                onChange={(e) => setMovieDirector(e.target.value)}
-                error={
-                  moviePartial ? '제목과 감독은 함께 입력해주세요' : undefined
-                }
-              />
+              {moviePartial && (
+                <p className="mt-1 text-xs text-danger">
+                  제목과 감독은 함께 입력해주세요
+                </p>
+              )}
             </div>
           </section>
 
-          <section className="py-7 border-b-2 border-ink grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
+          <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
             <FieldLabelWithHint label="일정" hint="후보 범위" />
             <div className="flex flex-col gap-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

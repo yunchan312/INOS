@@ -138,7 +138,7 @@ export function AvailabilityCalendar({
             )
           }
           disabled={!canGoPrev}
-          className="w-9 h-9 border-2 border-ink text-ink font-bold hover:bg-ink/[0.06] disabled:opacity-30 disabled:cursor-not-allowed"
+          className="w-9 h-9 border border-line rounded-ui text-ink font-semibold hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ‹
         </button>
@@ -154,7 +154,7 @@ export function AvailabilityCalendar({
             )
           }
           disabled={!canGoNext}
-          className="w-9 h-9 border-2 border-ink text-ink font-bold hover:bg-ink/[0.06] disabled:opacity-30 disabled:cursor-not-allowed"
+          className="w-9 h-9 border border-line rounded-ui text-ink font-semibold hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ›
         </button>
@@ -162,7 +162,7 @@ export function AvailabilityCalendar({
 
       <div
         className={[
-          'grid grid-cols-7 border-t-2 border-l-2 border-ink',
+          'grid grid-cols-7 overflow-hidden rounded-ui border-t border-l border-line',
           mode === 'paint' ? 'touch-none' : '',
         ]
           .filter(Boolean)
@@ -175,7 +175,7 @@ export function AvailabilityCalendar({
         {WEEKDAYS.map((w) => (
           <div
             key={w}
-            className="py-1.5 text-center text-[11px] font-bold tracking-[0.1em] border-r-2 border-b-2 border-ink bg-ink text-paper"
+            className="py-1.5 text-center text-[11px] font-bold tracking-[0.1em] border-r-2 border-b border-line bg-ink text-paper"
           >
             {w}
           </div>
@@ -185,7 +185,7 @@ export function AvailabilityCalendar({
             return (
               <div
                 key={idx}
-                className="h-12 border-r-2 border-b-2 border-ink bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(128,124,118,0.12)_5px,rgba(128,124,118,0.12)_6px)]"
+                className="h-12 border-r-2 border-b border-line bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(128,124,118,0.12)_5px,rgba(128,124,118,0.12)_6px)]"
               />
             );
           }
@@ -209,13 +209,13 @@ export function AvailabilityCalendar({
               }
               style={heatStyle(count)}
               className={[
-                'relative h-12 border-r-2 border-b-2 border-ink text-sm flex items-center justify-center',
+                'relative h-12 border-r-2 border-b border-line text-sm flex items-center justify-center',
                 disabled
                   ? 'text-line cursor-not-allowed'
                   : 'cursor-pointer text-ink',
                 mode === 'paint' && !disabled && !isSelected ? 'bg-paper hover:bg-ink/[0.06]' : '',
                 isSelected ? 'bg-point text-on-accent font-bold' : '',
-                isFull ? 'font-extrabold text-on-accent' : '',
+                isFull ? 'font-bold text-on-accent' : '',
                 isFocused ? 'ring-2 ring-inset ring-ink font-bold' : '',
               ]
                 .filter(Boolean)

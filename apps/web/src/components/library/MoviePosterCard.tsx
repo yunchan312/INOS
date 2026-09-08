@@ -58,14 +58,14 @@ export function MoviePosterCard({
       className="group relative block w-full cursor-pointer hover:z-[2]"
     >
       <span
-        className="flex aspect-[2/3] w-full flex-col box-border border-2 border-ink p-4 text-left text-on-accent transition-[transform,box-shadow] duration-150 ease-out will-change-transform group-hover:scale-[1.03] group-hover:shadow-[var(--lift-shadow-lg)]"
+        className="flex aspect-[2/3] w-full flex-col box-border border border-line rounded-hair p-4 text-left text-on-art transition-transform duration-150 ease-out will-change-transform group-hover:scale-[1.02]"
         style={{ backgroundColor: bg }}
       >
       <span className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">
         Film{year ? ` · ${year}` : ''}
       </span>
       <span className="mt-auto block">
-        <span className="block break-keep text-[19px] font-extrabold leading-[1.15] tracking-[-0.01em]">
+        <span className="block break-keep text-[19px] font-bold leading-[1.15] tracking-[-0.01em]">
           {item.title}
         </span>
         {item.creator && (
@@ -79,7 +79,7 @@ export function MoviePosterCard({
           <>
             <span className="flex items-center gap-1.5">
               <StarRating value={item.review.rating} sizePx={12} />
-              <span className="text-[11px] font-extrabold">
+              <span className="text-[11px] font-bold">
                 {formatRating(item.review.rating)}
               </span>
             </span>
@@ -129,16 +129,16 @@ function MoviePosterEditCard({
   const [comment, setComment] = useState(item.review?.comment ?? '');
 
   return (
-    <div className="flex aspect-[2/3] box-border flex-col border-2 border-ink bg-surface p-4 text-left">
+    <div className="flex aspect-[2/3] box-border flex-col border border-line rounded-card bg-surface p-4 text-left">
       <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
         리뷰 편집
       </span>
-      <span className="mt-2 break-keep text-[15px] font-extrabold leading-[1.2]">
+      <span className="mt-2 break-keep text-[15px] font-bold leading-[1.2]">
         {item.title}
       </span>
       <div className="mt-3 flex items-center gap-px">
         <StarRatingInput value={rating} onChange={setRating} sizePx={22} />
-        <span className="ml-1.5 text-xs font-extrabold">
+        <span className="ml-1.5 text-xs font-bold">
           {rating > 0 ? formatRating(rating) : '—'}
         </span>
       </div>
@@ -148,7 +148,7 @@ function MoviePosterEditCard({
         value={comment}
         onChange={(e) => setComment(e.target.value.slice(0, 100))}
         placeholder="한줄평 (100자)"
-        className="mt-3 w-full box-border resize-none border-2 border-ink bg-surface-2 p-2 text-xs leading-[1.5] outline-none focus:border-point-hover"
+        className="mt-3 w-full box-border resize-none border border-line rounded-ui bg-surface-2 p-2 text-xs leading-[1.5] outline-none focus:border-ink"
       />
       <span className="mt-1 flex items-center justify-between text-[10px] text-muted">
         <span className="flex items-center gap-2">
@@ -196,14 +196,14 @@ function MoviePosterEditCard({
           type="button"
           onClick={() => rating >= 1 && onSave({ rating, comment: comment.trim() || null })}
           disabled={rating < 1 || isSaving}
-          className="min-h-[38px] flex-1 cursor-pointer whitespace-nowrap border-2 border-ink bg-point px-3 text-left text-xs font-bold text-on-accent hover:bg-point-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted"
+          className="min-h-[38px] flex-1 cursor-pointer whitespace-nowrap border border-point rounded-ui bg-point px-3 text-left text-xs font-bold text-on-accent hover:bg-point-hover disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-muted"
         >
           {isSaving ? '저장 중…' : '저장'}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="min-h-[38px] cursor-pointer whitespace-nowrap border-2 border-ink bg-transparent px-3 text-xs font-semibold text-ink hover:bg-ink/[0.06]"
+          className="min-h-[38px] cursor-pointer whitespace-nowrap border border-line rounded-ui bg-transparent px-3 text-xs font-semibold text-ink hover:bg-ink/[0.06]"
         >
           취소
         </button>

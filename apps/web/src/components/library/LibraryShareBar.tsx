@@ -39,7 +39,7 @@ export function LibraryShareBar({
   if (status.isLoading) return null;
 
   return (
-    <div className="mt-6 border-2 border-ink bg-surface p-4">
+    <div className="mt-6 border border-line rounded-card bg-surface p-4">
       {shareId ? (
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">

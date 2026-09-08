@@ -30,7 +30,7 @@ export function MoviePosterGrid({
 }: MoviePosterGridProps) {
   if (movies.length === 0) {
     return (
-      <div className="max-w-[720px] box-border border-2 border-ink px-6 py-10 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(32,30,29,0.04)_10px,rgba(32,30,29,0.04)_12px)]">
+      <div className="max-w-[720px] box-border border border-line rounded-card px-6 py-10 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(20,20,20,0.035)_10px,rgba(20,20,20,0.035)_12px)]">
         <p className="text-base font-bold">아직 함께 본 영화가 없어요</p>
         <p className="mt-1.5 text-[13px] text-muted">
           영화 모임이 끝나면 포스터가 이곳에 걸려요.

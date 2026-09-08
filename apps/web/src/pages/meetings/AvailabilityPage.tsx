@@ -48,7 +48,7 @@ function OwnerReschedule({ orgId, meeting }: { orgId: string; meeting: MeetingDt
   const unchanged = date === originalDate && time === meeting.confirmedTime;
 
   return (
-    <div className="mt-6 border-2 border-ink bg-paper p-5">
+    <div className="mt-6 border border-line rounded-card bg-paper p-5">
       <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
         리더 · 날짜/시간 변경
       </p>
@@ -240,13 +240,13 @@ export default function AvailabilityPage() {
             <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
               일정 조율 · {meeting.respondedCount}/{meeting.totalMembers} 참여
             </p>
-            <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold leading-[1.15] tracking-tight">
+            <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-bold leading-[1.15] tracking-tight">
               가능한 날짜를
               <br />
               칠해주세요
             </h1>
 
-            <div className="mt-4 pb-6 border-b-2 border-ink">
+            <div className="mt-4 pb-6 border-b border-line">
               <p className="text-[15px] font-semibold">
                 {meeting.bookTitle && (
                   <>
@@ -274,11 +274,11 @@ export default function AvailabilityPage() {
             </div>
 
             {confirmed?.date ? (
-              <div className="mt-8 border-2 border-ink bg-surface p-8 text-center">
+              <div className="mt-8 border border-line rounded-card bg-surface p-8 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
                   확정된 모임 날짜
                 </p>
-                <p className="mt-3 text-3xl font-extrabold">
+                <p className="mt-3 text-3xl font-bold">
                   {formatKorean(confirmed.date)}
                 </p>
                 <p className="mt-3 text-sm text-muted">
@@ -287,7 +287,7 @@ export default function AvailabilityPage() {
               </div>
             ) : meeting.status !== 'PENDING' ? (
               <>
-                <div className="mt-8 border-2 border-ink bg-surface">
+                <div className="mt-8 border border-line rounded-card bg-surface">
                   <EmptyState
                     title="이미 확정된 모임이에요"
                     description={
@@ -314,7 +314,7 @@ export default function AvailabilityPage() {
                 {best.count > 0 && (
                   <div
                     className={[
-                      'mt-6 border-2 border-ink px-4 py-3 text-sm font-semibold',
+                      'mt-6 border border-line rounded-ui px-4 py-3 text-sm font-semibold',
                       best.count === totalMembers
                         ? 'bg-point text-on-accent'
                         : 'bg-surface',
@@ -381,7 +381,7 @@ export default function AvailabilityPage() {
                   </div>
 
                   {isOwner && (
-                    <div className="mt-5 border-2 border-ink bg-surface p-4">
+                    <div className="mt-5 border border-line rounded-card bg-surface p-4">
                       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
@@ -427,7 +427,7 @@ export default function AvailabilityPage() {
                   />
 
                   {focusedDate && focusDetail && (
-                    <div className="mt-3 border-2 border-ink bg-surface p-4 text-[13px]">
+                    <div className="mt-3 border border-line rounded-card bg-surface p-4 text-[13px]">
                       <p className="font-bold">{formatWithWeekday(focusedDate)}</p>
                       <p className="mt-1.5">
                         <span className="font-semibold">가능</span>{' '}

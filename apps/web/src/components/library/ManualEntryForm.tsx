@@ -33,13 +33,13 @@ export function ManualEntryForm({
   };
 
   return (
-    <div className="mt-6 border-2 border-ink bg-surface p-5">
-      <p className="text-sm font-extrabold">책/영화 직접 추가</p>
+    <div className="mt-6 border border-line rounded-card bg-surface p-5">
+      <p className="text-sm font-bold">책/영화 직접 추가</p>
       <p className="mt-1 text-xs text-muted">
         모임 없이 혼자 읽고 본 것도 서가에 꽂을 수 있어요.
       </p>
 
-      <div className="mt-4 flex gap-0 border-2 border-ink w-fit">
+      <div className="mt-4 flex gap-0 overflow-hidden border border-line rounded-ui w-fit">
         {(['BOOK', 'MOVIE'] as const).map((k) => (
           <button
             key={k}
@@ -101,7 +101,7 @@ export function ManualEntryForm({
           value={discussionText}
           onChange={(e) => setDiscussionText(e.target.value.slice(0, 5000))}
           placeholder="함께 나눴던(나누고 싶은) 질문이나 생각을 적어두세요."
-          className="mt-1 w-full box-border resize-y border-2 border-ink bg-surface-2 p-3 text-sm leading-relaxed outline-none focus:border-point-hover"
+          className="mt-1 w-full box-border resize-y border border-line rounded-ui bg-surface-2 p-3 text-sm leading-relaxed outline-none focus:border-ink"
         />
       </div>
 

@@ -21,11 +21,11 @@ export function LegalLayout({ label, title, updatedAt, children }: LegalLayoutPr
         <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
           {label}
         </p>
-        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold tracking-tight">
+        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-bold tracking-tight">
           {title}
         </h1>
         <p className="mt-3 text-[13px] text-muted">시행일 {updatedAt}</p>
-        <div className="mt-8 border-t-2 border-ink">{children}</div>
+        <div className="mt-8 border-t border-line">{children}</div>
       </main>
       <Footer />
     </div>

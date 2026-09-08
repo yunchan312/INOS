@@ -7,12 +7,16 @@ import { DiscussionProcessor } from './queues/discussion.processor';
 import { AuthModule } from '../auth/auth.module';
 import { GroupModule } from '../group/group.module';
 import { NotificationModule } from '../notification/notification.module';
+import { SeojiModule } from '../seoji/seoji.module';
+import { TmdbModule } from '../tmdb/tmdb.module';
 
 @Module({
   imports: [
     AuthModule,
     GroupModule,
     NotificationModule,
+    SeojiModule,
+    TmdbModule,
     BullModule.registerQueue(
       { name: MEETING_INVITE_QUEUE },
       { name: DISCUSSION_GENERATION_QUEUE },

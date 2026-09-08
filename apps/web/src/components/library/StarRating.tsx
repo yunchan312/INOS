@@ -15,7 +15,7 @@ export function StarRating({ value, sizePx = 12 }: StarRatingProps) {
   const pct = Math.max(0, Math.min(100, (value / 10) * 100));
   return (
     <span
-      className="relative inline-block leading-none tracking-[1px] text-ink/30 select-none"
+      className="relative inline-block leading-none tracking-[1px] text-line select-none"
       style={{ fontSize: sizePx }}
       aria-label={`별점 ${formatRating(value)}점`}
     >

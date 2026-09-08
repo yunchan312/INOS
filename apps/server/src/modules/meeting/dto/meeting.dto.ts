@@ -1,10 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { DiscussionStatus, MeetingStatus } from '@prisma/client';
+import type { BookWorkDto, MovieWorkDto } from '@inos/types';
+import { BookWorkResponseDto } from '../../seoji/dto/seoji.dto';
+import { MovieWorkResponseDto } from '../../tmdb/dto/tmdb.dto';
 import {
   ArrayNotEmpty,
   IsArray,
   IsDateString,
+  IsInt,
   IsOptional,
+  IsPositive,
   IsString,
   Matches,
   MaxLength,
@@ -24,6 +29,15 @@ export class CreateMeetingDto {
   @MaxLength(200)
   bookAuthor?: string;
 
+  @ApiProperty({
+    required: false,
+    description: '국중도에서 고른 책. 주면 bookTitle/bookAuthor는 SEOJI 값으로 덮어씁니다',
+    example: '9788936434120',
+  })
+  @IsOptional()
+  @Matches(/^\d{13}$/, { message: 'bookIsbn은 13자리 숫자여야 합니다' })
+  bookIsbn?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -35,6 +49,16 @@ export class CreateMeetingDto {
   @IsString()
   @MaxLength(200)
   movieDirector?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'TMDB에서 고른 영화. 주면 movieTitle/movieDirector는 TMDB 값으로 덮어씁니다',
+    example: 933260,
+  })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  movieTmdbId?: number;
 
   @ApiProperty({ example: '2026-07-15' })
   @IsDateString()
@@ -64,6 +88,15 @@ export class UpdateMeetingDto {
   @MaxLength(200)
   bookAuthor?: string;
 
+  @ApiProperty({
+    required: false,
+    description: '국중도에서 고른 책. 주면 bookTitle/bookAuthor는 SEOJI 값으로 덮어씁니다',
+    example: '9788936434120',
+  })
+  @IsOptional()
+  @Matches(/^\d{13}$/, { message: 'bookIsbn은 13자리 숫자여야 합니다' })
+  bookIsbn?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -75,6 +108,16 @@ export class UpdateMeetingDto {
   @IsString()
   @MaxLength(200)
   movieDirector?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'TMDB에서 고른 영화. 주면 movieTitle/movieDirector는 TMDB 값으로 덮어씁니다',
+    example: 933260,
+  })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  movieTmdbId?: number;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -115,6 +158,15 @@ export class RetryDiscussionDto {
   @MaxLength(200)
   bookAuthor?: string;
 
+  @ApiProperty({
+    required: false,
+    description: '국중도에서 고른 책. 주면 bookTitle/bookAuthor는 SEOJI 값으로 덮어씁니다',
+    example: '9788936434120',
+  })
+  @IsOptional()
+  @Matches(/^\d{13}$/, { message: 'bookIsbn은 13자리 숫자여야 합니다' })
+  bookIsbn?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -126,6 +178,16 @@ export class RetryDiscussionDto {
   @IsString()
   @MaxLength(200)
   movieDirector?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'TMDB에서 고른 영화. 주면 movieTitle/movieDirector는 TMDB 값으로 덮어씁니다',
+    example: 933260,
+  })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  movieTmdbId?: number;
 }
 
 export class SubmitAvailabilityDto {
@@ -185,6 +247,22 @@ export class MeetingResponseDto {
 
   @ApiProperty({ required: false, nullable: true })
   movieDirector!: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    type: BookWorkResponseDto,
+    description: '국중도로 식별된 책 정보 (자유 입력만 했으면 null)',
+  })
+  bookWork!: BookWorkDto | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    type: MovieWorkResponseDto,
+    description: 'TMDB로 식별된 영화 정보 (자유 입력만 했으면 null)',
+  })
+  movieWork!: MovieWorkDto | null;
 
   @ApiProperty()
   candidateFrom!: Date;

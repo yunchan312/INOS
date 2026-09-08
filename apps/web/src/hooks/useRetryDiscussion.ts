@@ -6,6 +6,7 @@ interface RetryPayload {
   bookAuthor?: string;
   movieTitle?: string;
   movieDirector?: string;
+  movieTmdbId?: number;
 }
 
 // 발제문 생성 실패 → 작품 정보 확인 후 재생성

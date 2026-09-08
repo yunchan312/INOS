@@ -26,7 +26,7 @@ export function ThemeToggle() {
           className={[
             'text-[11px] font-medium uppercase tracking-[0.1em] whitespace-nowrap transition-colors',
             mode === o.mode
-              ? 'font-bold text-ink border-b border-ink'
+              ? 'font-bold text-ink border-b border-line'
               : 'text-muted hover:text-ink',
           ].join(' ')}
         >

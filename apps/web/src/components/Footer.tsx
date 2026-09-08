@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { TMDB_ATTRIBUTION } from '@/lib/tmdb';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 const CONTACT_EMAIL = 'yunchan0339@gmail.com';
@@ -11,7 +12,7 @@ interface FooterProps {
 
 export function Footer({ wide }: FooterProps) {
   return (
-    <footer className="mt-16 border-t-2 border-ink pb-safe">
+    <footer className="mt-16 border-t border-line pb-safe">
       <div
         className={`mx-auto ${
           wide ? 'max-w-[1080px]' : 'max-w-3xl'
@@ -19,7 +20,7 @@ export function Footer({ wide }: FooterProps) {
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
           <p className="flex items-baseline gap-2.5">
-            <span className="text-base font-extrabold tracking-tight">INOS</span>
+            <span className="text-base font-extrabold tracking-[-0.045em]">INOS</span>
             <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted whitespace-nowrap">
               인문학의 OS
             </span>
@@ -60,6 +61,19 @@ export function Footer({ wide }: FooterProps) {
           <ThemeToggle />
           <span>함께 읽고, 보고, 생각합니다.</span>
         </div>
+        {/* TMDB API 이용 조건상 출처 표기는 의무 */}
+        <p className="text-[11px] leading-relaxed text-muted">
+          영화 정보 제공:{' '}
+          <a
+            href="https://www.themoviedb.org"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="underline underline-offset-2 hover:text-ink"
+          >
+            TMDB
+          </a>
+          . {TMDB_ATTRIBUTION}
+        </p>
       </div>
     </footer>
   );

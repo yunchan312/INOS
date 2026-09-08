@@ -68,14 +68,14 @@ export function PromptCard({
 
   return (
     <article className="py-9 border-b border-line grid grid-cols-[28px_minmax(0,1fr)] sm:grid-cols-[36px_minmax(0,1fr)] gap-3 sm:gap-4">
-      <span className="pt-0.5 text-sm sm:text-base font-extrabold leading-relaxed text-muted tabular-nums">
+      <span className="pt-0.5 text-xs sm:text-sm font-semibold leading-relaxed text-muted tabular-nums">
         {String(displayNumber ?? questionIndex + 1).padStart(2, '0')}
       </span>
       <div>
         {meta}
         <PromptText
           content={prompt}
-          className="text-lg font-normal leading-relaxed max-w-[62ch]"
+          className="text-[17px] font-normal leading-[1.75] max-w-[62ch] tracking-[-0.01em]"
         />
 
         {!readOnly && (
@@ -85,7 +85,7 @@ export function PromptCard({
               onChange={(e) => handleContentChange(e.target.value)}
               placeholder="내 생각을 적어보세요…"
               rows={3}
-              className="w-full box-border resize-y border-2 border-ink bg-surface px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
+              className="w-full box-border resize-y border border-line rounded-ui bg-surface px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-ink"
             />
             <div className="flex items-center justify-between gap-3">
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -93,7 +93,7 @@ export function PromptCard({
                   type="checkbox"
                   checked={isPublic}
                   onChange={handlePublicToggle}
-                  className="border-ink text-ink focus:ring-0 focus:ring-offset-0"
+                  className="size-[18px] cursor-pointer rounded-hair border border-line accent-point focus:ring-0 focus:ring-offset-0"
                 />
                 <span className="text-xs font-semibold text-muted-2">멤버에게 공개</span>
               </label>
@@ -105,7 +105,7 @@ export function PromptCard({
         )}
 
         {myNote && readOnly && (
-          <div className="mt-5 border-2 border-ink bg-surface px-3.5 py-3">
+          <div className="mt-5 border border-line rounded-card bg-surface px-3.5 py-3">
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{myNote.content}</p>
             <p className="mt-1.5 text-xs text-muted">
               내 노트{myNote.isPublic ? ' · 공개됨' : ''}
@@ -119,10 +119,14 @@ export function PromptCard({
               멤버 노트
             </p>
             {othersNotes.map((n) => (
-              <div key={n.id} className="border-l-4 border-point bg-point/15 px-4 py-3">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{n.content}</p>
-                <p className="mt-2 text-xs font-semibold text-muted-2">{n.author.nickname}</p>
-              </div>
+              <blockquote key={n.id} className="border-l border-line py-0.5 pl-4">
+                <p className="text-sm font-light leading-[1.85] whitespace-pre-wrap">
+                  {n.content}
+                </p>
+                <footer className="mt-2.5 text-xs font-medium text-muted">
+                  {n.author.nickname}
+                </footer>
+              </blockquote>
             ))}
           </div>
         )}

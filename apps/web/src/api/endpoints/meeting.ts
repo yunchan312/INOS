@@ -56,6 +56,7 @@ export const meetingApi = {
       bookAuthor?: string;
       movieTitle?: string;
       movieDirector?: string;
+      movieTmdbId?: number;
     },
   ) =>
     apiClient

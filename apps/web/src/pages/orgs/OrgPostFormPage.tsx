@@ -63,7 +63,7 @@ export default function OrgPostFormPage() {
         <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
           하고싶은 말
         </p>
-        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold leading-[1.15] tracking-tight">
+        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-bold leading-[1.15] tracking-tight">
           {isEdit ? '글 수정하기' : '글 남기기'}
         </h1>
 

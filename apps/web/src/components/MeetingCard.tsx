@@ -6,6 +6,13 @@ import { Button } from './Button';
 import { useUpdateMeeting } from '@/hooks/useUpdateMeeting';
 import { useDeleteMeeting } from '@/hooks/useDeleteMeeting';
 import { TimePicker } from './TimePicker';
+import { WorkCover } from '@/components/WorkCover';
+import {
+  MovieSearchInput,
+  movieSelectionFromMeeting,
+  toMoviePayload,
+  type MovieSelection,
+} from '@/components/MovieSearchInput';
 
 interface MeetingCardProps {
   meeting: MeetingDto;
@@ -52,8 +59,9 @@ function MeetingEditForm({
 }) {
   const [bookTitle, setBookTitle] = useState(meeting.bookTitle ?? '');
   const [bookAuthor, setBookAuthor] = useState(meeting.bookAuthor ?? '');
-  const [movieTitle, setMovieTitle] = useState(meeting.movieTitle ?? '');
-  const [movieDirector, setMovieDirector] = useState(meeting.movieDirector ?? '');
+  const [movie, setMovie] = useState<MovieSelection | null>(() =>
+    movieSelectionFromMeeting(meeting),
+  );
   const [location, setLocation] = useState(meeting.location ?? '');
   const [confirmedDate, setConfirmedDate] = useState(
     meeting.confirmedDate ? toDateInputValue(meeting.confirmedDate) : '',
@@ -74,8 +82,7 @@ function MeetingEditForm({
       {
         bookTitle: bookTitle.trim() || undefined,
         bookAuthor: bookAuthor.trim() || undefined,
-        movieTitle: movieTitle.trim() || undefined,
-        movieDirector: movieDirector.trim() || undefined,
+        ...toMoviePayload(movie),
         location: location.trim() || undefined,
         confirmedDate:
           canEditDate && confirmedDate && confirmedDate !== originalDate
@@ -91,7 +98,7 @@ function MeetingEditForm({
   };
 
   return (
-    <div className="mt-4 space-y-3 border-t-2 border-ink pt-4">
+    <div className="mt-4 space-y-3 border-t border-line pt-4">
       <div className="grid grid-cols-2 gap-3">
         <input
           type="text"
@@ -107,21 +114,14 @@ function MeetingEditForm({
           placeholder="저자"
           className={inputClass}
         />
-        <input
-          type="text"
-          value={movieTitle}
-          onChange={(e) => setMovieTitle(e.target.value)}
-          placeholder="영화 제목"
-          className={inputClass}
-        />
-        <input
-          type="text"
-          value={movieDirector}
-          onChange={(e) => setMovieDirector(e.target.value)}
-          placeholder="감독"
-          className={inputClass}
-        />
       </div>
+      <MovieSearchInput
+        value={movie}
+        onChange={setMovie}
+        variant="boxed"
+        label="영화"
+        placeholder="영화 제목으로 검색"
+      />
       <input
         type="text"
         value={location}
@@ -207,10 +207,10 @@ function ManualConfirmSection({
   };
 
   return (
-    <div className="mt-4 border-t-2 border-ink pt-4 space-y-3">
+    <div className="mt-4 border-t border-line pt-4 space-y-3">
       <p
         className={`text-xs font-semibold ${
-          urgent ? 'text-amber-800' : 'text-muted'
+          urgent ? 'text-ink font-semibold' : 'text-muted'
         }`}
       >
         {urgent
@@ -235,7 +235,7 @@ function ManualConfirmSection({
                 type="button"
                 onClick={() => handleConfirm(date, count)}
                 disabled={updateMeeting.isPending}
-                className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2 disabled:opacity-50"
+                className="font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2 disabled:opacity-50"
               >
                 이 날짜로 확정
               </button>
@@ -270,7 +270,7 @@ function ManualConfirmSection({
             handleConfirm(manualDate, meeting.dateCounts?.[manualDate] ?? 0)
           }
           disabled={!manualDate || updateMeeting.isPending}
-          className="pb-2 text-xs font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="pb-2 text-xs font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           이 날짜로 확정
         </button>
@@ -298,6 +298,34 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
       ? `${meeting.bookTitle} · ${meeting.movieTitle}`
       : meeting.bookTitle || meeting.movieTitle || '(제목 없음)';
 
+  const kindLabel =
+    meeting.bookTitle && meeting.movieTitle
+      ? '책 · 영화'
+      : meeting.movieTitle
+        ? '영화'
+        : '책';
+
+  // 저자/감독/연도 — 제목 아래 한 줄로 합친다
+  const creator = [
+    meeting.bookTitle ? meeting.bookAuthor : null,
+    meeting.movieTitle && meeting.movieDirector
+      ? `${meeting.movieDirector} 감독`
+      : null,
+    meeting.movieWork?.releaseDate?.slice(0, 4) ?? null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  // 날짜 · 장소 — 헤어라인으로 끊어 읽는 메타 줄
+  const meta = [
+    meeting.confirmedDate
+      ? `${formatKoreanDate(meeting.confirmedDate)}${
+          meeting.confirmedTime ? ` ${meeting.confirmedTime}` : ''
+        }`
+      : null,
+    meeting.location,
+  ].filter((v): v is string => Boolean(v));
+
   const showAvailabilityLink =
     meeting.status === 'PENDING';
   const showMeetingLink =
@@ -323,11 +351,11 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
     statusPill = needsManualConfirm
       ? {
           text: '날짜 확정 필요',
-          className: 'border-2 border-amber-700 text-amber-800',
+          className: 'border border-ink rounded-hair font-semibold text-ink',
         }
       : {
           text: `일정 조율 중 · ${meeting.respondedCount}/${meeting.totalMembers}`,
-          className: 'border-2 border-ink text-ink',
+          className: 'border border-line rounded-hair text-muted',
         };
   } else if (meeting.status === 'CONFIRMED' && meeting.confirmedDate) {
     const timeSuffix = meeting.confirmedTime ? ` ${meeting.confirmedTime}` : '';
@@ -335,47 +363,65 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
       text: isToday(meeting.confirmedDate)
         ? `오늘${timeSuffix}`
         : `${formatKoreanDate(meeting.confirmedDate)}${timeSuffix} 확정`,
-      className: 'border-2 border-ink bg-point text-ink',
+      className: 'border border-point rounded-hair bg-point text-on-accent',
     };
   } else if (meeting.status === 'DONE') {
     statusPill = {
       text: '종료',
-      className: 'border-2 border-line text-muted',
+      className: 'rounded-hair bg-surface-2 text-muted',
     };
   } else {
     statusPill = {
       text: '취소됨',
-      className: 'border-2 border-danger text-danger',
+      className: 'border border-line rounded-hair text-muted line-through',
     };
   }
 
   return (
     <Card>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-4 sm:gap-5">
+        <WorkCover meeting={meeting} className="w-[64px] sm:w-[76px]" />
         <div className="min-w-0 flex-1">
-          <p className="font-bold text-lg truncate">{label}</p>
-          <div className="mt-1.5 flex flex-col gap-0.5 text-xs text-muted">
-            {meeting.bookTitle && (
-              <span>📖 {meeting.bookTitle} — {meeting.bookAuthor}</span>
-            )}
-            {meeting.movieTitle && (
-              <span>🎬 {meeting.movieTitle} — {meeting.movieDirector} 감독</span>
-            )}
-            {meeting.location && <span>📍 {meeting.location}</span>}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-semibold tracking-[0.16em] text-muted">
+              {kindLabel}
+            </span>
+            <span
+              className={`px-2 py-[3px] text-[10px] font-semibold whitespace-nowrap ${statusPill.className}`}
+            >
+              {statusPill.text}
+            </span>
           </div>
+          <h3 className="mt-2 truncate text-[21px] font-bold tracking-[-0.03em]">
+            {label}
+          </h3>
+          {creator && (
+            <p className="mt-1 truncate text-[13px] font-light text-muted">
+              {creator}
+            </p>
+          )}
+          {meta.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-medium text-muted-2">
+              {meta.map((m, i) => (
+                <span key={m} className="flex items-center gap-2.5">
+                  {i > 0 && (
+                    <span aria-hidden="true" className="h-3 w-px bg-line" />
+                  )}
+                  <span className={i === 0 ? 'tabular-nums' : undefined}>
+                    {m}
+                  </span>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <span
-          className={`shrink-0 text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-1 whitespace-nowrap ${statusPill.className}`}
-        >
-          {statusPill.text}
-        </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
+      <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4 text-xs">
         {showAvailabilityLink && (
           <Link
             to={`/orgs/${orgId}/meetings/${meeting.id}/availability`}
-            className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+            className="font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2"
           >
             {meeting.myAvailability?.length ? '내 응답 수정' : '가능한 날짜 선택'}
           </Link>
@@ -383,7 +429,7 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
         {showMeetingLink && (
           <Link
             to={`/orgs/${orgId}/meetings/${meeting.id}`}
-            className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+            className="font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2"
           >
             모임 입장
           </Link>
@@ -416,7 +462,7 @@ export function MeetingCard({ meeting, orgId, canManage = false }: MeetingCardPr
         {discussionReady && !showMeetingLink && (
           <Link
             to={`/orgs/${orgId}/meetings/${meeting.id}`}
-            className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+            className="font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2"
           >
             발제문 보기
           </Link>

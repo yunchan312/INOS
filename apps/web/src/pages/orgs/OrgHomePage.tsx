@@ -14,7 +14,14 @@ import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/Button';
 import { MeetingCard } from '@/components/MeetingCard';
+import { MeetingRow } from '@/components/MeetingRow';
 import { SectionLabel } from '@/components/SectionLabel';
+import mascot from '@/assets/character-mascot.png';
+
+/** 빈 상태의 마스코트 — 무채색 화면에서 색을 갖는 몇 안 되는 요소 */
+function MascotMark() {
+  return <img src={mascot} alt="" className="w-14" />;
+}
 
 function toIsoDate(source: string | Date): string {
   const d = typeof source === 'string' ? new Date(source) : source;
@@ -74,7 +81,7 @@ function OrgBoardSection({ orgId }: { orgId: string }) {
         <SectionLabel num="00">하고싶은 말</SectionLabel>
         <Link
           to={`/orgs/${orgId}/posts/new`}
-          className="text-xs font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+          className="text-xs font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2"
         >
           + 글 남기기
         </Link>
@@ -85,6 +92,7 @@ function OrgBoardSection({ orgId }: { orgId: string }) {
       ) : !data || data.total === 0 ? (
         <Card>
           <EmptyState
+            media={<MascotMark />}
             title="아직 하고싶은 말이 없어요"
             description="모임에 대한 생각, 공지, 아무 말이든 남겨보세요."
             action={
@@ -96,28 +104,42 @@ function OrgBoardSection({ orgId }: { orgId: string }) {
         </Card>
       ) : (
         <>
-          <ul className="border-t-2 border-ink">
+          <ul className="border-t border-line">
             {data.items.map((p) => (
               <li key={p.id}>
                 <Link
                   to={`/orgs/${orgId}/posts/${p.id}`}
-                  className="flex items-baseline gap-3 border-b border-line px-1 py-3 transition-colors hover:bg-surface"
+                  className="flex items-center gap-3 border-b border-line px-1 py-3 transition-colors hover:bg-surface-2"
                 >
-                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
                     {p.title}
                   </span>
-                  <span className="shrink-0 text-xs text-muted">
+                  <span className="hidden shrink-0 text-xs text-muted sm:inline">
                     {p.authorNickname}
                   </span>
-                  <span className="shrink-0 text-xs text-muted">
+                  <span className="shrink-0 text-xs tabular-nums text-muted">
                     {formatPostDate(p.createdAt)}
                   </span>
                   <span
-                    className={`shrink-0 text-xs font-bold ${
-                      p.likedByMe ? 'text-ink' : 'text-muted'
+                    className={`flex shrink-0 items-center gap-1 text-xs tabular-nums ${
+                      p.likedByMe ? 'font-semibold text-ink' : 'text-muted'
                     }`}
                   >
-                    ♥ {p.likeCount}
+                    <svg
+                      width="11"
+                      height="10"
+                      viewBox="0 0 12 11"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M6 10.2 1.6 6.1a2.7 2.7 0 1 1 4.4-3 2.7 2.7 0 1 1 4.4 3L6 10.2Z"
+                        fill={p.likedByMe ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    {p.likeCount}
                   </span>
                 </Link>
               </li>
@@ -130,7 +152,7 @@ function OrgBoardSection({ orgId }: { orgId: string }) {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
                 aria-label="이전 페이지"
-                className="border-2 border-ink px-2 py-0.5 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+                className="border border-line rounded-hair px-2 py-0.5 hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 ←
               </button>
@@ -142,7 +164,7 @@ function OrgBoardSection({ orgId }: { orgId: string }) {
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 aria-label="다음 페이지"
-                className="border-2 border-ink px-2 py-0.5 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+                className="border border-line rounded-hair px-2 py-0.5 hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 →
               </button>
@@ -193,19 +215,25 @@ export default function OrgHomePage() {
 
         {orgQuery.data && (
           <>
-            <div className="flex flex-wrap items-end justify-between gap-4 pb-6 border-b-2 border-ink">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+            <div className="flex flex-wrap items-end justify-between gap-5 border-b border-line pb-7">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-muted">
                   오가니제이션
                 </p>
-                <h1 className="mt-2.5 text-[clamp(30px,5vw,48px)] font-extrabold tracking-tight">
+                <h1 className="mt-3 text-[clamp(30px,5vw,44px)] font-bold leading-[1.1] tracking-[-0.04em]">
                   {orgQuery.data.name}
                 </h1>
-                {orgQuery.data.description && (
-                  <p className="mt-2 text-sm text-muted">
-                    {orgQuery.data.description} · {orgQuery.data.members.length}명
-                  </p>
-                )}
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] font-light text-muted">
+                  {orgQuery.data.description && (
+                    <>
+                      <span>{orgQuery.data.description}</span>
+                      <span aria-hidden="true" className="h-3 w-px bg-line" />
+                    </>
+                  )}
+                  <span className="tabular-nums">
+                    멤버 {orgQuery.data.members.length}명
+                  </span>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Link to={`/orgs/${orgId}/library`}>
@@ -250,7 +278,7 @@ export default function OrgHomePage() {
                 {isOwner && (
                   <Link
                     to={`/orgs/${orgId}/meetings/new`}
-                    className="text-xs font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+                    className="text-xs font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2"
                   >
                     + 새 모임
                   </Link>
@@ -261,6 +289,7 @@ export default function OrgHomePage() {
               ) : sections.upcoming.length === 0 ? (
                 <Card>
                   <EmptyState
+                    media={<MascotMark />}
                     title="예정된 모임이 없어요"
                     description={
                       isOwner
@@ -292,18 +321,27 @@ export default function OrgHomePage() {
 
             {sections.past.length > 0 && (
               <section className="mt-10">
-                <SectionLabel num="03">지난 모임</SectionLabel>
-                <div className="space-y-3">
-                  {sections.past.map((m) => (
-                    <MeetingCard key={m.id} meeting={m} orgId={orgId as string} />
-                  ))}
+                {/* 끝난 모임은 카드로 감싸지 않는다 — 헤어라인 목록으로 훑는다 */}
+                <div className="mb-4 flex items-center justify-between">
+                  <SectionLabel num="03">지난 모임</SectionLabel>
+                  <Link
+                    to={`/orgs/${orgId}/library`}
+                    className="text-xs font-medium text-muted hover:text-ink"
+                  >
+                    서가에서 보기
+                  </Link>
                 </div>
+                <ul className="border-t border-line">
+                  {sections.past.map((m) => (
+                    <MeetingRow key={m.id} meeting={m} orgId={orgId as string} />
+                  ))}
+                </ul>
               </section>
             )}
 
             <section className="mt-10">
               <SectionLabel num="04">{`멤버 · ${orgQuery.data.members.length}`}</SectionLabel>
-              <div className="border-t-2 border-ink">
+              <div className="border-t border-line">
                 {orgQuery.data.members.map((m) => (
                   <div
                     key={m.id}
@@ -313,17 +351,17 @@ export default function OrgHomePage() {
                       <img
                         src={m.profileImageUrl}
                         alt={m.nickname}
-                        className="w-[34px] h-[34px] object-cover border-2 border-ink shrink-0"
+                        className="w-[34px] h-[34px] object-cover border border-line rounded-full shrink-0"
                       />
                     ) : (
-                      <div className="w-[34px] h-[34px] bg-ink text-point flex items-center justify-center text-[13px] font-bold shrink-0">
+                      <div className="w-[34px] h-[34px] rounded-full bg-ink text-paper flex items-center justify-center text-[13px] font-bold shrink-0">
                         {m.nickname[0]}
                       </div>
                     )}
-                    <span className="flex-1 text-sm font-medium">
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">
                       {m.nickname}
                     </span>
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted whitespace-nowrap">
+                    <span className="whitespace-nowrap text-[10px] font-semibold tracking-[0.14em] text-muted">
                       {m.role === 'OWNER' ? '소유자' : '멤버'}
                     </span>
                     {isOwner && m.role !== 'OWNER' && (

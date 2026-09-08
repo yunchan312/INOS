@@ -32,7 +32,7 @@ export default function RecapPage() {
           >
             ← 내 서재
           </Link>
-          <h1 className="mt-3 text-[clamp(26px,4.5vw,40px)] font-extrabold tracking-tight">
+          <h1 className="mt-3 text-[clamp(26px,4.5vw,40px)] font-bold tracking-tight">
             결산 카드
           </h1>
           <p className="mt-2 text-sm text-muted">

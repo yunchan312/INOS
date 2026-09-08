@@ -45,10 +45,10 @@ export function BookSpine({ item, isEditing, onClick }: BookSpineProps) {
       <span
         className={[
           'flex h-full w-full flex-col items-center justify-end box-border px-1 pt-3.5 pb-2.5',
-          'border-2 border-ink text-on-accent',
-          'transition-[transform,box-shadow] duration-150 ease-out will-change-transform',
-          'group-hover:-translate-y-2.5 group-hover:shadow-[var(--lift-shadow)]',
-          isEditing ? '-translate-y-2.5 shadow-[var(--lift-shadow)]' : '',
+          'rounded-t-ui rounded-b-hair border border-line text-on-art',
+          'transition-transform duration-150 ease-out will-change-transform',
+          'group-hover:-translate-y-2.5',
+          isEditing ? '-translate-y-2.5' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -58,7 +58,7 @@ export function BookSpine({ item, isEditing, onClick }: BookSpineProps) {
           {spineTitle}
           {spineAuthor && <span className="font-normal opacity-70">{spineAuthor}</span>}
         </span>
-        <span className="mt-2 shrink-0 whitespace-nowrap text-[10px] font-extrabold">
+        <span className="mt-2 shrink-0 whitespace-nowrap text-[10px] font-bold">
           {item.review ? `★${formatRating(item.review.rating)}` : '—'}
         </span>
       </span>

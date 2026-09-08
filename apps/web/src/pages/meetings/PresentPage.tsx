@@ -133,12 +133,12 @@ export default function PresentPage() {
   return (
     <div className="fixed inset-0 flex flex-col bg-paper">
       {/* 상단 바 — 작품명 · 진행도 · 닫기 */}
-      <header className="flex items-center justify-between gap-4 border-b-2 border-ink px-6 py-3">
+      <header className="flex items-center justify-between gap-4 border-b border-line px-6 py-3">
         <p className="min-w-0 truncate text-sm font-bold tracking-tight">
           {slide.workLabel}
         </p>
         <div className="flex items-center gap-4">
-          <span className="text-md font-extrabold tabular-nums">
+          <span className="text-md font-bold tabular-nums">
             {String(index + 1).padStart(2, "0")}
             <span className="text-muted">
               {" "}
@@ -176,7 +176,7 @@ export default function PresentPage() {
         <div className="m-auto w-full max-w-300 px-8 py-10 sm:px-14">
           {slide.authorNickname && (
             <p className="mb-6 flex items-center gap-2">
-              <span className="border-2 border-ink bg-point px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-on-accent">
+              <span className="border border-point rounded-hair bg-point px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-on-accent">
                 자체 발제문
               </span>
               <span className="text-xs font-semibold text-muted">
@@ -193,7 +193,7 @@ export default function PresentPage() {
       </div>
 
       {/* 하단 — 진행 바 + 이동 버튼 */}
-      <footer className="border-t-2 border-ink pb-safe">
+      <footer className="border-t border-line pb-safe">
         <div
           className="h-1.5 bg-point transition-[width] duration-300"
           style={{ width: `${((index + 1) / total) * 100}%` }}
@@ -203,7 +203,7 @@ export default function PresentPage() {
             type="button"
             onClick={() => go(-1)}
             disabled={index === 0}
-            className="flex min-h-10 items-center border-2 border-ink px-4 text-sm font-bold hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex min-h-10 items-center border border-line rounded-ui px-4 text-sm font-semibold hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
           >
             ← 이전
           </button>
@@ -214,7 +214,7 @@ export default function PresentPage() {
             type="button"
             onClick={() => go(1)}
             disabled={index === total - 1}
-            className="flex min-h-10 items-center border-2 border-ink bg-point px-4 text-sm font-bold text-on-accent hover:bg-point-hover disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex min-h-10 items-center border border-point rounded-ui bg-point px-4 text-sm font-semibold text-on-accent hover:bg-point-hover disabled:opacity-30 disabled:cursor-not-allowed"
           >
             다음 →
           </button>

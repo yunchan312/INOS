@@ -1,52 +1,68 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* ─── 2안 "모던 미니멀 · 흑백" ──────────────────────────────────────
+   · UI는 무채색 100%. 색은 작품(표지·포스터)과 마스코트에만.
+   · 경계는 1px 헤어라인. 그림자 없음.
+   · 위계는 크기와 굵기로만 — 본문을 300까지 내려 제목과 벌린다.
+   · 랜딩까지 같은 팔레트를 쓴다 — 예외 스코프 없음.
+   ───────────────────────────────────────────────────────────────── */
+
 @theme {
-  --color-point: #ffdf05;
-  --color-point-hover: #f0d000;
-  --color-ink: #201e1d;
-  --color-paper: #f3f2f2;
+  /* point = "가장 강한 채움". 흑백에서는 색이 아니라 검정이 강조다. */
+  --color-point: #0a0a0a;
+  --color-point-hover: #232323;
+  --color-ink: #141414;
+  --color-paper: #fafafa;
   --color-surface: #ffffff;
-  --color-surface-2: #f3f2f2;
-  --color-muted: #6b6963;
-  --color-muted-2: #45433f;
-  --color-line: #b5b3ae;
-  --color-danger: #a3271b;
-  --color-danger-2: #7c1d13;
-  /* 색칠된 면(노랑 버튼·책등·포스터) 위 글자 — 라이트/다크 공통 고정 앵커 */
-  --color-on-accent: #201e1d;
-  /* 라이브러리 책꽂이 나무 선반 */
-  --color-shelf: #8a7a5f;
-  --color-shelf-shadow: #201e1d;
+  --color-surface-2: #f2f2f2;
+  --color-muted: #6e6e6e;
+  --color-muted-2: #4a4a4a;
+  --color-line: #e4e4e4;
+  /* 흑백에는 경고색이 없다. 파괴적 액션은 문장과 확인 단계로 알린다. */
+  --color-danger: #141414;
+  --color-danger-2: #0a0a0a;
+  /* 검정 면 위 글자 — 라이트/다크 공통으로 point의 반대편 */
+  --color-on-accent: #ffffff;
+  /* 색칠된 면(책등·포스터) 위 글자 — 테마와 무관하게 항상 어둡게 고정 */
+  --color-on-art: #141414;
+  /* 라이브러리 책꽂이 선반 */
+  --color-shelf: #141414;
+  --color-shelf-shadow: #e4e4e4;
+
   --font-sans: "Archivo", "Pretendard Variable", Pretendard, sans-serif;
+
+  /* 라운드 — 6 / 10 / 14. pill은 아바타·토글에만 (rounded-full) */
+  --radius-hair: 6px;
+  --radius-ui: 10px;
+  --radius-card: 14px;
 }
 
-/* ─── Theme: solid-offset 리프트 그림자 (책등·포스터 hover) ─────────── */
 :root {
   color-scheme: light;
-  --lift-shadow: 0 6px 0 rgba(32, 30, 29, 0.18);
-  --lift-shadow-lg: 0 8px 0 rgba(32, 30, 29, 0.18);
+  --skeleton-a: #f2f2f2;
+  --skeleton-b: #fafafa;
 }
 
-/* ─── Dark theme (클로드 디자인 "따뜻한 먹빛 위의 노랑" 팔레트) ─────── */
+/* ─── Dark ───────────────────────────────────────────────────────── */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-paper: #171514;
-  --color-surface: #201e1d;
-  --color-surface-2: #2a2725;
-  --color-ink: #f0ede8;
-  --color-muted: #a39e96;
-  --color-muted-2: #c7c2ba;
-  --color-line: #4a4642;
-  --color-point: #f0d000;
-  --color-point-hover: #ffdf05;
-  --color-danger: #d9604f;
-  --color-danger-2: #e87f70;
-  --color-shelf: #6f6250;
-  --color-shelf-shadow: #0d0c0b;
-  --lift-shadow: 0 6px 0 rgba(0, 0, 0, 0.45);
-  --lift-shadow-lg: 0 8px 0 rgba(0, 0, 0, 0.45);
-  /* --color-on-accent 은 덮지 않음 → 다크에서도 #201e1d 유지 */
+  --color-point: #fafafa;
+  --color-point-hover: #e4e4e4;
+  --color-ink: #f2f2f2;
+  --color-paper: #0f0f0f;
+  --color-surface: #171717;
+  --color-surface-2: #1f1f1f;
+  --color-muted: #8f8f8f;
+  --color-muted-2: #b5b5b5;
+  --color-line: #2e2e2e;
+  --color-danger: #f2f2f2;
+  --color-danger-2: #ffffff;
+  --color-on-accent: #0a0a0a;
+  --color-shelf: #f2f2f2;
+  --color-shelf-shadow: #2e2e2e;
+  --skeleton-a: #1f1f1f;
+  --skeleton-b: #2a2a2a;
 }
 
 /* ─── Base ──────────────────────────────────────────────────────── */
@@ -63,6 +79,9 @@
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    /* 흑백에서는 굵기가 위계를 전담한다. 본문 기본을 한 단계 내린다. */
+    font-weight: 400;
+    letter-spacing: -0.005em;
   }
 
   * {
@@ -77,13 +96,13 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-point);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
 
   ::selection {
-    background: var(--color-point);
-    color: var(--color-ink);
+    background: var(--color-ink);
+    color: var(--color-surface);
   }
 }
 
@@ -121,7 +140,8 @@
     cursor: pointer;
     transition:
       transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
-      background-color 150ms ease;
+      background-color 150ms ease,
+      border-color 150ms ease;
   }
   .card-hover:active {
     transform: scale(0.985);
@@ -134,31 +154,37 @@
 
   /* Skeleton loading shimmer */
   .skeleton-shimmer {
+    border-radius: var(--radius-hair);
     background: linear-gradient(
       90deg,
-      oklch(93% 0.003 80) 25%,
-      oklch(96% 0.002 80) 50%,
-      oklch(93% 0.003 80) 75%
+      var(--skeleton-a) 25%,
+      var(--skeleton-b) 50%,
+      var(--skeleton-a) 75%
     );
     background-size: 200% 100%;
     animation: shimmer 1.6s ease infinite;
   }
 
-  /* Underline-style input */
+  /* 입력 — 흑백에서는 밑줄 대신 헤어라인 상자. 포커스는 테두리만 잉크로. */
   .input-underline {
-    border: none;
-    border-bottom: 2px solid var(--color-ink);
-    border-radius: 0;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-ui);
     outline: none;
-    background: transparent;
+    background: var(--color-surface);
     color: var(--color-ink);
-    padding-block: 8px;
+    padding: 10px 12px;
     width: 100%;
-    transition: border-color 200ms ease;
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease;
     appearance: none;
   }
   .input-underline:focus {
-    border-bottom-color: var(--color-point);
+    border-color: var(--color-ink);
+  }
+  .input-underline:disabled {
+    background: var(--color-surface-2);
+    color: var(--color-muted);
   }
   .input-underline::placeholder {
     color: var(--color-muted);
@@ -175,7 +201,7 @@
     top: 0;
     bottom: 0;
     width: 1px;
-    background-color: oklch(90% 0.004 80);
+    background-color: var(--color-line);
   }
 }
 

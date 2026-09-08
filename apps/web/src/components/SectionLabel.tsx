@@ -6,12 +6,14 @@ interface SectionLabelProps {
 
 export function SectionLabel({ num, children, hint }: SectionLabelProps) {
   return (
-    <div className="flex items-baseline gap-3 mb-4">
-      <span className="text-xs font-bold uppercase tracking-[0.16em]">{num}</span>
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted whitespace-nowrap">
+    <div className="mb-4 flex items-baseline gap-2.5">
+      <span className="text-[10px] font-semibold tabular-nums tracking-[0.16em] text-muted">
+        {num}
+      </span>
+      <h2 className="text-xs font-semibold tracking-[0.06em] text-muted whitespace-nowrap">
         {children}
       </h2>
-      {hint && <span className="text-xs text-muted">{hint}</span>}
+      {hint && <span className="text-[11px] text-muted">{hint}</span>}
     </div>
   );
 }

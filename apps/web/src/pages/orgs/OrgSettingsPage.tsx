@@ -55,7 +55,7 @@ function InviteLinkBlock({ orgId }: { orgId: string }) {
       <InputLabel>초대 링크 — 카톡·문자로 직접 공유</InputLabel>
 
       {link ? (
-        <div className="border-2 border-ink bg-surface p-4">
+        <div className="border border-line rounded-card bg-surface p-4">
           <div className="flex flex-wrap items-center gap-2">
             <input
               readOnly
@@ -174,7 +174,7 @@ export default function OrgSettingsPage() {
         <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
           설정
         </p>
-        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold tracking-tight">
+        <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-bold tracking-tight">
           {orgQuery.data?.name ?? '오가니제이션 설정'}
         </h1>
 
@@ -186,7 +186,7 @@ export default function OrgSettingsPage() {
         )}
 
         {orgQuery.data && (
-          <div className="mt-8 border-t-2 border-ink">
+          <div className="mt-8 border-t border-line">
             <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
               <FieldLabel>기본 정보</FieldLabel>
               <div className="flex flex-col gap-5">
@@ -265,7 +265,7 @@ export default function OrgSettingsPage() {
                       key={inv.id}
                       className="py-3 border-b border-line flex items-center gap-3.5 last:border-b-0"
                     >
-                      <span className="w-[34px] h-[34px] border-2 border-dashed border-line text-muted flex items-center justify-center text-[13px] font-bold shrink-0">
+                      <span className="w-[34px] h-[34px] border border-dashed border-line text-muted flex items-center justify-center text-[13px] font-bold shrink-0">
                         {inv.email[0]?.toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -292,7 +292,7 @@ export default function OrgSettingsPage() {
               </section>
             )}
 
-            <section className="py-7 border-b-2 border-ink grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
+            <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
               <div>
                 <FieldLabel>현재 멤버</FieldLabel>
                 <p className="mt-1 text-sm text-muted">
@@ -309,10 +309,10 @@ export default function OrgSettingsPage() {
                       <img
                         src={m.profileImageUrl}
                         alt={m.nickname}
-                        className="w-[34px] h-[34px] object-cover border-2 border-ink shrink-0"
+                        className="w-[34px] h-[34px] object-cover border border-line rounded-full shrink-0"
                       />
                     ) : (
-                      <div className="w-[34px] h-[34px] bg-ink text-point flex items-center justify-center text-[13px] font-bold shrink-0">
+                      <div className="w-[34px] h-[34px] rounded-full bg-ink text-paper flex items-center justify-center text-[13px] font-bold shrink-0">
                         {m.nickname[0]}
                       </div>
                     )}

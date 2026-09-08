@@ -79,9 +79,9 @@ export function MarkdownEditor({
   };
 
   return (
-    <div className="border-2 border-ink">
+    <div className="border border-line rounded-card">
       {/* 탭 + 툴바 */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-ink bg-surface px-2 py-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-surface px-2 py-1.5">
         <div className="flex items-center gap-1">
           {ACTIONS.map((a) => (
             <button
@@ -91,7 +91,7 @@ export function MarkdownEditor({
               aria-label={a.title}
               onClick={() => applyAction(a)}
               disabled={tab === 'preview'}
-              className="flex h-7 min-w-7 items-center justify-center px-1.5 text-xs font-bold text-ink hover:bg-point/40 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex h-7 min-w-7 items-center justify-center px-1.5 text-xs font-bold text-ink hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               {a.label}
             </button>

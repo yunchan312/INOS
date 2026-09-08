@@ -125,7 +125,7 @@ export function Calendar({
             )
           }
           disabled={!canGoPrev}
-          className="w-10 h-10 border-2 border-ink text-ink font-bold hover:bg-ink/[0.06] disabled:opacity-30 disabled:cursor-not-allowed"
+          className="w-10 h-10 border border-line rounded-ui text-ink font-semibold hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ‹
         </button>
@@ -141,17 +141,17 @@ export function Calendar({
             )
           }
           disabled={!canGoNext}
-          className="w-10 h-10 border-2 border-ink text-ink font-bold hover:bg-ink/[0.06] disabled:opacity-30 disabled:cursor-not-allowed"
+          className="w-10 h-10 border border-line rounded-ui text-ink font-semibold hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ›
         </button>
       </div>
 
-      <div className="grid grid-cols-7 border-t-2 border-l-2 border-ink">
+      <div className="grid grid-cols-7 overflow-hidden rounded-ui border-t border-l border-line">
         {WEEKDAYS.map((w) => (
           <div
             key={w}
-            className="py-2 text-center text-[11px] font-bold tracking-[0.1em] border-r-2 border-b-2 border-ink bg-ink text-paper"
+            className="py-2 text-center text-[11px] font-bold tracking-[0.1em] border-r-2 border-b border-line bg-ink text-paper"
           >
             {w}
           </div>
@@ -161,10 +161,10 @@ export function Calendar({
             return (
               <div
                 key={idx}
-                className="h-[52px] border-r-2 border-b-2 border-ink"
+                className="h-[52px] border-r-2 border-b border-line"
                 style={{
                   background:
-                    'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(32,30,29,0.08) 5px, rgba(32,30,29,0.08) 6px)',
+                    'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(20,20,20,0.055) 5px, rgba(20,20,20,0.055) 6px)',
                 }}
               />
             );
@@ -180,13 +180,13 @@ export function Calendar({
           const badge = !disabled ? (badges?.[cell.iso] ?? 0) : 0;
 
           const classes = [
-            'relative h-[52px] border-r-2 border-b-2 border-ink text-sm flex items-center justify-center transition-colors',
+            'relative h-[52px] border-r-2 border-b border-line text-sm flex items-center justify-center transition-colors',
             disabled
               ? 'text-line cursor-not-allowed'
               : mode === 'multi-select'
                 ? 'cursor-pointer hover:bg-ink/[0.06]'
                 : 'text-ink',
-            isSelected ? 'bg-point text-ink font-bold' : 'bg-paper',
+            isSelected ? 'bg-point text-on-accent font-semibold' : 'bg-paper',
             !isSelected && (isHighlighted || isSingle)
               ? 'ring-2 ring-inset ring-point font-bold text-ink'
               : '',

@@ -82,11 +82,11 @@ export default function OrgPostDetailPage() {
 
         {post && (
           <article className="pb-12">
-            <div className="mt-6 border-b-2 border-ink pb-6">
+            <div className="mt-6 border-b border-line pb-6">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
                 하고싶은 말
               </p>
-              <h1 className="mt-3 text-[clamp(26px,4.5vw,40px)] font-extrabold leading-[1.2] tracking-tight break-keep">
+              <h1 className="mt-3 text-[clamp(26px,4.5vw,40px)] font-bold leading-[1.2] tracking-tight break-keep">
                 {post.title}
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
@@ -148,7 +148,7 @@ export default function OrgPostDetailPage() {
                 disabled={toggleLike.isPending}
                 aria-pressed={post.likedByMe}
                 className={[
-                  'flex items-center gap-2.5 border-2 border-ink px-5 py-2.5 text-sm font-bold transition-colors',
+                  'flex items-center gap-2.5 border border-line rounded-ui px-5 py-2.5 text-sm font-semibold transition-colors',
                   post.likedByMe
                     ? 'bg-point text-on-accent hover:bg-point-hover'
                     : 'bg-paper text-ink hover:bg-surface',

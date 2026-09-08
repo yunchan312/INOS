@@ -21,10 +21,10 @@ export default function SharedLibraryPage() {
 
   return (
     <div className="min-h-dvh bg-paper flex flex-col">
-      <header className="sticky top-0 z-40 bg-paper border-b-2 border-ink pt-safe">
+      <header className="sticky top-0 z-40 bg-paper border-b border-line pt-safe">
         <div className="mx-auto max-w-3xl px-4 h-[60px] flex items-center justify-between">
           <Link to="/" className="flex items-baseline gap-2.5">
-            <span className="text-xl font-extrabold tracking-tight">INOS</span>
+            <span className="text-xl font-bold tracking-tight">INOS</span>
             <span className="hidden sm:inline text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
               인문학의 OS
             </span>

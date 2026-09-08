@@ -3,8 +3,8 @@ import { create } from 'zustand';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 const STORAGE_KEY = 'inos.theme';
-const META_LIGHT = '#ffdf05';
-const META_DARK = '#171514';
+const META_LIGHT = '#ffffff';
+const META_DARK = '#0f0f0f';
 
 function systemPrefersDark(): boolean {
   return (

@@ -71,7 +71,7 @@ export default function InviteLinkPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
                 {preview.data.inviterName}님이 초대했어요
               </p>
-              <h1 className="mt-3 text-2xl font-extrabold tracking-tight">
+              <h1 className="mt-3 text-2xl font-bold tracking-tight">
                 「{preview.data.groupName}」
               </h1>
               <p className="mt-3 text-sm text-muted">

@@ -72,12 +72,12 @@ export default function NotificationsPage() {
     <div className="min-h-dvh bg-paper flex flex-col">
       <Header />
       <main className="mx-auto max-w-3xl w-full flex-1 px-6 pt-10 page-enter">
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-6">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
               알림함
             </p>
-            <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-extrabold tracking-tight">
+            <h1 className="mt-2.5 text-[clamp(28px,5vw,44px)] font-bold tracking-tight">
               받은 알림
             </h1>
             {!!data && (
@@ -124,7 +124,7 @@ export default function NotificationsPage() {
                       onClick={() => handleOpen(n)}
                       className={[
                         'flex w-full items-start gap-3 border-b border-line px-1 py-4 text-left transition-colors hover:bg-surface',
-                        n.readAt ? '' : 'bg-point/10',
+                        n.readAt ? '' : 'bg-surface-2',
                       ].join(' ')}
                     >
                       {/* 안 읽음 표시 */}
@@ -137,7 +137,7 @@ export default function NotificationsPage() {
                       />
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2">
-                          <span className="border-2 border-ink px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]">
+                          <span className="border border-line rounded-hair px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]">
                             {label.badge}
                           </span>
                           <span className="text-[15px] font-bold break-keep">
@@ -166,7 +166,7 @@ export default function NotificationsPage() {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                   aria-label="이전 페이지"
-                  className="border-2 border-ink px-2 py-0.5 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="border border-line rounded-hair px-2 py-0.5 hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   ←
                 </button>
@@ -178,7 +178,7 @@ export default function NotificationsPage() {
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                   aria-label="다음 페이지"
-                  className="border-2 border-ink px-2 py-0.5 hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="border border-line rounded-hair px-2 py-0.5 hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   →
                 </button>

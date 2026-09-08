@@ -58,7 +58,7 @@ export default function PrivacyPage() {
         <p>
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="font-semibold text-ink border-b border-ink hover:text-muted-2 hover:border-muted-2"
+            className="font-semibold text-ink border-b border-line hover:text-muted-2 hover:border-muted-2"
           >
             {CONTACT_EMAIL}
           </a>

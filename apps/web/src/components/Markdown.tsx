@@ -82,14 +82,14 @@ export function Markdown({ content }: { content: string }) {
       i++;
     } else if (line.startsWith('## ')) {
       blocks.push(
-        <h2 key={key} className="mt-5 text-xl font-extrabold tracking-tight break-keep">
+        <h2 key={key} className="mt-5 text-xl font-bold tracking-tight break-keep">
           {renderInline(line.slice(3), `h2-${key}`)}
         </h2>,
       );
       i++;
     } else if (line.startsWith('# ')) {
       blocks.push(
-        <h1 key={key} className="mt-5 text-2xl font-extrabold tracking-tight break-keep">
+        <h1 key={key} className="mt-5 text-2xl font-bold tracking-tight break-keep">
           {renderInline(line.slice(2), `h1-${key}`)}
         </h1>,
       );
@@ -119,7 +119,7 @@ export function Markdown({ content }: { content: string }) {
       blocks.push(
         <div
           key={key}
-          className="border-2 border-ink bg-surface px-4 py-3 text-sm leading-relaxed"
+          className="border border-line rounded-ui bg-surface px-4 py-3 text-sm leading-relaxed"
         >
           {rows.map((row, j) => (
             <p key={j} className={j > 0 ? 'mt-1.5' : ''}>

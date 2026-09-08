@@ -35,8 +35,23 @@ import { Button } from '@/components/Button';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { PromptCard } from '@/components/PromptCard';
+import { MoviePoster } from '@/components/MoviePoster';
+import {
+  MovieSearchInput,
+  movieSelectionFromMeeting,
+  toMoviePayload,
+  type MovieSelection,
+} from '@/components/MovieSearchInput';
 import { discussionApi } from '@/api/endpoints/discussion';
 import { useQueryClient } from '@tanstack/react-query';
+
+/** 141 → "2시간 21분" */
+function formatRuntime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}분`;
+  return m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+}
 
 interface Prompts {
   book: string[];
@@ -72,8 +87,8 @@ function CustomPromptForm({
   };
 
   return (
-    <section className="mt-10 border-2 border-ink bg-surface p-5">
-      <p className="text-sm font-extrabold">자체 발제하기</p>
+    <section className="mt-10 border border-line rounded-card bg-surface p-5">
+      <p className="text-sm font-bold">자체 발제하기</p>
       <p className="mt-1 text-xs text-muted">
         나누고 싶은 질문을 직접 추가해보세요. 작품 아래에 내 이름과 함께 실려요.
       </p>
@@ -106,7 +121,7 @@ function CustomPromptForm({
           maxLength={500}
           rows={3}
           placeholder="나누고 싶은 발제 질문을 적어보세요"
-          className="w-full box-border resize-y border-2 border-ink bg-surface-2 px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
+          className="w-full box-border resize-y border border-line rounded-ui bg-surface-2 px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-ink"
         />
         <p className="mt-1 text-right text-[11px] text-muted">{content.length}/500</p>
       </div>
@@ -168,10 +183,10 @@ function ImpressionSection({
   const rowClass =
     'py-9 border-b border-line grid grid-cols-[72px_minmax(0,1fr)] sm:grid-cols-[104px_minmax(0,1fr)] gap-4';
   const nameClass =
-    'text-base sm:text-xl font-extrabold leading-snug tracking-tight break-keep pt-0.5';
+    'text-base sm:text-xl font-bold leading-snug tracking-tight break-keep pt-0.5';
 
   return (
-    <section className="mt-12 border-t-2 border-ink pt-8 pb-10">
+    <section className="mt-12 border-t border-line pt-8 pb-10">
       <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-muted">
         작품 감상 <span className="normal-case tracking-normal">· 선택</span>
       </h2>
@@ -223,7 +238,7 @@ function ImpressionSection({
                 onChange={(e) => setContent(e.target.value.slice(0, 2000))}
                 placeholder="모임을 마친 소감이나 작품에 대한 감상을 자유롭게 남겨보세요."
                 rows={3}
-                className="w-full box-border resize-y border-2 border-ink bg-surface px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
+                className="w-full box-border resize-y border border-line rounded-ui bg-surface px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-ink"
               />
               <div className="mt-2 flex items-center gap-3">
                 <Button
@@ -273,21 +288,23 @@ function DiscussionRetryPanel({
 }) {
   const [bookTitle, setBookTitle] = useState(meeting.bookTitle ?? '');
   const [bookAuthor, setBookAuthor] = useState(meeting.bookAuthor ?? '');
-  const [movieTitle, setMovieTitle] = useState(meeting.movieTitle ?? '');
-  const [movieDirector, setMovieDirector] = useState(meeting.movieDirector ?? '');
+  const [movie, setMovie] = useState<MovieSelection | null>(() =>
+    movieSelectionFromMeeting(meeting),
+  );
   const retry = useRetryDiscussion(orgId, meetingId);
 
+  const moviePayload = toMoviePayload(movie);
   const hasBook = !!bookTitle.trim() && !!bookAuthor.trim();
-  const hasMovie = !!movieTitle.trim() && !!movieDirector.trim();
+  const hasMovie = !!moviePayload.movieTmdbId || !!moviePayload.movieTitle;
   const inputClass =
-    'w-full box-border border-2 border-ink bg-paper px-3 py-2 text-sm outline-none focus:border-point-hover';
+    'w-full box-border border border-line rounded-ui bg-surface px-3 py-2 text-sm outline-none focus:border-ink';
 
   return (
-    <section className="mt-6 border-2 border-ink bg-surface p-5">
+    <section className="mt-6 border border-line rounded-card bg-surface p-5">
       <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
         발제문 생성 실패
       </p>
-      <h2 className="mt-2 text-xl font-extrabold tracking-tight break-keep">
+      <h2 className="mt-2 text-xl font-bold tracking-tight break-keep">
         작품 정보를 다시 확인해주세요
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-muted break-keep">
@@ -322,34 +339,20 @@ function DiscussionRetryPanel({
                 className={inputClass}
               />
             </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
-                🎬 영화 제목
-              </label>
-              <input
-                type="text"
-                value={movieTitle}
-                onChange={(e) => setMovieTitle(e.target.value)}
+            <div className="sm:col-span-2">
+              <MovieSearchInput
+                value={movie}
+                onChange={setMovie}
+                variant="boxed"
+                label="🎬 영화"
                 placeholder="예: 화양연화"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
-                감독
-              </label>
-              <input
-                type="text"
-                value={movieDirector}
-                onChange={(e) => setMovieDirector(e.target.value)}
-                placeholder="예: 왕가위"
-                className={inputClass}
               />
             </div>
           </div>
 
           <p className="mt-2 text-xs text-muted">
-            책은 제목과 저자, 영화는 제목과 감독이 짝을 이뤄야 생성할 수 있어요.
+            영화는 검색해서 고르면 AI가 작품을 정확히 특정할 수 있어요. 책은
+            제목과 저자가 짝을 이뤄야 생성할 수 있어요.
           </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -362,8 +365,7 @@ function DiscussionRetryPanel({
                 retry.mutate({
                   bookTitle: bookTitle.trim(),
                   bookAuthor: bookAuthor.trim(),
-                  movieTitle: movieTitle.trim(),
-                  movieDirector: movieDirector.trim(),
+                  ...moviePayload,
                 })
               }
             >
@@ -569,7 +571,7 @@ export default function MeetingPage() {
     const canManage = !readOnly && (user?.id === cp.authorId || isOwner);
     return (
       <span className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="border-2 border-ink bg-point px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-on-accent">
+        <span className="border border-point rounded-hair bg-point px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-on-accent">
           자체 발제문
         </span>
         <span className="text-xs font-semibold text-muted">{cp.authorNickname}</span>
@@ -610,7 +612,7 @@ export default function MeetingPage() {
           key={cp.id}
           className="py-9 border-b border-line grid grid-cols-[28px_minmax(0,1fr)] sm:grid-cols-[36px_minmax(0,1fr)] gap-3 sm:gap-4"
         >
-          <span className="pt-0.5 text-sm sm:text-base font-extrabold leading-relaxed text-muted tabular-nums">
+          <span className="pt-0.5 text-sm sm:text-base font-bold leading-relaxed text-muted tabular-nums">
             {String(displayNumber).padStart(2, '0')}
           </span>
           <div className="min-w-0">
@@ -619,7 +621,7 @@ export default function MeetingPage() {
               onChange={(e) => setEditPromptContent(e.target.value.slice(0, 500))}
               maxLength={500}
               rows={3}
-              className="w-full box-border resize-y border-2 border-ink bg-surface-2 px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-point-hover"
+              className="w-full box-border resize-y border border-line rounded-ui bg-surface-2 px-3.5 py-3 text-sm leading-relaxed outline-none focus:border-ink"
             />
             <div className="mt-2 flex items-center gap-3">
               <Button
@@ -680,13 +682,13 @@ export default function MeetingPage() {
           ← 오가니제이션으로
         </Link>
 
-        <div className="mt-6 pb-7 border-b-2 border-ink">
+        <div className="mt-6 pb-7 border-b border-line">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
             {readOnly ? '종료된 모임' : '모임'}
             {meeting.location && ` · ${meeting.location}`}
           </p>
           <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-            <h1 className="text-[clamp(30px,5vw,52px)] font-extrabold leading-[1.1] tracking-tight">
+            <h1 className="text-[clamp(30px,5vw,52px)] font-bold leading-[1.1] tracking-tight">
               {label}
             </h1>
             {(prompts.book.length > 0 || prompts.movie.length > 0) && (
@@ -701,7 +703,7 @@ export default function MeetingPage() {
         </div>
 
         {(isStreaming || (!hasStoredPrompts && !streamDone && discussionQuery.isLoading)) && (
-          <div className="mt-6 border-2 border-ink bg-surface px-4">
+          <div className="mt-6 border border-line rounded-card bg-surface px-4">
             <div className="flex items-center gap-3 py-4">
               <div className="w-5 h-5 rounded-full border-2 border-line border-t-ink animate-spin shrink-0" />
               <p className="text-sm font-medium">AI가 발제 질문을 생성하고 있어요…</p>
@@ -736,7 +738,7 @@ export default function MeetingPage() {
         )}
 
         {notesLocked && (prompts.book.length > 0 || prompts.movie.length > 0) && (
-          <div className="mt-6 border-2 border-ink bg-surface px-4 py-3">
+          <div className="mt-6 border border-line rounded-card bg-surface px-4 py-3">
             <p className="text-sm">
               발제 질문을 미리 읽어보세요. 노트 작성은{' '}
               <span className="font-bold">모임 당일에만</span> 가능해요.
@@ -746,7 +748,7 @@ export default function MeetingPage() {
 
         {(prompts.book.length > 0 || customBook.length > 0) && (
           <section className="mt-8">
-            <h2 className="mb-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[clamp(20px,3.2vw,28px)] font-extrabold tracking-tight break-keep">
+            <h2 className="mb-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[clamp(20px,3.2vw,28px)] font-bold tracking-tight break-keep">
               <span aria-hidden="true">📖</span>
               {meeting.bookTitle}
               {meeting.bookAuthor && (
@@ -780,15 +782,48 @@ export default function MeetingPage() {
 
         {(prompts.movie.length > 0 || customMovie.length > 0) && (
           <section className="mt-8">
-            <h2 className="mb-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[clamp(20px,3.2vw,28px)] font-extrabold tracking-tight break-keep">
-              <span aria-hidden="true">🎬</span>
-              {meeting.movieTitle}
-              {meeting.movieDirector && (
-                <span className="text-sm font-medium text-muted">
-                  {meeting.movieDirector} 감독
-                </span>
+            <div className="mb-2 flex items-start gap-4">
+              {meeting.movieWork && (
+                <MoviePoster
+                  path={meeting.movieWork.posterPath}
+                  alt={`${meeting.movieWork.title} 포스터`}
+                  size="w185"
+                  className="w-20 shrink-0 sm:w-24"
+                />
               )}
-            </h2>
+              <div className="min-w-0 flex-1">
+                <h2 className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[clamp(20px,3.2vw,28px)] font-bold tracking-tight break-keep">
+                  <span aria-hidden="true">🎬</span>
+                  {meeting.movieTitle}
+                  {meeting.movieDirector && (
+                    <span className="text-sm font-medium text-muted">
+                      {meeting.movieDirector} 감독
+                    </span>
+                  )}
+                </h2>
+                {meeting.movieWork && (
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                    {meeting.movieWork.originalTitle && (
+                      <span>{meeting.movieWork.originalTitle}</span>
+                    )}
+                    {meeting.movieWork.releaseDate && (
+                      <span>{meeting.movieWork.releaseDate.slice(0, 4)}</span>
+                    )}
+                    {meeting.movieWork.runtime && (
+                      <span>{formatRuntime(meeting.movieWork.runtime)}</span>
+                    )}
+                    {meeting.movieWork.certification && (
+                      <span className="border border-line px-1.5 py-0.5 text-[10px] font-semibold">
+                        {meeting.movieWork.certification}
+                      </span>
+                    )}
+                    {meeting.movieWork.genres.length > 0 && (
+                      <span>{meeting.movieWork.genres.join(' · ')}</span>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
             <div>
               {prompts.movie.map((q, i) => {
                 const { myNote, publicNotes } = notesByKey('MOVIE', i);

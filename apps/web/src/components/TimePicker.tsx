@@ -9,7 +9,7 @@ interface TimePickerProps {
 }
 
 const selectClass =
-  'appearance-none bg-transparent pl-2.5 pr-6 py-1.5 text-sm font-semibold text-ink cursor-pointer outline-none focus-visible:bg-point/20 disabled:cursor-not-allowed disabled:text-muted';
+  'appearance-none bg-transparent pl-2.5 pr-6 py-1.5 text-sm font-semibold text-ink cursor-pointer outline-none focus-visible:bg-surface-2 disabled:cursor-not-allowed disabled:text-muted';
 
 const chevron = (
   <span
@@ -35,7 +35,7 @@ export function TimePicker({ value, onChange, disabled = false }: TimePickerProp
 
   return (
     <div
-      className={`inline-flex items-stretch border-2 border-ink bg-surface ${
+      className={`inline-flex items-stretch overflow-hidden border border-line rounded-ui bg-surface ${
         disabled ? 'opacity-50' : ''
       }`}
       role="group"
@@ -58,7 +58,7 @@ export function TimePicker({ value, onChange, disabled = false }: TimePickerProp
         </select>
         {chevron}
       </span>
-      <span aria-hidden="true" className="border-l-2 border-ink" />
+      <span aria-hidden="true" className="border-l border-line" />
       <span className="relative flex items-center">
         <select
           value={value ? minute : '00'}
