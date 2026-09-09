@@ -92,10 +92,10 @@ function ShowcasePoster({ movie }: { movie: ShowcaseMovieDto }) {
 
 /**
  * 랜딩 한가운데의 서가 미리보기.
- * 목록은 인기 도서 10 · 인기 영화 5를 서버에서 받아오고, 실패하면 큐레이션 폴백이 선다.
+ * 책 10권은 큐레이션 목록이 그대로 서고, 영화 5편만 서버에서 받아온다(실패하면 폴백).
  */
 export function ShelfShowcase() {
-  const { data, isBookFallback, isMovieFallback } = useShowcase();
+  const { books, movies, isMovieFallback } = useShowcase();
 
   return (
     <div>
@@ -118,16 +118,14 @@ export function ShelfShowcase() {
             서가 미리보기
           </p>
           <p className="text-[11px] text-muted">
-            {isBookFallback
-              ? '인문학 모임이 자주 고르는 책 10권'
-              : '요즘 가장 많이 읽히는 책 10권'}
+            인문학 모임이 자주 고르는 책 10권
           </p>
         </div>
 
         <div className="-mx-1 mt-7 overflow-x-auto overflow-y-hidden pb-1">
           <div className="min-w-max">
             <div className="flex items-end gap-1.5 px-3">
-              {data.books.map((book) => (
+              {books.map((book) => (
                 <ShowcaseSpine key={book.title} book={book} />
               ))}
             </div>
@@ -155,7 +153,7 @@ export function ShelfShowcase() {
 
         <div className="-mx-1 mt-6 overflow-x-auto pb-1">
           <ul className="flex min-w-max gap-3 px-1">
-            {data.movies.map((movie) => (
+            {movies.map((movie) => (
               <li key={`${movie.tmdbId}-${movie.title}`}>
                 <ShowcasePoster movie={movie} />
               </li>

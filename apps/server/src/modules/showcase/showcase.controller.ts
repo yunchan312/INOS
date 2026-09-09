@@ -11,9 +11,10 @@ export class ShowcaseController {
 
   @Get()
   @ApiOperation({
-    summary: '랜딩용 인기 도서 10 · 인기 영화 5 (공개, 6시간 캐시)',
+    summary: '랜딩용 인기 영화 5편 (공개, 6시간 캐시)',
     description:
-      '외부 API 키가 없거나 조회에 실패하면 해당 목록은 빈 배열로 내려가고 화면이 자체 폴백을 쓴다',
+      'TMDB 키가 없거나 조회에 실패하면 빈 배열로 내려가고 화면이 자체 폴백을 쓴다. ' +
+      '서가의 책은 랭킹 API가 없어 웹의 큐레이션 목록이 채운다',
   })
   get(): Promise<ShowcaseDto> {
     return this.showcaseService.get();

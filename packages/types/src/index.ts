@@ -581,6 +581,7 @@ export interface NotificationListDto {
 // ─── 랜딩 쇼케이스 (공개) ────────────────────────────────────────
 
 /** 랜딩 서가에 꽂히는 인기 도서 한 권 */
+/** 랜딩 서가에 꽂히는 책 한 권 (API가 아니라 웹의 큐레이션 목록이 채운다) */
 export interface ShowcaseBookDto {
   title: string;
   author: string | null;
@@ -598,10 +599,10 @@ export interface ShowcaseMovieDto {
 }
 
 /**
- * 랜딩 페이지용 인기 작품 묶음. 외부 API가 죽어도 랜딩은 떠야 하므로
- * 실패한 쪽은 빈 배열로 내려가고, 화면이 자체 폴백을 채운다.
+ * 랜딩 페이지용 인기 작품 묶음 — 영화만 외부에서 받아온다.
+ * 서가의 책은 랭킹을 주는 무료 API가 없어 웹의 큐레이션 목록을 그대로 쓴다.
+ * TMDB가 죽으면 movies가 빈 배열로 내려가고 화면이 자체 폴백을 채운다.
  */
 export interface ShowcaseDto {
-  books: ShowcaseBookDto[];
   movies: ShowcaseMovieDto[];
 }

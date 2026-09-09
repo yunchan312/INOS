@@ -96,7 +96,7 @@ export class SeojiService {
 
     const items: SeojiBookSearchItemDto[] = [];
     const seen = new Set<string>();
-    for (const doc of docs) {
+    for (const doc of sortByTitleRelevance(docs, query)) {
       // ISBN이 곧 우리 쪽 키다. 없는 행은 확정할 수 없으니 후보에서 뺀다
       const isbn13 = normalizeIsbn(doc.EA_ISBN);
       if (!isbn13 || seen.has(isbn13)) continue;
@@ -104,7 +104,7 @@ export class SeojiService {
       items.push({
         isbn13,
         title: nullify(doc.TITLE) ?? '(제목 없음)',
-        author: nullify(doc.AUTHOR),
+        author: normalizeAuthor(doc.AUTHOR),
         publisher: nullify(doc.PUBLISHER),
         publishYear: parseYear(doc.PUBLISH_PREDATE),
         coverUrl: nullify(doc.TITLE_URL),
@@ -143,7 +143,7 @@ export class SeojiService {
       setIsbn: normalizeIsbn(doc.SET_ISBN),
       title: nullify(doc.TITLE) ?? '(제목 없음)',
       seriesTitle: nullify(doc.SERIES_TITLE),
-      author: nullify(doc.AUTHOR),
+      author: normalizeAuthor(doc.AUTHOR),
       publisher: nullify(doc.PUBLISHER),
       publishDate: parseSeojiDate(doc.PUBLISH_PREDATE),
       page: parsePage(doc.PAGE),
@@ -248,6 +248,62 @@ function toDateOnly(d: Date): string {
 }
 
 /** 빈 문자열로 오는 미입력 값을 null로 통일한다 */
+/**
+ * SEOJI의 AUTHOR는 역할이 잔뜩 붙은 한 덩어리로 온다. 실측된 형태만 해도
+ *   "저자 : 헤르만 헤세;역자 : 이민정;"  "지은이: 헤르만 헤세 ;옮긴이: 김민준"
+ *   "아이작 아시모프 지음 ;이강환 옮김"  "알베르 카뮈 [저] ; 김용훈 [역]"
+ *   "글 김성훈, 그림 최복기, 감수 오창길"  "글/그림: Ryuhei Tamura ;번역: 김수연"
+ *   "Bohra Naono  번역:김명은"           "김정호 지음"
+ * 이걸 그대로 두면 자동완성 한 줄에 번역가·삽화가까지 다 나온다.
+ * 대표 저자 한 명만 남긴다 — 못 알아보는 형태면 원문을 그대로 돌려준다.
+ */
+function normalizeAuthor(raw: string | undefined): string | null {
+  const original = nullify(raw);
+  if (!original) return null;
+
+  let s = original;
+  // 1) 역할이 여러 개면 맨 앞(=대표 저자)만 취한다
+  s = s.split(/[;；]/)[0];
+  s = s.split(/\s+\/\s+/)[0];
+  // 2) 맨 앞 역할 라벨을 먼저 뗀다 ("저자 : ", "글쓴이: ", "글/그림: ")
+  //    부차 역할 절단보다 앞서야 한다 — "글/그림:"의 "그림:"에 잘리면 "글/"만 남는다
+  s = s.replace(/^[^:：]{1,12}[:：]\s*/, '');
+  // 3) 구분자 없이 이어 붙는 다른 역할을 잘라낸다 ("Bohra Naono  번역:김명은")
+  s = s.split(SECONDARY_ROLE_RE)[0];
+  // 4) 콤마로 역할을 나열한 경우 첫 항목만 ("글 김성훈, 그림 최복기")
+  s = s.split(',')[0];
+  // 5) 대괄호 역할과 앞뒤 역할어를 턴다
+  s = s.replace(/\[[^\]]*\]/g, '');
+  s = s.replace(/^(?:글|그림|사진|감수)\s+/, '');
+  s = s.replace(/\s+(?:지음|엮음|옮김|편저|저술|저|글|역)\s*$/, '');
+
+  return s.trim() || original;
+}
+
+/** 앞 사람 이름 뒤에 구분자 없이 붙는 부차 역할 라벨 */
+const SECONDARY_ROLE_RE =
+  /\s*(?:역자|옮긴이|번역|그림|삽화가?|감수|사진|낭독자|공동연구|편집)\s*[:：]/;
+
+/**
+ * SEOJI의 제목 검색은 부분 일치라 "데미안"에 "(알타미라 벽화에서 데미안 허스트까지) 미술법"
+ * 같은 것이 상위로 섞여 온다. 제목이 정확히 같은 것 → 검색어로 시작하는 것 순으로 보여준다 —
+ * 같은 등급 안에서는 SEOJI가 준 순서를 그대로 둔다.
+ */
+function sortByTitleRelevance(docs: SeojiDoc[], query: string): SeojiDoc[] {
+  const q = query.replace(/\s+/g, '').toLowerCase();
+  const rank = (doc: SeojiDoc): number => {
+    const title = (doc.TITLE ?? '').replace(/\s+/g, '').toLowerCase();
+    if (title === q) return 0;
+    if (title.startsWith(q)) return 1;
+    if (title.includes(q)) return 2;
+    return 3;
+  };
+  return docs
+    .map((doc, i) => ({ doc, i, r: rank(doc) }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map((x) => x.doc);
+}
+
 function nullify(value: string | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
