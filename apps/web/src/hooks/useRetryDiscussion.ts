@@ -4,6 +4,8 @@ import { meetingApi } from '@/api/endpoints/meeting';
 interface RetryPayload {
   bookTitle?: string;
   bookAuthor?: string;
+  /** 국중도에서 고른 책 — 주면 제목/저자는 서지정보 값으로 채워진다 */
+  bookIsbn?: string;
   movieTitle?: string;
   movieDirector?: string;
   movieTmdbId?: number;

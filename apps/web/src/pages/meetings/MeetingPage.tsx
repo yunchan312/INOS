@@ -42,6 +42,12 @@ import {
   toMoviePayload,
   type MovieSelection,
 } from '@/components/MovieSearchInput';
+import {
+  BookSearchInput,
+  bookSelectionFromMeeting,
+  toBookPayload,
+  type BookSelection,
+} from '@/components/BookSearchInput';
 import { discussionApi } from '@/api/endpoints/discussion';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -286,18 +292,18 @@ function DiscussionRetryPanel({
   meetingId: string;
   canRetry: boolean;
 }) {
-  const [bookTitle, setBookTitle] = useState(meeting.bookTitle ?? '');
-  const [bookAuthor, setBookAuthor] = useState(meeting.bookAuthor ?? '');
+  const [book, setBook] = useState<BookSelection | null>(() =>
+    bookSelectionFromMeeting(meeting),
+  );
   const [movie, setMovie] = useState<MovieSelection | null>(() =>
     movieSelectionFromMeeting(meeting),
   );
   const retry = useRetryDiscussion(orgId, meetingId);
 
+  const bookPayload = toBookPayload(book);
   const moviePayload = toMoviePayload(movie);
-  const hasBook = !!bookTitle.trim() && !!bookAuthor.trim();
+  const hasBook = !!bookPayload.bookIsbn || !!bookPayload.bookTitle;
   const hasMovie = !!moviePayload.movieTmdbId || !!moviePayload.movieTitle;
-  const inputClass =
-    'w-full box-border border border-line rounded-ui bg-surface px-3 py-2 text-sm outline-none focus:border-ink';
 
   return (
     <section className="mt-6 border border-line rounded-card bg-surface p-5">
@@ -314,45 +320,26 @@ function DiscussionRetryPanel({
 
       {canRetry ? (
         <>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
-                📖 책 제목
-              </label>
-              <input
-                type="text"
-                value={bookTitle}
-                onChange={(e) => setBookTitle(e.target.value)}
-                placeholder="예: 이방인"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
-                저자
-              </label>
-              <input
-                type="text"
-                value={bookAuthor}
-                onChange={(e) => setBookAuthor(e.target.value)}
-                placeholder="예: 알베르 카뮈"
-                className={inputClass}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <MovieSearchInput
-                value={movie}
-                onChange={setMovie}
-                variant="boxed"
-                label="🎬 영화"
-                placeholder="예: 화양연화"
-              />
-            </div>
+          <div className="mt-4 flex flex-col gap-4">
+            <BookSearchInput
+              value={book}
+              onChange={setBook}
+              variant="boxed"
+              label="📖 책"
+              placeholder="예: 이방인"
+            />
+            <MovieSearchInput
+              value={movie}
+              onChange={setMovie}
+              variant="boxed"
+              label="🎬 영화"
+              placeholder="예: 화양연화"
+            />
           </div>
 
           <p className="mt-2 text-xs text-muted">
-            영화는 검색해서 고르면 AI가 작품을 정확히 특정할 수 있어요. 책은
-            제목과 저자가 짝을 이뤄야 생성할 수 있어요.
+            검색해서 고르면 AI가 작품을 정확히 특정할 수 있어요. 직접 입력할
+            때는 제목과 저자·감독이 짝을 이뤄야 생성할 수 있어요.
           </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -363,8 +350,7 @@ function DiscussionRetryPanel({
               disabled={!hasBook && !hasMovie}
               onClick={() =>
                 retry.mutate({
-                  bookTitle: bookTitle.trim(),
-                  bookAuthor: bookAuthor.trim(),
+                  ...bookPayload,
                   ...moviePayload,
                 })
               }

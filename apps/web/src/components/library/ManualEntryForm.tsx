@@ -1,6 +1,23 @@
 import { useState } from 'react';
 import type { CreateManualLibraryEntryDto, PromptKind } from '@inos/types';
 import { Button } from '@/components/Button';
+import { BookSearchInput, type BookSelection } from '@/components/BookSearchInput';
+import { MovieSearchInput, type MovieSelection } from '@/components/MovieSearchInput';
+
+/** 검색해서 고른 작품이든 직접 적은 작품이든, 서가는 제목+지은이만 받는다 */
+function toEntry(
+  kind: PromptKind,
+  book: BookSelection | null,
+  movie: MovieSelection | null,
+): { title: string; creator: string | null } | null {
+  const work = kind === 'BOOK' ? book : movie;
+  if (!work) return null;
+  const title = work.title.trim();
+  if (!title) return null;
+  // 책은 author, 영화는 director — 서가에서는 둘 다 "지은이" 한 칸이다
+  const creator = 'author' in work ? work.author : work.director;
+  return { title, creator: creator?.trim() || null };
+}
 
 interface ManualEntryFormProps {
   onSubmit: (dto: CreateManualLibraryEntryDto) => void;
@@ -16,17 +33,20 @@ export function ManualEntryForm({
   hasError,
 }: ManualEntryFormProps) {
   const [kind, setKind] = useState<PromptKind>('BOOK');
-  const [title, setTitle] = useState('');
-  const [creator, setCreator] = useState('');
+  // 책/영화를 따로 들고 있어서, 탭을 잘못 눌렀다 돌아와도 고른 게 날아가지 않는다
+  const [book, setBook] = useState<BookSelection | null>(null);
+  const [movie, setMovie] = useState<MovieSelection | null>(null);
   const [finishedAt, setFinishedAt] = useState('');
   const [discussionText, setDiscussionText] = useState('');
 
+  const entry = toEntry(kind, book, movie);
+
   const handleSubmit = () => {
-    if (!title.trim()) return;
+    if (!entry) return;
     onSubmit({
       kind,
-      title: title.trim(),
-      creator: creator.trim() || null,
+      title: entry.title,
+      creator: entry.creator,
       finishedAt: finishedAt || null,
       discussionText: discussionText.trim() || null,
     });
@@ -55,31 +75,25 @@ export function ManualEntryForm({
         ))}
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
-            제목 (필수)
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value.slice(0, 200))}
-            className="input-underline mt-1 text-[15px]"
-            placeholder={kind === 'BOOK' ? '예: 데미안' : '예: 기생충'}
+      <div className="mt-4 flex flex-col gap-4">
+        {kind === 'BOOK' ? (
+          <BookSearchInput
+            value={book}
+            onChange={setBook}
+            variant="boxed"
+            label="제목 (필수)"
+            placeholder="예: 데미안"
           />
-        </div>
-        <div>
-          <label className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
-            {kind === 'BOOK' ? '저자' : '감독'}
-          </label>
-          <input
-            type="text"
-            value={creator}
-            onChange={(e) => setCreator(e.target.value.slice(0, 200))}
-            className="input-underline mt-1 text-[15px]"
+        ) : (
+          <MovieSearchInput
+            value={movie}
+            onChange={setMovie}
+            variant="boxed"
+            label="제목 (필수)"
+            placeholder="예: 기생충"
           />
-        </div>
-        <div>
+        )}
+        <div className="sm:max-w-[220px]">
           <label className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
             {kind === 'BOOK' ? '읽은 날' : '본 날'}
           </label>
@@ -114,7 +128,7 @@ export function ManualEntryForm({
           variant="primary"
           size="md"
           loading={isSaving}
-          disabled={!title.trim()}
+          disabled={!entry}
           onClick={handleSubmit}
         >
           서가에 추가

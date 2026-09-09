@@ -12,6 +12,11 @@ import {
   toMoviePayload,
   type MovieSelection,
 } from '@/components/MovieSearchInput';
+import {
+  BookSearchInput,
+  toBookPayload,
+  type BookSelection,
+} from '@/components/BookSearchInput';
 
 function todayIso(): string {
   const d = new Date();
@@ -48,8 +53,7 @@ export default function CreateMeetingPage() {
   const orgQuery = useOrg(orgId);
   const createMutation = useCreateMeeting(orgId);
 
-  const [bookTitle, setBookTitle] = useState('');
-  const [bookAuthor, setBookAuthor] = useState('');
+  const [book, setBook] = useState<BookSelection | null>(null);
   const [movie, setMovie] = useState<MovieSelection | null>(null);
   const [candidateFrom, setCandidateFrom] = useState(todayIso());
   const [candidateTo, setCandidateTo] = useState(addDays(todayIso(), 7));
@@ -66,8 +70,10 @@ export default function CreateMeetingPage() {
     }
   }, [orgQuery.data, orgId, navigate]);
 
-  const bookFilled = !!bookTitle.trim() && !!bookAuthor.trim();
-  const bookPartial = !!bookTitle.trim() !== !!bookAuthor.trim();
+  const bookPayload = toBookPayload(book);
+  const bookFilled = !!bookPayload.bookIsbn || !!bookPayload.bookTitle;
+  // 직접 입력 모드에서 제목만 적고 저자를 비운 상태
+  const bookPartial = book?.kind === 'manual' && !bookFilled;
   const moviePayload = toMoviePayload(movie);
   const movieFilled = !!moviePayload.movieTmdbId || !!moviePayload.movieTitle;
   // 직접 입력 모드에서 제목만 적고 감독을 비운 상태
@@ -90,8 +96,7 @@ export default function CreateMeetingPage() {
     }
     createMutation.mutate(
       {
-        bookTitle: bookFilled ? bookTitle.trim() : undefined,
-        bookAuthor: bookFilled ? bookAuthor.trim() : undefined,
+        ...bookPayload,
         ...moviePayload,
         candidateFrom,
         candidateTo,
@@ -133,22 +138,17 @@ export default function CreateMeetingPage() {
         <form onSubmit={handleSubmit} className="mt-8 border-t border-line">
           <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
             <FieldLabelWithHint label="책" hint="선택" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <Input
-                label="제목"
+            <div className="max-w-[420px]">
+              <BookSearchInput
+                value={book}
+                onChange={setBook}
                 placeholder="예: 1984"
-                value={bookTitle}
-                onChange={(e) => setBookTitle(e.target.value)}
               />
-              <Input
-                label="저자"
-                placeholder="예: 조지 오웰"
-                value={bookAuthor}
-                onChange={(e) => setBookAuthor(e.target.value)}
-                error={
-                  bookPartial ? '제목과 저자는 함께 입력해주세요' : undefined
-                }
-              />
+              {bookPartial && (
+                <p className="mt-1 text-xs text-danger">
+                  제목과 저자는 함께 입력해주세요
+                </p>
+              )}
             </div>
           </section>
 
