@@ -14,6 +14,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 const DEFAULT_SEOJI_BASE_URL = 'https://www.nl.go.kr/seoji';
 const SEARCH_PATH = '/SearchApi.do';
 
+/** 제목·저자·출판사 중 이 길이를 넘긴 항목만 SEOJI로 보낸다 */
+const MIN_FIELD_LENGTH = 2;
 /** 같은 책의 여러 판·쇄가 섞여 나오므로 ISBN 중복을 걸러낼 여유분을 두고 받는다 */
 const SEARCH_FETCH_SIZE = 20;
 const SEARCH_RESULT_LIMIT = 10;
@@ -24,6 +26,13 @@ const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
 const SEARCH_CACHE_MAX = 100;
 /** 저장된 책 정보를 다시 받아올 주기 (표지 교체·서지 정정을 반영) */
 const REFETCH_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** 자동완성 검색 조건. 셋 다 선택이지만 하나는 채워져야 한다 */
+export interface SeojiSearchCriteria {
+  title?: string;
+  author?: string;
+  publisher?: string;
+}
 
 /** SEOJI 응답은 모든 값이 문자열이고, 빈 값은 null이 아니라 ""로 온다 */
 interface SeojiDoc {
@@ -76,27 +85,41 @@ export class SeojiService {
   }
 
   /**
-   * 책 제목 자동완성. TMDB와 달리 검색 응답 한 번에 저자·출판사·표지가 모두 담겨
+   * 책 자동완성. TMDB와 달리 검색 응답 한 번에 저자·출판사·표지가 모두 담겨
    * 오므로 결과당 추가 조회가 없다.
+   *
+   * 제목만으로는 같은 작품의 판본이 수백 건씩 잡힌다("데미안" 515건). 저자·출판사를
+   * 함께 넘기면 SEOJI가 교집합으로 좁혀준다(+출판사 = 7건). 셋 다 선택 항목이고,
+   * 그중 하나만 2글자를 넘겨도 검색한다 — 제목이 기억나지 않을 때가 있다.
    */
-  async search(rawQuery: string): Promise<SeojiBookSearchItemDto[]> {
-    const query = rawQuery.trim();
-    if (query.length < 2) return [];
+  async search(criteria: SeojiSearchCriteria): Promise<SeojiBookSearchItemDto[]> {
+    const title = criteria.title?.trim() ?? '';
+    const author = criteria.author?.trim() ?? '';
+    const publisher = criteria.publisher?.trim() ?? '';
+
+    const longEnough = (v: string) => v.length >= MIN_FIELD_LENGTH;
+    if (![title, author, publisher].some(longEnough)) return [];
     this.assertConfigured();
 
-    const cached = this.searchCache.get(query);
+    // 세 항목의 조합이 곧 캐시 키다 — 제목만 같고 저자가 다른 검색이 섞이면 안 된다
+    const cacheKey = JSON.stringify([title, author, publisher]);
+    const cached = this.searchCache.get(cacheKey);
     if (cached && Date.now() - cached.at < SEARCH_CACHE_TTL_MS) {
       return cached.items;
     }
 
     const docs = await this.request({
-      title: query,
       page_size: SEARCH_FETCH_SIZE,
+      // 2글자에 못 미치는 값은 보내지 않는다. SEOJI가 한 글자로도 걸러내긴 하지만
+      // 오타 한 글자 때문에 결과가 통째로 비는 편이 더 나쁘다
+      ...(longEnough(title) ? { title } : {}),
+      ...(longEnough(author) ? { author } : {}),
+      ...(longEnough(publisher) ? { publisher } : {}),
     });
 
     const items: SeojiBookSearchItemDto[] = [];
     const seen = new Set<string>();
-    for (const doc of sortByTitleRelevance(docs, query)) {
+    for (const doc of sortByTitleRelevance(docs, title)) {
       // ISBN이 곧 우리 쪽 키다. 없는 행은 확정할 수 없으니 후보에서 뺀다
       const isbn13 = normalizeIsbn(doc.EA_ISBN);
       if (!isbn13 || seen.has(isbn13)) continue;
@@ -112,7 +135,7 @@ export class SeojiService {
       if (items.length >= SEARCH_RESULT_LIMIT) break;
     }
 
-    this.rememberSearch(query, items);
+    this.rememberSearch(cacheKey, items);
     return items;
   }
 
@@ -207,12 +230,12 @@ export class SeojiService {
     );
   }
 
-  private rememberSearch(query: string, items: SeojiBookSearchItemDto[]): void {
+  private rememberSearch(cacheKey: string, items: SeojiBookSearchItemDto[]): void {
     if (this.searchCache.size >= SEARCH_CACHE_MAX) {
       const oldest = this.searchCache.keys().next().value;
       if (oldest !== undefined) this.searchCache.delete(oldest);
     }
-    this.searchCache.set(query, { at: Date.now(), items });
+    this.searchCache.set(cacheKey, { at: Date.now(), items });
   }
 
   private assertConfigured(): void {
@@ -291,6 +314,8 @@ const SECONDARY_ROLE_RE =
  */
 function sortByTitleRelevance(docs: SeojiDoc[], query: string): SeojiDoc[] {
   const q = query.replace(/\s+/g, '').toLowerCase();
+  // 저자·출판사로만 찾는 중이면 견줄 제목이 없다. SEOJI가 준 순서를 그대로 둔다
+  if (!q) return docs;
   const rank = (doc: SeojiDoc): number => {
     const title = (doc.TITLE ?? '').replace(/\s+/g, '').toLowerCase();
     if (title === q) return 0;

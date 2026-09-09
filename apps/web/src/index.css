@@ -42,6 +42,12 @@
   color-scheme: light;
   --skeleton-a: #f2f2f2;
   --skeleton-b: #fafafa;
+  /* 2안은 그림자를 쓰지 않지만, 떠 있는 레이어만 예외다 —
+     자동완성 목록이 아래 내용 위에 겹치는 것을 헤어라인만으로는 알릴 수 없다. */
+  --shadow-popover:
+    0 1px 2px rgb(0 0 0 / 0.05),
+    0 8px 20px -6px rgb(0 0 0 / 0.14),
+    0 20px 44px -12px rgb(0 0 0 / 0.12);
 }
 
 /* ─── Dark ───────────────────────────────────────────────────────── */
@@ -63,6 +69,10 @@
   --color-shelf-shadow: #2e2e2e;
   --skeleton-a: #1f1f1f;
   --skeleton-b: #2a2a2a;
+  --shadow-popover:
+    0 1px 2px rgb(0 0 0 / 0.5),
+    0 8px 20px -6px rgb(0 0 0 / 0.6),
+    0 20px 44px -12px rgb(0 0 0 / 0.55);
 }
 
 /* ─── Base ──────────────────────────────────────────────────────── */
@@ -166,6 +176,11 @@
   }
 
   /* 입력 — 흑백에서는 밑줄 대신 헤어라인 상자. 포커스는 테두리만 잉크로. */
+  /* 자동완성 목록처럼 본문 위에 떠 있는 레이어 */
+  .popover-shadow {
+    box-shadow: var(--shadow-popover);
+  }
+
   .input-underline {
     border: 1px solid var(--color-line);
     border-radius: var(--radius-ui);

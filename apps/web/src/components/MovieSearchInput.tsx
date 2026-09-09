@@ -41,6 +41,7 @@ export function MovieSearchInput({
   const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState(-1);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
 
   const { data, isSearching, isTooShort, isError } = useMovieSearch(
@@ -62,6 +63,14 @@ export function MovieSearchInput({
 
   // 결과가 바뀌면 키보드 커서를 처음으로 되돌린다
   useEffect(() => setCursor(-1), [results.length, query]);
+
+  // 목록에 최대 높이가 생긴 뒤로는 화살표 커서가 보이지 않는 곳으로 갈 수 있다
+  useEffect(() => {
+    if (cursor < 0) return;
+    listRef.current
+      ?.querySelector(`[data-idx="${cursor}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [cursor]);
 
   const select = (item: TmdbMovieSearchItemDto) => {
     onChange({
@@ -194,49 +203,57 @@ export function MovieSearchInput({
         <div
           id={listboxId}
           role="listbox"
-          className="absolute z-20 mt-1 w-full overflow-hidden border border-line rounded-ui bg-surface"
+          className="popover-shadow absolute z-20 mt-1 w-full overflow-hidden border border-line rounded-ui bg-surface"
         >
-          {isError ? (
-            <p className="p-3 text-xs text-danger">
-              검색에 실패했어요. 아래에서 직접 입력할 수 있어요.
-            </p>
-          ) : results.length === 0 ? (
-            <p className="p-3 text-xs text-muted">
-              {isSearching ? '검색 중…' : '검색 결과가 없어요'}
-            </p>
-          ) : (
-            results.map((item, i) => (
-              <button
-                key={item.tmdbId}
-                type="button"
-                role="option"
-                aria-selected={i === cursor}
-                onMouseEnter={() => setCursor(i)}
-                onClick={() => select(item)}
-                className={`flex w-full items-center gap-3 border-b border-line p-2.5 text-left last:border-b-0 ${
-                  i === cursor ? 'bg-surface' : 'bg-paper'
-                }`}
-              >
-                <MoviePoster
-                  path={item.posterPath}
-                  alt=""
-                  size="w92"
-                  thin
-                  className="w-9 shrink-0"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">
-                    {item.title}
+          {/* 후보가 열 건까지 나오면 화면 밖으로 흘러서, 목록만 안에서 굴린다.
+              "직접 입력하기"는 스크롤 밖에 두어 언제나 손이 닿게 한다. */}
+          <div
+            ref={listRef}
+            className="max-h-[min(52vh,340px)] overflow-y-auto overscroll-contain"
+          >
+            {isError ? (
+              <p className="p-3 text-xs text-danger">
+                검색에 실패했어요. 아래에서 직접 입력할 수 있어요.
+              </p>
+            ) : results.length === 0 ? (
+              <p className="p-3 text-xs text-muted">
+                {isSearching ? '검색 중…' : '검색 결과가 없어요'}
+              </p>
+            ) : (
+              results.map((item, i) => (
+                <button
+                  key={item.tmdbId}
+                  type="button"
+                  role="option"
+                  aria-selected={i === cursor}
+                  data-idx={i}
+                  onMouseEnter={() => setCursor(i)}
+                  onClick={() => select(item)}
+                  className={`flex w-full items-center gap-3 border-b border-line p-2.5 text-left last:border-b-0 ${
+                    i === cursor ? 'bg-surface' : 'bg-paper'
+                  }`}
+                >
+                  <MoviePoster
+                    path={item.posterPath}
+                    alt=""
+                    size="w92"
+                    thin
+                    className="w-9 shrink-0"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">
+                      {item.title}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-muted">
+                      {[item.director, item.releaseYear]
+                        .filter(Boolean)
+                        .join(' · ') || '정보 없음'}
+                    </span>
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-muted">
-                    {[item.director, item.releaseYear]
-                      .filter(Boolean)
-                      .join(' · ') || '정보 없음'}
-                  </span>
-                </span>
-              </button>
-            ))
-          )}
+                </button>
+              ))
+            )}
+          </div>
           <button
             type="button"
             onClick={() => {

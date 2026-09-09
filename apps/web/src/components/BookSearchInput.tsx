@@ -51,14 +51,26 @@ export function BookSearchInput({
   placeholder = '예: 데미안',
 }: BookSearchInputProps) {
   const [query, setQuery] = useState('');
+  // 같은 제목의 판본이 수백 건씩 잡혀서, 저자·출판사로 좁힐 수 있게 열어둔다
+  const [author, setAuthor] = useState('');
+  const [publisher, setPublisher] = useState('');
+  const [refineOpen, setRefineOpen] = useState(false);
   const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState(-1);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
 
-  const { data, isSearching, isTooShort, isError } = useBookSearch(query, open && !value);
+  const { data, isSearching, isTooShort, isError } = useBookSearch(
+    { title: query, author, publisher },
+    open && !value,
+  );
   const results = data ?? [];
   const inputClass = variant === 'underline' ? UNDERLINE : BOXED;
+  // 서버와 같은 기준 — 어느 한 항목이라도 2글자를 넘기면 검색이 돈다
+  const hasCriteria = [query, author, publisher].some(
+    (v) => v.trim().length >= 2,
+  );
 
   // 바깥을 클릭하면 후보 목록을 닫는다
   useEffect(() => {
@@ -71,7 +83,15 @@ export function BookSearchInput({
   }, [open]);
 
   // 결과가 바뀌면 키보드 커서를 처음으로 되돌린다
-  useEffect(() => setCursor(-1), [results.length, query]);
+  useEffect(() => setCursor(-1), [results.length, query, author, publisher]);
+
+  // 목록에 최대 높이가 생긴 뒤로는 화살표 커서가 보이지 않는 곳으로 갈 수 있다
+  useEffect(() => {
+    if (cursor < 0) return;
+    listRef.current
+      ?.querySelector(`[data-idx="${cursor}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [cursor]);
 
   const select = (item: SeojiBookSearchItemDto) => {
     onChange({
@@ -189,57 +209,119 @@ export function BookSearchInput({
         onKeyDown={handleKeyDown}
       />
 
-      <p className="mt-1 text-xs text-muted">
-        {isTooShort
-          ? '두 글자 이상 입력해주세요'
-          : isSearching
-            ? '검색 중…'
-            : '제목을 입력하면 후보가 나와요'}
-      </p>
+      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <p className="text-xs text-muted">
+          {isTooShort
+            ? '두 글자 이상 입력해주세요'
+            : isSearching
+              ? '검색 중…'
+              : author.trim() || publisher.trim()
+                ? '저자·출판사로 좁히는 중'
+                : '제목을 입력하면 후보가 나와요'}
+        </p>
+        <button
+          type="button"
+          onClick={() => setRefineOpen((v) => !v)}
+          className="text-xs text-muted underline underline-offset-2 hover:text-ink"
+        >
+          {refineOpen ? '상세 조건 접기' : '저자·출판사로 좁히기'}
+        </button>
+      </div>
 
-      {open && query.trim().length >= 2 && (
+      {refineOpen && (
+        <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className={LABEL}>저자 (선택)</label>
+            <input
+              type="text"
+              className={inputClass}
+              value={author}
+              placeholder="예: 헤르만 헤세"
+              onChange={(e) => {
+                setAuthor(e.target.value);
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+          <div>
+            <label className={LABEL}>출판사 (선택)</label>
+            <input
+              type="text"
+              className={inputClass}
+              value={publisher}
+              placeholder="예: 민음사"
+              onChange={(e) => {
+                setPublisher(e.target.value);
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+        </div>
+      )}
+
+      {open && hasCriteria && (
         <div
           id={listboxId}
           role="listbox"
-          className="absolute z-20 mt-1 w-full overflow-hidden border border-line rounded-ui bg-surface"
+          className="popover-shadow absolute z-20 mt-1 w-full overflow-hidden border border-line rounded-ui bg-surface"
         >
-          {isError ? (
-            <p className="p-3 text-xs text-danger">
-              검색에 실패했어요. 아래에서 직접 입력할 수 있어요.
-            </p>
-          ) : results.length === 0 ? (
-            <p className="p-3 text-xs text-muted">
-              {isSearching ? '검색 중…' : '검색 결과가 없어요'}
-            </p>
-          ) : (
-            results.map((item, i) => (
-              <button
-                key={item.isbn13}
-                type="button"
-                role="option"
-                aria-selected={i === cursor}
-                onMouseEnter={() => setCursor(i)}
-                onClick={() => select(item)}
-                className={`flex w-full items-center gap-3 border-b border-line p-2.5 text-left last:border-b-0 ${
-                  i === cursor ? 'bg-surface' : 'bg-paper'
-                }`}
-              >
-                <BookCover url={item.coverUrl} alt="" thin className="w-9 shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">
-                    {item.title}
+          {/* 후보가 열 건까지 나오면 화면 밖으로 흘러서, 목록만 안에서 굴린다.
+              "직접 입력하기"는 스크롤 밖에 두어 언제나 손이 닿게 한다. */}
+          <div
+            ref={listRef}
+            className="max-h-[min(52vh,340px)] overflow-y-auto overscroll-contain"
+          >
+            {isError ? (
+              <p className="p-3 text-xs text-danger">
+                검색에 실패했어요. 아래에서 직접 입력할 수 있어요.
+              </p>
+            ) : results.length === 0 ? (
+              <p className="p-3 text-xs text-muted">
+                {isSearching
+                  ? '검색 중…'
+                  : author || publisher
+                    ? '검색 결과가 없어요. 저자·출판사를 지우고 다시 찾아보세요'
+                    : '검색 결과가 없어요'}
+              </p>
+            ) : (
+              results.map((item, i) => (
+                <button
+                  key={item.isbn13}
+                  type="button"
+                  role="option"
+                  aria-selected={i === cursor}
+                  data-idx={i}
+                  onMouseEnter={() => setCursor(i)}
+                  onClick={() => select(item)}
+                  className={`flex w-full items-center gap-3 border-b border-line p-2.5 text-left last:border-b-0 ${
+                    i === cursor ? 'bg-surface' : 'bg-paper'
+                  }`}
+                >
+                  <BookCover url={item.coverUrl} alt="" thin className="w-9 shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">
+                      {item.title}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-muted">
+                      {subtitleOf(item)}
+                    </span>
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-muted">
-                    {subtitleOf(item)}
-                  </span>
-                </span>
-              </button>
-            ))
-          )}
+                </button>
+              ))
+            )}
+          </div>
           <button
             type="button"
             onClick={() => {
-              onChange({ kind: 'manual', title: query.trim(), author: '' });
+              onChange({
+                kind: 'manual',
+                title: query.trim(),
+                author: author.trim(),
+              });
               setOpen(false);
             }}
             className="w-full border-t border-line bg-surface p-2.5 text-left text-xs font-semibold text-muted hover:text-ink"
