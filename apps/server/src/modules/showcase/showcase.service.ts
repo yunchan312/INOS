@@ -5,7 +5,8 @@ import type { ShowcaseDto, ShowcaseMovieDto } from '@inos/types';
 
 const TMDB_POPULAR_URL = 'https://api.themoviedb.org/3/movie/popular';
 
-const MOVIE_COUNT = 5;
+// TMDB popular 한 페이지가 20건이다 — 선반이 가로로 넘치도록 그대로 다 쓴다
+const MOVIE_COUNT = 20;
 
 /** 인기작 목록은 하루 단위로도 거의 안 바뀐다. 랜딩 트래픽을 외부로 흘리지 않는다. */
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -52,7 +53,7 @@ export class ShowcaseService {
     return { movies };
   }
 
-  /** TMDB 인기 영화 상위 5편 */
+  /** TMDB 인기 영화 상위 20편 */
   private async fetchMovies(): Promise<ShowcaseMovieDto[]> {
     if (!this.tmdbKey) return [];
     try {

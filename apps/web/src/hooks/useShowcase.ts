@@ -7,7 +7,7 @@ import { FALLBACK_MOVIES, SHELF_BOOKS } from '@/pages/home/showcaseContent';
 const STALE_TIME_MS = 30 * 60 * 1000;
 
 /**
- * 서가 책 10권 · 인기 영화 5편.
+ * 서가 책 · 인기 영화.
  * 책은 서버를 타지 않는 큐레이션 목록이고, 영화만 TMDB에서 받아온다.
  * 요청이 실패했거나 서버가 빈 목록을 내려도(TMDB 키 없음 등) 폴백으로 채운다 —
  * 랜딩에 빈 선반을 보이지 않는다.
