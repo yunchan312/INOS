@@ -1,5 +1,5 @@
 /**
- * 랜딩 서가의 책등 스타일 30벌.
+ * 책등 스타일 30벌 — 랜딩 미리보기와 실제 서재가 같은 것을 쓴다.
  *
  * 실제 책등 사진은 어떤 API에서도 구할 수 없다 — 출판사가 유통사에 넘기는 건
  * 앞표지뿐이고 책등은 애초에 디지털화되지 않는다. 그래서 이미지를 붙이는 대신
@@ -121,15 +121,19 @@ const FOOT_MARKS = '—·◆▪○□';
  *
  * 글자 목록은 제목에서 그때그때 뽑는다 — 책을 추가해도 손으로 맞출 필요가 없다.
  */
-export function buildSpineFontsHref(titles: string[]): string {
-  const chars = [...new Set((titles.join('') + FOOT_MARKS).split(''))]
+export function spineFontChars(titles: string[]): string[] {
+  return [...new Set((titles.join('') + FOOT_MARKS).split(''))]
     .filter((c) => c.trim())
-    .sort()
-    .join('');
+    .sort();
+}
+
+/** 넘긴 글자만 담은 30벌 스타일시트 주소. 글자가 비면 요청할 것이 없다. */
+export function buildSpineFontsHref(chars: string[]): string | null {
+  if (chars.length === 0) return null;
   const families = FAMILY_QUERY.join('&family=');
   return (
     `https://fonts.googleapis.com/css2?family=${families}` +
-    `&text=${encodeURIComponent(chars)}&display=swap`
+    `&text=${encodeURIComponent(chars.join(''))}&display=swap`
   );
 }
 
@@ -142,9 +146,21 @@ function hashString(input: string): number {
   return Math.abs(hash);
 }
 
-/** 같은 책은 항상 같은 스타일이 나오도록 제목으로 고른다 (목록 순서가 바뀌는 곳용) */
-export function pickSpineStyle(seed: string): SpineStyle {
-  return SPINE_STYLES[hashString(`${seed}:style`) % SPINE_STYLES.length];
+/**
+ * 한 선반에 늘어놓을 책등 스타일을 정한다.
+ *
+ * 실제 서재는 책이 지워지거나 더 열리면서 순서가 밀리는데, 자리 순서로 고르면
+ * 그때마다 내 책의 생김새가 통째로 바뀐다. 그래서 seed(모임 id)로 고정하되,
+ * 앞 권과 같은 벌이 나오면 한 칸 밀어 이웃끼리 겹치는 것만 푼다.
+ */
+export function assignSpineStyles(seeds: string[]): SpineStyle[] {
+  let prev = -1;
+  return seeds.map((seed) => {
+    let i = hashString(`${seed}:style`) % SPINE_STYLES.length;
+    if (i === prev) i = (i + 1) % SPINE_STYLES.length;
+    prev = i;
+    return SPINE_STYLES[i];
+  });
 }
 
 /**

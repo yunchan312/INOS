@@ -1,6 +1,8 @@
 import type { LibraryItemDto } from '@inos/types';
 import { formatRating } from './StarRating';
-import { pickSpineColor, pickSpineHeight, pickSpineWidth } from './libraryPalette';
+import { pickSpineHeight, pickSpineWidth } from './libraryPalette';
+import { SpineFace } from './SpineFace';
+import type { SpineStyle } from './spineStyles';
 
 // 세로쓰기 글자당 높이(px)와 패딩+별점 배지 영역 — 디자인 시안의 상수
 const PER_CHAR = 15;
@@ -9,12 +11,13 @@ const MAX_HEIGHT = 300;
 
 interface BookSpineProps {
   item: LibraryItemDto;
+  /** 선반이 정해준 30벌 중 한 벌 — 이웃과 겹치지 않게 골라서 내려온다 */
+  style: SpineStyle;
   isEditing: boolean;
   onClick: () => void;
 }
 
-export function BookSpine({ item, isEditing, onClick }: BookSpineProps) {
-  const color = pickSpineColor(item.meetingId);
+export function BookSpine({ item, style, isEditing, onClick }: BookSpineProps) {
   const width = pickSpineWidth(item.meetingId);
 
   // 제목이 길면 책등을 키우고, 그래도 넘치면 말줄임
@@ -42,26 +45,28 @@ export function BookSpine({ item, isEditing, onClick }: BookSpineProps) {
       className="group relative shrink-0 cursor-pointer"
       style={{ width, height }}
     >
-      <span
+      <SpineFace
+        style={style}
+        title={spineTitle}
+        trailing={
+          spineAuthor ? (
+            <span className="font-normal opacity-70">{spineAuthor}</span>
+          ) : undefined
+        }
+        foot={
+          // 바닥은 출판사 마크 대신 별점이 가진다 — 서재에서 제일 자주 보는 값이다
+          <span className="relative mt-1 shrink-0 whitespace-nowrap text-[10px] leading-none font-bold">
+            {item.review ? `★${formatRating(item.review.rating)}` : '—'}
+          </span>
+        }
         className={[
-          'flex h-full w-full flex-col items-center justify-end box-border px-1 pt-3.5 pb-2.5',
-          'rounded-t-ui rounded-b-hair border border-line text-on-art',
           'transition-transform duration-150 ease-out will-change-transform',
           'group-hover:-translate-y-2.5',
           isEditing ? '-translate-y-2.5' : '',
         ]
           .filter(Boolean)
           .join(' ')}
-        style={{ backgroundColor: color }}
-      >
-        <span className="[writing-mode:vertical-rl] flex-1 min-h-0 overflow-hidden whitespace-nowrap text-[13px] font-bold tracking-[0.01em]">
-          {spineTitle}
-          {spineAuthor && <span className="font-normal opacity-70">{spineAuthor}</span>}
-        </span>
-        <span className="mt-2 shrink-0 whitespace-nowrap text-[10px] font-bold">
-          {item.review ? `★${formatRating(item.review.rating)}` : '—'}
-        </span>
-      </span>
+      />
     </button>
   );
 }

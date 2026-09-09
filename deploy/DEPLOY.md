@@ -49,6 +49,14 @@ vi .env    # 전부 채우기 (아래 참고)
 - `GOOGLE_CLIENT_ID/SECRET` — Google Console에서 발급하고, **redirect URI에
   `https://<DOMAIN>/api/auth/google/callback` 추가** (localhost용과 별도)
 - `SMTP_USER/PASS` — Gmail 앱 비밀번호 (https://myaccount.google.com/apppasswords)
+- `TMDB_API_KEY` — 영화 포스터/감독/장르. https://www.themoviedb.org/settings/api 에서
+  "Developer" 선택 후 즉시 발급 (무료). **API Key (v3 auth)** 문자열을 넣는다
+- `SEOJI_CERT_KEY` — 도서 검색(국립중앙도서관 서지정보).
+  https://www.nl.go.kr/NL/contents/N31101010000.do 에서 신청 (무료, 승인 절차 없음)
+
+두 키는 **비워둬도 배포가 정상 동작한다.** 없으면 작품 검색 API만 503으로 응답하고,
+모임을 만들 때 제목·감독을 직접 입력하는 경로로 넘어간다. 다만 랜딩 페이지 서가의
+영화 포스터는 TMDB 키가 있어야 채워진다 (없으면 내장 목록으로 대체).
 
 ## 4. 첫 배포
 

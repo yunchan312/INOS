@@ -2,6 +2,8 @@ import { useState, type ReactNode, type UIEvent } from 'react';
 import type { LibraryItemDto, UpsertLibraryReviewDto } from '@inos/types';
 import { BookSpine } from './BookSpine';
 import { BookEditPanel } from './BookEditPanel';
+import { assignSpineStyles } from './spineStyles';
+import { useShelfFonts } from '@/hooks/useShelfFonts';
 
 const PAGE_SIZE = 20;
 
@@ -42,6 +44,10 @@ export function Bookshelf({
   emptyAction,
 }: BookshelfProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // 스타일은 전체 목록 기준으로 정한다 — 20권씩 더 열려도 앞의 책등이 바뀌지 않게
+  const styles = assignSpineStyles(books.map((b) => b.meetingId));
+  // 지금 꽂혀 있는 책 제목에 쓰인 글자만 받아온다 (더 열리면 부족한 글자를 이어서 받는다)
+  const shelfRef = useShelfFonts(books.slice(0, visibleCount).map((b) => b.title));
 
   if (books.length === 0) {
     return (
@@ -75,13 +81,18 @@ export function Bookshelf({
 
   return (
     <div>
-      <div className="overflow-x-auto overflow-y-hidden pb-1" onScroll={handleScroll}>
+      <div
+        ref={shelfRef}
+        className="overflow-x-auto overflow-y-hidden pb-1"
+        onScroll={handleScroll}
+      >
         <div className="min-w-max pt-4">
           <div className="flex items-end gap-1.5 px-3">
-            {visible.map((item) => (
+            {visible.map((item, i) => (
               <BookSpine
                 key={item.meetingId}
                 item={item}
+                style={styles[i]}
                 isEditing={item.meetingId === editingId}
                 onClick={() =>
                   item.meetingId === editingId ? onClose() : onSelect(item.meetingId)

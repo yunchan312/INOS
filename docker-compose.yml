@@ -60,6 +60,9 @@ services:
       MAIL_FROM: ${MAIL_FROM}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       SENTRY_DSN: ${SERVER_SENTRY_DSN:-}
+      # 작품 메타데이터 조회용 외부 API. 비우면 해당 검색만 503이고 나머지는 정상 동작한다
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+      SEOJI_CERT_KEY: ${SEOJI_CERT_KEY:-}
       NODE_ENV: production
 
   ai-server:

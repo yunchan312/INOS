@@ -2,11 +2,8 @@ import type { ShowcaseBookDto, ShowcaseMovieDto } from '@inos/types';
 import { useShowcase } from '@/hooks/useShowcase';
 import { tmdbImageUrl } from '@/lib/tmdb';
 import { pickSpineHeight, pickSpineWidth } from '@/components/library/libraryPalette';
-import {
-  spineStyleAt,
-  textureLayer,
-  type SpineRule,
-} from '@/components/library/spineStyles';
+import { spineStyleAt } from '@/components/library/spineStyles';
+import { SpineFace } from '@/components/library/SpineFace';
 import { useShelfFonts } from '@/hooks/useShelfFonts';
 
 // 랜딩에서는 실제 서가보다 한 뼘 낮게 세운다 — 섹션 안에 들어가야 하므로
@@ -24,27 +21,10 @@ function ShelfBoard() {
   );
 }
 
-/** 책등을 가로지르는 장정 띠 — 스타일마다 개수와 위치가 다르다 */
-function SpineRules({ rule, ink }: { rule: SpineRule; ink: string }) {
-  if (rule === 'none' || rule === 'panel' || rule === 'band') return null;
-  const line = (
-    <span
-      className="block h-px w-full shrink-0"
-      style={{ backgroundColor: ink, opacity: 0.5 }}
-    />
-  );
-  return (
-    <span className="flex w-full shrink-0 flex-col gap-[3px] px-1.5">
-      {line}
-      {rule === 'double' && line}
-    </span>
-  );
-}
-
 /**
- * 랜딩용 책등. 30벌의 스타일 프리셋 중 제목 해시로 하나를 골라 입힌다 —
- * 서체·명도·장정 띠·질감·바닥 마크가 전부 달라서, 선반에 꽂아두면
- * 같은 틀에서 찍어낸 블록이 아니라 제각각인 책으로 읽힌다.
+ * 랜딩용 책등. 겉면은 실제 서재와 같은 SpineFace를 쓰고, 30벌 중 어느 벌을
+ * 입힐지만 여기서 정한다 — 고정 목록이라 자리 순서로 돌리면 이웃끼리 한 벌도
+ * 겹치지 않는다.
  *
  * 여기 꽂힌 책은 누군가의 기록이 아니라 "이렇게 생겼어요"라는 예시라
  * 클릭도 별점도 없다.
@@ -63,71 +43,13 @@ function ShowcaseSpine({ book, index }: { book: ShowcaseBookDto; index: number }
       ? `${book.title.slice(0, Math.max(1, availChars - 1))}…`
       : book.title;
 
-  const texture = textureLayer(style.texture);
-
   return (
     <div
-      className={`relative flex shrink-0 flex-col items-center justify-between box-border overflow-hidden border border-line px-1 pt-2 pb-1.5 ${
-        style.round ? 'rounded-t-ui rounded-b-hair' : 'rounded-hair'
-      }`}
-      style={{ width, height, backgroundColor: style.bg, color: style.ink }}
+      className="shrink-0"
+      style={{ width, height }}
       title={book.author ? `${book.title} — ${book.author}` : book.title}
     >
-      {texture && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{ backgroundImage: texture }}
-        />
-      )}
-
-      {/* 위쪽 장정 띠. band는 띠 대신 면으로 채운다 */}
-      {style.rule === 'band' ? (
-        <span
-          aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-5"
-          style={{ backgroundColor: style.ink, opacity: 0.14 }}
-        />
-      ) : (
-        <SpineRules rule={style.rule} ink={style.ink} />
-      )}
-
-      {/* 제목 판(panel)이면 안쪽에 테두리를 두른다 */}
-      <span
-        className={`relative flex min-h-0 flex-1 items-center justify-center ${
-          style.rule === 'panel' ? 'my-1.5 w-full border px-0.5' : ''
-        }`}
-        style={
-          style.rule === 'panel'
-            ? { borderColor: style.ink, opacity: 0.95 }
-            : undefined
-        }
-      >
-        <span
-          className="[writing-mode:vertical-rl] overflow-hidden whitespace-nowrap"
-          style={{
-            fontFamily: style.font,
-            fontWeight: style.weight,
-            fontSize: style.size,
-            letterSpacing: style.tracking,
-            lineHeight: 1,
-          }}
-        >
-          {title}
-        </span>
-      </span>
-
-      {/* 아래쪽 띠와 출판사 마크 자리 */}
-      {style.rule !== 'top' && style.rule !== 'band' && (
-        <SpineRules rule={style.rule} ink={style.ink} />
-      )}
-      <span
-        className="relative mt-1 shrink-0 text-[9px] leading-none"
-        style={{ opacity: 0.55 }}
-        aria-hidden="true"
-      >
-        {style.foot}
-      </span>
+      <SpineFace style={style} title={title} />
     </div>
   );
 }
