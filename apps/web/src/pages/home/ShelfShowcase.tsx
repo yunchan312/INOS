@@ -11,8 +11,8 @@ const SHELF_SCALE = 0.78;
 const PER_CHAR = 14;
 const CHROME = 34;
 
-/** 실제 서가와 같은 두 줄 선반 — 위는 판, 아래는 그림자 */
-function ShelfBoard() {
+/** 실제 서가와 같은 두 줄 선반 — 위는 판, 아래는 그림자. 초대장도 같은 선반을 쓴다 */
+export function ShelfBoard() {
   return (
     <>
       <div className="h-px bg-shelf" />
@@ -29,7 +29,7 @@ function ShelfBoard() {
  * 여기 꽂힌 책은 누군가의 기록이 아니라 "이렇게 생겼어요"라는 예시라
  * 클릭도 별점도 없다.
  */
-function ShowcaseSpine({ book, index }: { book: ShowcaseBookDto; index: number }) {
+export function ShowcaseSpine({ book, index }: { book: ShowcaseBookDto; index: number }) {
   const seed = book.title;
   const style = spineStyleAt(index);
   const width = Math.round(pickSpineWidth(seed) * SHELF_SCALE);

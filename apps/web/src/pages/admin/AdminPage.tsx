@@ -190,6 +190,7 @@ function CreateOrgForm() {
 
 function OrgRow({ org }: { org: AdminOrgDto }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [name, setName] = useState(org.name);
@@ -304,6 +305,10 @@ function OrgRow({ org }: { org: AdminOrgDto }) {
             </>
           ) : (
             <>
+              {/* 관리자는 가입하지 않은 오가니제이션에도 리더 권한으로 들어간다 */}
+              <Button variant="ghost" size="sm" onClick={() => navigate(`/orgs/${org.id}`)}>
+                들어가기
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
                 수정
               </Button>

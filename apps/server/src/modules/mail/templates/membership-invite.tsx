@@ -15,7 +15,15 @@ export interface MembershipInviteProps {
   inviteeEmail: string;
   acceptUrl: string;
   greeting?: string | null;
+  expiresAt: Date;
 }
+
+// 서버는 UTC로 돌 수 있으니 받는 사람 기준(한국)으로 날짜를 적는다
+const expiryFormat = new Intl.DateTimeFormat('ko-KR', {
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'Asia/Seoul',
+});
 
 export function MembershipInvite({
   groupName,
@@ -23,6 +31,7 @@ export function MembershipInvite({
   inviteeEmail,
   acceptUrl,
   greeting,
+  expiresAt,
 }: MembershipInviteProps) {
   return (
     <EmailShell
@@ -50,7 +59,7 @@ export function MembershipInvite({
         </Text>
         <Cta href={acceptUrl}>모임 참여하기</Cta>
         <Text style={footnote}>
-          이 링크는 7일간 유효해요. 요청한 적이 없다면 무시하셔도 좋아요.
+          이 링크는 {expiryFormat.format(expiresAt)}까지 유효해요. 요청한 적이 없다면 무시하셔도 좋아요.
         </Text>
       </Section>
     </EmailShell>

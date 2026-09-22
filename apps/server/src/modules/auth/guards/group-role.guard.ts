@@ -32,6 +32,9 @@ export class GroupRoleGuard implements CanActivate {
     const user = request.user;
     if (!user) throw new ForbiddenException('인증이 필요합니다');
 
+    // 서비스 관리자는 모든 그룹에서 리더(OWNER)와 같은 권한
+    if (user.isAdmin) return true;
+
     const groupId = request.params.groupId ?? request.params.id;
     if (!groupId) throw new ForbiddenException('groupId 파라미터가 필요합니다');
 

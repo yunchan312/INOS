@@ -70,7 +70,7 @@ function InviteLinkBlock({ orgId }: { orgId: string }) {
           </div>
           <p className="mt-2 text-[11px] text-muted">
             {new Date(link.expiresAt).toLocaleDateString('ko-KR')} 까지 유효 ·{' '}
-            {link.useCount}명 참여 · 링크를 받은 사람은 로그인만 하면 참여돼요
+            {link.useCount}명 참여 · 이메일 초대도 이 링크로 보내져요
           </p>
           <div className="mt-2.5 flex items-center gap-4 text-xs">
             <button
@@ -102,7 +102,7 @@ function InviteLinkBlock({ orgId }: { orgId: string }) {
             + 초대 링크 만들기
           </Button>
           <p className="mt-2 text-[11px] text-muted">
-            링크를 받은 사람은 누구나 로그인 후 바로 참여할 수 있어요 (7일 유효)
+            링크를 받은 사람은 누구나 로그인 후 바로 참여할 수 있어요 (7일 유효) · 이메일 초대도 이 링크로 보내져요
           </p>
         </div>
       )}
@@ -215,7 +215,7 @@ export default function OrgSettingsPage() {
                   />
                 </div>
                 <div>
-                  <InputLabel>초대의 말 — 모임 초대 메일 상단에 표시</InputLabel>
+                  <InputLabel>초대의 말 — 초대 메일과 초대장에 표시</InputLabel>
                   <textarea
                     value={greeting}
                     onChange={(e) => {
@@ -254,9 +254,12 @@ export default function OrgSettingsPage() {
             {(invitationsQuery.data?.length ?? 0) > 0 && (
               <section className="py-7 border-b border-line grid grid-cols-1 sm:grid-cols-[120px_minmax(0,1fr)] gap-4">
                 <div>
-                  <FieldLabel>대기 중인 초대</FieldLabel>
+                  <FieldLabel>보낸 초대</FieldLabel>
                   <p className="mt-1 text-sm text-muted">
                     {invitationsQuery.data!.length}명
+                  </p>
+                  <p className="mt-2 text-[11px] leading-relaxed text-muted break-keep">
+                    메일 속 링크까지 막으려면 초대 링크를 끄거나 교체하세요
                   </p>
                 </div>
                 <div>
@@ -284,7 +287,7 @@ export default function OrgSettingsPage() {
                         disabled={revokeMutation.isPending}
                         className="text-xs font-medium text-danger border-b border-danger hover:text-danger-2 hover:border-danger-2 disabled:opacity-50"
                       >
-                        취소
+                        지우기
                       </button>
                     </div>
                   ))}
