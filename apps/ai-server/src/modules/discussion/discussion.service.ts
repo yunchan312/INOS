@@ -519,7 +519,7 @@ export class DiscussionService {
     ]);
   }
 
-  /** 발제자 본인 또는 그룹 리더(OWNER)만 수정/삭제 가능. 종료된 모임은 금지 */
+  /** 발제자 본인·그룹 리더(OWNER)·서비스 관리자만 수정/삭제 가능. 종료된 모임은 금지 */
   private async assertCanManagePrompt(
     meetingId: string,
     promptId: string,
@@ -543,16 +543,20 @@ export class DiscussionService {
       throw new ForbiddenException('종료된 모임의 발제는 수정할 수 없어요');
     }
     if (prompt.userId !== userId) {
-      const membership = await this.prisma.groupMember.findUnique({
-        where: {
-          groupId_userId: {
-            groupId: prompt.discussion.meeting.groupId,
-            userId,
+      const [membership, user] = await Promise.all([
+        this.prisma.groupMember.findUnique({
+          where: {
+            groupId_userId: {
+              groupId: prompt.discussion.meeting.groupId,
+              userId,
+            },
           },
-        },
-        select: { role: true },
-      });
-      if (membership?.role !== 'OWNER') {
+          select: { role: true },
+        }),
+        this.prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } }),
+      ]);
+      // 서비스 관리자는 모든 그룹에서 리더와 같은 권한
+      if (membership?.role !== 'OWNER' && !user?.isAdmin) {
         throw new ForbiddenException('발제자 또는 리더만 수정/삭제할 수 있어요');
       }
     }

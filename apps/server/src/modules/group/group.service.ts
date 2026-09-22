@@ -75,7 +75,7 @@ export class GroupService {
     if (!group) throw new NotFoundException('그룹을 찾을 수 없습니다');
 
     const myMembership = group.members.find((m) => m.userId === userId);
-    if (!myMembership) throw new ForbiddenException('그룹 멤버가 아닙니다');
+    const myRole = await this.resolveRole(myMembership?.role ?? null, userId);
 
     return {
       id: group.id,
@@ -83,7 +83,7 @@ export class GroupService {
       description: group.description,
       greeting: group.greeting,
       ownerId: group.ownerId,
-      myRole: myMembership.role,
+      myRole,
       members: group.members.map((m) => this.toMemberDto(m)),
       createdAt: group.createdAt,
     };
@@ -313,13 +313,27 @@ export class GroupService {
     });
   }
 
+  /** 그룹 안에서의 실효 역할 — 서비스 관리자는 가입 여부와 상관없이 모든 그룹에서 OWNER로 취급 */
   async assertMember(groupId: string, userId: string): Promise<GroupRole> {
     const membership = await this.prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId, userId } },
       select: { role: true },
     });
-    if (!membership) throw new ForbiddenException('그룹 멤버가 아닙니다');
-    return membership.role;
+    return this.resolveRole(membership?.role ?? null, userId);
+  }
+
+  private async resolveRole(
+    memberRole: GroupRole | null,
+    userId: string,
+  ): Promise<GroupRole> {
+    if (memberRole === GroupRole.OWNER) return memberRole;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    });
+    if (user?.isAdmin) return GroupRole.OWNER;
+    if (!memberRole) throw new ForbiddenException('그룹 멤버가 아닙니다');
+    return memberRole;
   }
 
   // ─── 링크 초대 — 그룹당 활성 링크 1개, 링크를 아는 로그인 사용자는 누구나 참여 ───

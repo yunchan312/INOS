@@ -9,6 +9,7 @@ import type {
   GroupPostListDto,
   GroupPostSummaryDto,
 } from '@inos/types';
+import { GroupRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GroupService } from '../group/group.service';
 import { CreateGroupPostDto, UpdateGroupPostDto } from './dto/board.dto';
@@ -140,15 +141,15 @@ export class BoardService {
     postId: string,
     userId: string,
   ): Promise<void> {
-    await this.groupService.assertMember(groupId, userId);
+    const role = await this.groupService.assertMember(groupId, userId);
     const post = await this.prisma.groupPost.findUnique({
       where: { id: postId },
-      select: { groupId: true, authorId: true, group: { select: { ownerId: true } } },
+      select: { groupId: true, authorId: true },
     });
     if (!post || post.groupId !== groupId) {
       throw new NotFoundException('글을 찾을 수 없습니다');
     }
-    if (post.authorId !== userId && post.group.ownerId !== userId) {
+    if (post.authorId !== userId && role !== GroupRole.OWNER) {
       throw new ForbiddenException('작성자 또는 오가니제이션 소유자만 가능합니다');
     }
   }
