@@ -162,6 +162,18 @@
     animation: page-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* 초대장 — 슬라이드가 들어오면 글이 살짝 떠오른다.
+     지원하지 않는 브라우저나 움직임을 줄인 환경에서는 처음부터 그냥 보인다 */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .invite-rise {
+        animation: invite-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 4% cover 26%;
+      }
+    }
+  }
+
   /* Skeleton loading shimmer */
   .skeleton-shimmer {
     border-radius: var(--radius-hair);
@@ -250,6 +262,17 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes invite-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

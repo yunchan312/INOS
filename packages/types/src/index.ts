@@ -527,6 +527,11 @@ export interface InviteLinkPreviewDto {
   groupName: string;
   inviterName: string;
   memberCount: number;
+  /** 가입 순 앞쪽 일부 — memberCount보다 적으면 나머지는 "외 N명". 만료된 링크면 빈 배열 */
+  memberNames: string[];
+  /** 초대의 말 · 모임 설명 — 비어 있거나 링크가 만료됐으면 null */
+  greeting: string | null;
+  description: string | null;
   /** 만료 또는 철회됨 */
   expired: boolean;
 }

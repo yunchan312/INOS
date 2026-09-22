@@ -20,6 +20,8 @@ export interface SendMembershipInviteInput {
   inviterName: string;
   greeting?: string | null;
   acceptUrl: string;
+  /** 링크 만료 시각 — 그룹 링크를 공유하므로 남은 기간이 TTL보다 짧을 수 있다 */
+  expiresAt: Date;
 }
 
 export interface SendMeetingInviteInput {
@@ -74,6 +76,7 @@ export class MailService {
       inviteeEmail: input.toEmail,
       acceptUrl: input.acceptUrl,
       greeting: input.greeting ?? null,
+      expiresAt: input.expiresAt,
     };
     const html = await render(MembershipInvite(props));
     const subject = `${input.inviterName}님이 「${input.groupName}」에 초대했어요`;

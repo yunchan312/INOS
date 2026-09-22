@@ -27,6 +27,9 @@ import type {
   InviteLinkPreviewDto,
 } from '@inos/types';
 
+/** 초대장에 보여줄 멤버 이름 수 — 넘치면 "외 N명"으로 */
+const INVITE_PREVIEW_MEMBER_LIMIT = 12;
+
 @Injectable()
 export class GroupService {
   constructor(
@@ -135,22 +138,24 @@ export class GroupService {
     });
   }
 
+  /**
+   * 이메일 초대 = 그룹의 초대 링크를 메일로 전달한다.
+   * 링크가 하나뿐이라 수락 경로도 하나(`/invite/:token`)이고, 받는 사람의 이메일 일치는 보지 않는다.
+   * 활성 링크가 없으면(만료·끄기) 새로 발급한다.
+   */
   async inviteMember(
     groupId: string,
     ownerUserId: string,
     email: string,
   ): Promise<InvitationPreviewDto> {
-    const group = await this.prisma.group.findUnique({
-      where: { id: groupId },
-      include: { owner: true },
-    });
+    const group = await this.prisma.group.findUnique({ where: { id: groupId } });
     if (!group) throw new NotFoundException('그룹을 찾을 수 없습니다');
 
     const normalizedEmail = email.trim().toLowerCase();
 
     const existingMember = await this.prisma.user.findFirst({
       where: {
-        email: normalizedEmail,
+        email: { equals: normalizedEmail, mode: 'insensitive' },
         groupMembers: { some: { groupId } },
       },
       select: { id: true },
@@ -159,46 +164,47 @@ export class GroupService {
       throw new ConflictException('이미 그룹 멤버입니다');
     }
 
-    const ttlDays = this.config.get<number>('INVITATION_TTL_DAYS', 7);
-    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
-    const token = this.generateToken();
+    const link = await this.ensureActiveInviteLink(groupId, ownerUserId);
+    const inviter = await this.prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { nickname: true },
+    });
+    const inviterName = inviter?.nickname ?? '관리자';
 
+    // 메일부터 보낸다 — 실패하면 "보냈다"는 기록을 남기지 않는다
+    await this.mailService.sendMembershipInvite({
+      toEmail: normalizedEmail,
+      groupName: group.name,
+      inviterName,
+      greeting: group.greeting,
+      acceptUrl: this.inviteLinkUrl(link.token),
+      expiresAt: link.expiresAt,
+    });
+
+    // 누구에게 보냈는지의 기록 — 링크로 가입하면 ACCEPTED로 바뀐다.
+    // token 컬럼은 링크 통합 이전에 나간 메일(`/invitations/:token`)과의 호환용이라 새로 쓰이지 않는다
     const invitation = await this.prisma.invitation.upsert({
       where: { groupId_email: { groupId, email: normalizedEmail } },
       update: {
-        token,
+        token: this.generateToken(),
         status: InvitationStatus.PENDING,
-        expiresAt,
+        expiresAt: link.expiresAt,
         invitedById: ownerUserId,
         acceptedAt: null,
       },
       create: {
         groupId,
         email: normalizedEmail,
-        token,
+        token: this.generateToken(),
         invitedById: ownerUserId,
-        expiresAt,
+        expiresAt: link.expiresAt,
       },
-    });
-
-    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
-    const inviter = await this.prisma.user.findUnique({
-      where: { id: ownerUserId },
-      select: { nickname: true },
-    });
-
-    await this.mailService.sendMembershipInvite({
-      toEmail: normalizedEmail,
-      groupName: group.name,
-      inviterName: inviter?.nickname ?? '관리자',
-      greeting: group.greeting,
-      acceptUrl: `${frontendUrl}/invitations/${token}`,
     });
 
     return {
       groupId: invitation.groupId,
       groupName: group.name,
-      inviterName: inviter?.nickname ?? '관리자',
+      inviterName,
       inviteeEmail: invitation.email,
       status: invitation.status,
       expiresAt: invitation.expiresAt,
@@ -325,22 +331,7 @@ export class GroupService {
     const group = await this.prisma.group.findUnique({ where: { id: groupId } });
     if (!group) throw new NotFoundException('그룹을 찾을 수 없습니다');
 
-    const ttlDays = this.config.get<number>('INVITATION_TTL_DAYS', 7);
-    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
-    const token = this.generateToken();
-
-    const [, link] = await this.prisma.$transaction([
-      // 기존 활성 링크는 철회 — 언제나 최신 링크 하나만 유효
-      this.prisma.groupInviteLink.updateMany({
-        where: { groupId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      }),
-      this.prisma.groupInviteLink.create({
-        data: { groupId, token, createdById: ownerUserId, expiresAt },
-      }),
-    ]);
-
-    return this.toInviteLinkDto(link);
+    return this.toInviteLinkDto(await this.issueInviteLink(groupId, ownerUserId));
   }
 
   async getActiveInviteLink(groupId: string): Promise<GroupInviteLinkDto | null> {
@@ -363,18 +354,33 @@ export class GroupService {
       where: { token },
       include: {
         group: {
-          select: { name: true, _count: { select: { members: true } } },
+          select: {
+            name: true,
+            description: true,
+            greeting: true,
+            _count: { select: { members: true } },
+            members: {
+              select: { user: { select: { nickname: true } } },
+              orderBy: { joinedAt: 'asc' },
+              take: INVITE_PREVIEW_MEMBER_LIMIT,
+            },
+          },
         },
         createdBy: { select: { nickname: true } },
       },
     });
     if (!link) throw new NotFoundException('초대 링크를 찾을 수 없습니다');
 
+    const expired = !!link.revokedAt || link.expiresAt < new Date();
+    // 링크는 비로그인에게도 열려 있다 — 죽은 링크로는 모임 안쪽 정보를 보여주지 않는다
     return {
       groupName: link.group.name,
       inviterName: link.createdBy.nickname,
       memberCount: link.group._count.members,
-      expired: !!link.revokedAt || link.expiresAt < new Date(),
+      memberNames: expired ? [] : link.group.members.map((m) => m.user.nickname),
+      greeting: expired ? null : link.group.greeting,
+      description: expired ? null : link.group.description,
+      expired,
     };
   }
 
@@ -390,7 +396,14 @@ export class GroupService {
       throw new BadRequestException('만료되거나 철회된 초대 링크예요');
     }
 
-    // 이메일 초대와 달리 수신자를 특정하지 않으므로 이메일 일치 검사 없음
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
+
+    // 수신자를 특정하지 않는 링크라 이메일 일치는 보지 않는다.
+    // 대신 이 이메일로 보낸 초대 메일이 있었다면 함께 수락 처리해 "대기 중" 목록에서 내린다
     await this.prisma.$transaction([
       this.prisma.groupMember.upsert({
         where: { groupId_userId: { groupId: link.groupId, userId } },
@@ -401,9 +414,48 @@ export class GroupService {
         where: { id: link.id },
         data: { useCount: { increment: 1 } },
       }),
+      this.prisma.invitation.updateMany({
+        where: {
+          groupId: link.groupId,
+          email: { equals: user.email, mode: 'insensitive' },
+          status: InvitationStatus.PENDING,
+        },
+        data: { status: InvitationStatus.ACCEPTED, acceptedAt: new Date() },
+      }),
     ]);
 
     return { groupId: link.groupId };
+  }
+
+  /** 새 링크를 발급한다. 기존 활성 링크는 철회 — 언제나 최신 링크 하나만 유효 */
+  private async issueInviteLink(groupId: string, createdById: string) {
+    const ttlDays = this.config.get<number>('INVITATION_TTL_DAYS', 7);
+    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
+
+    const [, link] = await this.prisma.$transaction([
+      this.prisma.groupInviteLink.updateMany({
+        where: { groupId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      this.prisma.groupInviteLink.create({
+        data: { groupId, token: this.generateToken(), createdById, expiresAt },
+      }),
+    ]);
+    return link;
+  }
+
+  /** 살아 있는 링크가 있으면 그대로, 없으면 새로 발급 */
+  private async ensureActiveInviteLink(groupId: string, createdById: string) {
+    const active = await this.prisma.groupInviteLink.findFirst({
+      where: { groupId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return active ?? this.issueInviteLink(groupId, createdById);
+  }
+
+  private inviteLinkUrl(token: string): string {
+    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
+    return `${frontendUrl}/invite/${token}`;
   }
 
   private toInviteLinkDto(link: {
@@ -412,9 +464,8 @@ export class GroupService {
     useCount: number;
     createdAt: Date;
   }): GroupInviteLinkDto {
-    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
     return {
-      url: `${frontendUrl}/invite/${link.token}`,
+      url: this.inviteLinkUrl(link.token),
       token: link.token,
       expiresAt: link.expiresAt.toISOString(),
       useCount: link.useCount,
